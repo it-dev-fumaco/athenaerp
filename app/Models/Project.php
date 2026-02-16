@@ -8,10 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 class Project extends Model
 {
     use HasFactory;
+
     protected $table = 'tabProject';
+
     protected $connection = 'mysql';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
-    
 }

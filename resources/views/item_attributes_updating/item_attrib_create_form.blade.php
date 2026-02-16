@@ -65,19 +65,19 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach ($completeAttr as $item_code => $row)
-                                        <input type="hidden" name="itemCode" value="{{ $item_code }}">
+                                        @foreach ($completeAttr as $itemCode => $row)
+                                        <input type="hidden" name="itemCode" value="{{ $itemCode }}">
                                         <tr>
                                             <td class="text-center align-middle p-2">
                                                 <div class="custom-control custom-checkbox">
                                                     <input type="hidden" value="{{ $row['disabled'] }}" name="is_disabled">
-                                                    <input class="custom-control-input cb-1" type="checkbox" id="is-disabled-cb-{{ $item_code }}" {{ ($row['disabled']) ? 'checked' : '' }}>
-                                                    <label for="is-disabled-cb-{{ $item_code }}" class="custom-control-label">Disabled</label>
+                                                    <input class="custom-control-input cb-1" type="checkbox" id="is-disabled-cb-{{ $itemCode }}" {{ ($row['disabled']) ? 'checked' : '' }}>
+                                                    <label for="is-disabled-cb-{{ $itemCode }}" class="custom-control-label">Disabled</label>
                                                 </div>
                                             </td>
-                                            <td class="text-center align-middle font-weight-bold p-2">{{ $item_code }}</td>
+                                            <td class="text-center align-middle font-weight-bold p-2">{{ $itemCode }}</td>
                                             @foreach ($itemAttributes as $itemAttribute)
-                                            <td class="text-center align-middle p-2">{{ $completeAttr[$item_code][$itemAttribute] }}</td>
+                                            <td class="text-center align-middle p-2">{{ $completeAttr[$itemCode][$itemAttribute] }}</td>
                                             @endforeach
                                         </tr>
                                         @endforeach
@@ -125,19 +125,19 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach ($incompleteAttr as $item_code => $row)
-                                        <input type="hidden" name="itemCode" value="{{ $item_code }}">
+                                        @foreach ($incompleteAttr as $itemCode => $row)
+                                        <input type="hidden" name="itemCode" value="{{ $itemCode }}">
                                         <tr>
                                             <td class="text-center align-middle p-2">
                                                 <div class="custom-control custom-checkbox">
                                                     <input type="hidden" class="tb-2" value="{{ $row['disabled'] }}" name="is_disabled">
-                                                    <input class="custom-control-input cb-1 cb-2" type="checkbox" id="is-disabled-cb-{{ $item_code }}-1" {{ ($row['disabled']) ? 'checked' : '' }}>
-                                                    <label for="is-disabled-cb-{{ $item_code }}-1" class="custom-control-label">Disabled</label>
+                                                    <input class="custom-control-input cb-1 cb-2" type="checkbox" id="is-disabled-cb-{{ $itemCode }}-1" {{ ($row['disabled']) ? 'checked' : '' }}>
+                                                    <label for="is-disabled-cb-{{ $itemCode }}-1" class="custom-control-label">Disabled</label>
                                                 </div>
                                             </td>
-                                            <td class="text-center align-middle font-weight-bold p-2">{{ $item_code }}</td>
+                                            <td class="text-center align-middle font-weight-bold p-2">{{ $itemCode }}</td>
                                             @foreach ($itemAttributes as $itemAttribute)
-                                            <td class="text-center align-middle p-2">{{ (isset($incompleteAttr[$item_code][$itemAttribute])) ? $incompleteAttr[$item_code][$itemAttribute] : null }}</td>
+                                            <td class="text-center align-middle p-2">{{ (isset($incompleteAttr[$itemCode][$itemAttribute])) ? $incompleteAttr[$itemCode][$itemAttribute] : null }}</td>
                                             @endforeach
                                         </tr>
                                         @endforeach

@@ -54,37 +54,7 @@
                                     {{ session()->get('error') }}
                                 </div>
                             @endif
-                            <!-- Nav tabs -->
-                            <ul class="nav nav-pills mt-1 d-flex flex-row justify-content-center" id="tabs" role="tablist" style="font-size: 8pt;">
-                                <li class="nav-item border">
-                                    <a class="nav-link nav-trigger font-weight-bold active"
-                                    data-toggle="tab"
-                                    data-target="store-transfer"
-                                    data-purpose="Store Transfer"
-                                    >Store-to-Store Transfer</a>
-                                </li>
-                                <li class="nav-item border">
-                                    <a class="nav-link nav-trigger font-weight-bold"
-                                    data-toggle="tab"
-                                    data-target="return"
-                                    data-purpose="Pull Out"
-                                    >Item Pull Out</a>
-                                </li>
-                                <li class="nav-item border">
-                                    <a class="nav-link nav-trigger font-weight-bold"
-                                    data-toggle="tab"
-                                    data-target="sales-return"
-                                    data-purpose="Item Return"
-                                    >Item Return</a>
-                                </li>
-                            </ul>
-                        
-                            <!-- Tab panes -->
-                            <div class="tab-content"> 
-                                <div id="store-transfer" class="container tab-pane active" style="padding: 8px 0 0 0;"></div>
-                                <div id="return" class="container tab-pane" style="padding: 8px 0 0 0;"></div>
-                                <div id="sales-return" class="container tab-pane" style="padding: 8px 0 0 0;"></div>
-                            </div>
+                            <div id="consignment-stock-transfer-list"></div>
                         </div>
                     </div>
                 </div>
@@ -119,80 +89,4 @@
         }
 
     </style>
-@endsection
-
-@section('script')
-    <script>
-        var showTotalChar = 150, showChar = "Show more", hideChar = "Show less";
-        $('.item-description').each(function() {
-            var content = $(this).text();
-            if (content.length > showTotalChar) {
-                var con = content.substr(0, showTotalChar);
-                var hcon = content.substr(showTotalChar, content.length - showTotalChar);
-                var txt = con + '<span class="dots">...</span><span class="morectnt"><span>' + hcon + '</span>&nbsp;&nbsp;<a href="#" class="show-more">' + showChar + '</a></span>';
-                $(this).html(txt);
-            }
-        });
-
-        $(".show-more").click(function(e) {
-            e.preventDefault();
-            if ($(this).hasClass("sample")) {
-                $(this).removeClass("sample");
-                $(this).text(showChar);
-            } else {
-                $(this).addClass("sample");
-                $(this).text(hideChar);
-            }
-
-            $(this).parent().prev().toggle();
-            $(this).prev().toggle();
-            return false;
-        });
-
-        var list_action = 'Store Transfer';
-        $(document).on('click', '.nav-trigger', function (e){
-            e.preventDefault();
-            var table = '#' + $(this).data('target');
-            list_action = $(this).data('purpose');
-
-            loadTable(list_action, table, 1);
-
-            $('.callout').addClass('d-none');
-
-            $('.nav-link').removeClass('active');
-            $('.tab-pane').removeClass('active');
-
-            $(this).addClass('active');
-            $(table).addClass('active');
-        });
-
-        $(document).on('click', '#transfers-pagination a', function(event){
-            event.preventDefault();
-            switch (list_action) {
-                case 'For Return':
-                    var table = '#return';
-                    break;
-                default:
-                    var table = '#store-transfer';
-                    break;
-            }
-
-            var page = $(this).attr('href').split('page=')[1];
-            loadTable(list_action, table, page);
-        });
-
-        loadTable('Store Transfer', '#store-transfer', 1);
-        function loadTable(purpose, table, page) {
-            $.ajax({
-                type: "GET",
-                url: "/stock_transfer/list/?page=" + page,
-                data: {
-                    purpose: purpose
-                },
-                success: function (response) {
-                    $(table).html(response);
-                }
-            });
-        }
-    </script>    
 @endsection

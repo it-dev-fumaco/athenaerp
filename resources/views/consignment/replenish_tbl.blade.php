@@ -6,15 +6,15 @@
         <th class="d-none d-sm-table-cell">Requested By</th>
         <th class='text-center' style="width: 23%">Action</th>
     </tr>
-    @forelse ($list->items() as $material_request)
+    @forelse ($list->items() as $materialRequest)
         @php
-            $is_promodiser = Auth::user()->user_group == 'Promodiser' ?? 0;
-            $owner = explode('.', explode('@', $material_request->owner)[0]);
+            $isPromodiser = Auth::user()->user_group == 'Promodiser' ?? 0;
+            $owner = explode('.', explode('@', $materialRequest->owner)[0]);
 
-            $material_request->owner = ucfirst($owner[0]) . ' ' . ucfirst($owner[1]);
-            $material_request->creation = Carbon\Carbon::parse($material_request->creation)->format('M. d, Y h:i a');
+            $materialRequest->owner = ucfirst($owner[0]) . ' ' . ucfirst($owner[1]);
+            $materialRequest->creation = Carbon\Carbon::parse($materialRequest->creation)->format('M. d, Y h:i a');
 
-            switch ($material_request->consignment_status) {
+            switch ($materialRequest->consignment_status) {
                 case 'For Approval':
                     $badge = 'warning';
                     break;
@@ -34,20 +34,20 @@
         @endphp
         <tr>
             <td>
-                {{ $material_request->name }}  <span class="{{ $material_request->consignment_status ? 'd-inline' : 'd-none' }} d-lg-none badge badge-{{ $badge }} " style="font-size: 7pt">{{ $material_request->consignment_status }}</span>
+                {{ $materialRequest->name }}  <span class="{{ $materialRequest->consignment_status ? 'd-inline' : 'd-none' }} d-lg-none badge badge-{{ $badge }} " style="font-size: 7pt">{{ $materialRequest->consignment_status }}</span>
                 <div class="d-block d-lg-none" style="font-size: 9pt">
-                    <b>{{ $material_request->branch_warehouse }}</b>
-                    <span class="d-block" style="font-size: 8pt">{{ $material_request->owner }} | {{ $material_request->creation }}</span>
+                    <b>{{ $materialRequest->branch_warehouse }}</b>
+                    <span class="d-block" style="font-size: 8pt">{{ $materialRequest->owner }} | {{ $materialRequest->creation }}</span>
                 </div>
             </td>
-            <td class="d-none d-sm-table-cell">{{ $material_request->branch_warehouse }}</td>
-            <td class="d-none d-sm-table-cell"><span class="badge badge-{{ $badge }} {{ $material_request->consignment_status ?? 'd-none' }}">{{ $material_request->consignment_status }}</span></td>
+            <td class="d-none d-sm-table-cell">{{ $materialRequest->branch_warehouse }}</td>
+            <td class="d-none d-sm-table-cell"><span class="badge badge-{{ $badge }} {{ $materialRequest->consignment_status ?? 'd-none' }}">{{ $materialRequest->consignment_status }}</span></td>
             <td class="d-none d-sm-table-cell">
-                <span>{{ $material_request->owner }}</span><br>
-                <small>{{ $material_request->creation }}</small>
+                <span>{{ $materialRequest->owner }}</span><br>
+                <small>{{ $materialRequest->creation }}</small>
             </td>
             <td class="text-center">
-                <a href="/consignment/replenish/form/{{ $material_request->name }}" style="font-size: 9pt">
+                <a href="/consignment/replenish/form/{{ $materialRequest->name }}" style="font-size: 9pt">
                     <i class="fa fa-edit"></i> View
                 </a>
             </td>

@@ -2,7 +2,7 @@
     <div class="row">
         <h3><b>Stock Adjustment Alert</b></h3>
         <br>
-        <p style="display:block;line-height:8px;">Reference No.: <b>{{ $reference_no }}</b></p>
+        <p style="display:block;line-height:8px;">Reference No.: <b>{{ $referenceNo }}</b></p>
         <p style="display:block;line-height:8px;">Branch: <b>{{ $warehouse }}</b></p>
         <br>
         <br>
@@ -24,7 +24,7 @@
                 <tr>
                     <td style="border: 1px solid black !important;text-align:justfy; width: 50% !important;">
                         <div style="width: 10% !important; display: flex; justify-content: center !important; align-items: center !important; float: left !important">
-                            <img src="https://athena.fumaco.org/storage/{{ $image }}" style="width: 100%">
+                            <img src="{{ Storage::disk('upcloud')->url($image) }}" style="width: 100%">
                         </div>
                         <div style="width: 89% !important; display: flex; justify-content: center !important; align-items: center !important; float: right !important">
                             <p><b>{{ $item['item_code'] }}</b> - {{ strip_tags($item['item_description']) }}</p>
@@ -56,8 +56,8 @@
         <br>
         <br>
         <br>
-        <p style="display:block;line-height:8px;">Created by: <b>{{ $created_by }}</b></p>
-        <p style="display:block;line-height:8px;">Created on: <b>{{ $created_at }}</b></p>
+        <p style="display:block;line-height:8px;">Created by: <b>{{ $createdBy }}</b></p>
+        <p style="display:block;line-height:8px;">Created on: <b>{{ $createdAt }}</b></p>
         <p style="display:block;line-height:8px;">For more details, please log in to <a href="https://athena.fumaco.org" target="_blank">https://athena.fumaco.org</a></p>
 
         <br>

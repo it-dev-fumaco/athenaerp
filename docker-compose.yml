@@ -1,0 +1,129 @@
+# AthenaERP - Docker Compose
+# Copy .env.example to .env and set DB_* / APP_URL before running.
+#
+# If the stack feels slow: give Docker more RAM in Docker Desktop
+# (Settings → Resources → Memory, e.g. 4–8 GB). See readme.md "Performance".
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        COMPOSER_INSTALL_FLAGS: ""   # use "--no-dev" for production build
+    image: athenaerp-app
+    container_name: athenaerp-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    env_file:
+      - .env
+    volumes:
+      - .:/var/www/html:delegated
+    ports:
+      - "80:8000"
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      APP_URL: ${APP_URL:-http://AthenaERP.local}
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-laravel}
+      DB_USERNAME: ${DB_USERNAME:-laravel}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      DB_HOST_1: mysql_mes
+      DB_PORT_1: 3306
+      DB_DATABASE_1: ${DB_DATABASE_1:-}
+      DB_USERNAME_1: ${DB_USERNAME_1:-laravel}
+      DB_PASSWORD_1: ${DB_PASSWORD_1:-secret}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CACHE_STORE: ${CACHE_STORE:-redis}
+      SESSION_DRIVER: ${SESSION_DRIVER:-redis}
+      QUEUE_CONNECTION: ${QUEUE_CONNECTION:-sync}
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_USERNAME: null
+      MAIL_PASSWORD: null
+      MAIL_ENCRYPTION: null
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - athenaerp
+
+  mysql:
+    image: mysql:8.2
+    container_name: athenaerp-mysql
+    restart: unless-stopped
+    ports:
+      - "${FORWARD_DB_PORT:-3306}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_DATABASE: ${DB_DATABASE:-laravel}
+      MYSQL_USER: ${DB_USERNAME:-laravel}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+    volumes:
+      - athenaerp-mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD:-secret}"]
+      retries: 5
+      interval: 5s
+      timeout: 5s
+    networks:
+      - athenaerp
+
+  # Optional: second MySQL for MES (mysql_mes connection). Leave DB_DATABASE_1 empty to skip using it.
+  mysql_mes:
+    image: mysql:8.2
+    container_name: athenaerp-mysql-mes
+    restart: unless-stopped
+    ports:
+      - "${FORWARD_DB_PORT_MES:-3307}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD_1:-secret}
+      MYSQL_DATABASE: ${DB_DATABASE_1:-mes}
+      MYSQL_USER: ${DB_USERNAME_1:-laravel}
+      MYSQL_PASSWORD: ${DB_PASSWORD_1:-secret}
+    volumes:
+      - athenaerp-mysql-mes:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD_1:-secret}"]
+      retries: 5
+      interval: 5s
+      timeout: 5s
+    networks:
+      - athenaerp
+
+  redis:
+    image: redis:7-alpine
+    container_name: athenaerp-redis
+    restart: unless-stopped
+    ports:
+      - "${FORWARD_REDIS_PORT:-6379}:6379"
+    volumes:
+      - athenaerp-redis:/data
+    networks:
+      - athenaerp
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: athenaerp-mailpit
+    restart: unless-stopped
+    ports:
+      - "${FORWARD_MAILPIT_PORT:-1025}:1025"
+      - "${FORWARD_MAILPIT_DASHBOARD:-8025}:8025"
+    networks:
+      - athenaerp
+
+networks:
+  athenaerp:
+    driver: bridge
+
+volumes:
+  athenaerp-mysql:
+  athenaerp-mysql-mes:
+  athenaerp-redis:

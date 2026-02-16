@@ -5,10 +5,10 @@
             <br>
             <p style="display:block;line-height: 15px; font-size: 14pt;">Sales Report for: <b>{{ $month.'-'.$year }}</b></p>
             <p style="display:block;line-height: 15px; font-size: 14pt;">Branch Warehouse: <b>{{ $warehouse }}</b></p>
-            <p style="display:block;line-height: 15px; font-size: 14pt;">Total Amount: <b>₱ {{ number_format($total_amount, 2) }}</b></p>
+            <p style="display:block;line-height: 15px; font-size: 14pt;">Total Amount: <b>₱ {{ number_format($totalAmount, 2) }}</b></p>
             <p style="display:block;line-height: 15px; font-size: 14pt;">Promodiser: <b>{{ Auth::user()->full_name }}</b></p>
-            <p style="display:block;line-height: 15px; font-size: 14pt;">Transaction Date: <b>{{ Carbon\Carbon::parse($date_submitted)->format('F d, Y') }}</b></p>
-            <p style="display:block;line-height: 15px; font-size: 14pt;">Submission Status: <b>{{ $submission_status }}</b></p>
+            <p style="display:block;line-height: 15px; font-size: 14pt;">Transaction Date: <b>{{ Carbon\Carbon::parse($dateSubmitted)->format('F d, Y') }}</b></p>
+            <p style="display:block;line-height: 15px; font-size: 14pt;">Submission Status: <b>{{ $submissionStatus }}</b></p>
             @if ($remarks)
                 <p style="display:block;line-height: 15px; font-size: 14pt;">Remarks: <b>{{ $remarks }}</b></p>
             @endif

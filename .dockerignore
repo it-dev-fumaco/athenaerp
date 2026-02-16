@@ -1,0 +1,43 @@
+# Dependencies (installed in container or mounted)
+/node_modules
+/vendor
+
+# Git and IDE
+.git
+.gitignore
+.gitattributes
+.idea
+.vscode
+.cursor
+
+# Env and secrets (mount or pass at runtime)
+.env
+.env.*
+!.env.example
+
+# Laravel and PHP
+/storage/*.key
+/bootstrap/cache/*
+.phpunit.result.cache
+.phpunit.cache
+Homestead.json
+Homestead.yaml
+
+# Logs and temp
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+
+# Docs and tests (optional: include if you run tests in image)
+# /docs
+# /tests
+
+# Docker (avoid recursive copy)
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Misc
+*.md
+!readme.md

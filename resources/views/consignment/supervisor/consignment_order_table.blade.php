@@ -9,7 +9,7 @@
     <tbody>
         @forelse ($result as $row)
         @php
-            $erp_url = env('ERP_API_BASE_URL');
+            $erpUrl = env('ERP_API_BASE_URL');
             $id = $row['name'];
             switch ($row['status']) {
                 case 'For Approval':
@@ -31,7 +31,7 @@
         @endphp
         <tr>
             <td class="text-center p-1 align-middle">
-                <a href="{{ "$erp_url/app/material-request/$id" }}" class="text-dark" target="_blank">
+                <a href="{{ "$erpUrl/app/material-request/$id" }}" class="text-dark" target="_blank">
                     {{ $row['name'] }}
                     <i class="fa fa-arrow-right"></i>
                 </a>

@@ -21,21 +21,21 @@
                             </div>
                         </div>
                         <div class="card-body p-0 text-center">
-                            <span class="font-weight-bold d-block font-responsive text-center mt-2">{{ $beginning_inventory->branch_warehouse }}</span>
+                            <span class="font-weight-bold d-block font-responsive text-center mt-2">{{ $beginningInventory->branch_warehouse }}</span>
                             @php
                                 $badge = null;
-                                if($beginning_inventory->status == 'Approved'){
+                                if($beginningInventory->status == 'Approved'){
                                     $badge = 'success';
-                                }else if($beginning_inventory->status == 'Cancelled'){
+                                }else if($beginningInventory->status == 'Cancelled'){
                                     $badge = 'secondary';
                                 }else{
                                     $badge = 'primary';
                                 }
                             @endphp
-                            <span class="badge badge-{{ $badge }}">{{ $beginning_inventory->status }}</span>
+                            <span class="badge badge-{{ $badge }}">{{ $beginningInventory->status }}</span>
                             <div class="d-flex flex-row mt-2 pl-2" style="font-size: 9pt;">
                                 <div class="p-0 col-7 text-left">
-                                    <span class="d-block">Date: <b>{{ Carbon\Carbon::parse($beginning_inventory->transaction_date)->format('F d, Y - h:i A') }}</b></span>
+                                    <span class="d-block">Date: <b>{{ Carbon\Carbon::parse($beginningInventory->transaction_date)->format('F d, Y - h:i A') }}</b></span>
                                 </div>
                                 <div class="p-0 col-5">
                                     <span class="d-block">Total item(s): <b>{{ count($inventory) }}</b></span>
@@ -43,9 +43,9 @@
                             </div>
                             <div class="d-flex flex-row pl-2" style="font-size: 9pt;">
                                 <div class="p-0 col-12 text-left">
-                                    @if ($beginning_inventory->status == 'Approved')
-                                    <span class="d-block">Approved by: <b>{{ $beginning_inventory->approved_by }}</b></span>
-                                    <span class="d-block">Date Approved: <b>{{ Carbon\Carbon::parse($beginning_inventory->date_approved)->format('M d, Y - h:i A') }}</b></span>
+                                    @if ($beginningInventory->status == 'Approved')
+                                    <span class="d-block">Approved by: <b>{{ $beginningInventory->approved_by }}</b></span>
+                                    <span class="d-block">Date Approved: <b>{{ Carbon\Carbon::parse($beginningInventory->date_approved)->format('M d, Y - h:i A') }}</b></span>
                                     @endif
                                 </div>
                             </div>
@@ -61,21 +61,21 @@
                                 <tbody>
                                     @forelse ($inventory as $inv)
                                     @php
-                                        $img = isset($item_image[$inv->item_code]) ? "/img/" . $item_image[$inv->item_code][0]->image_path : "/icon/no_img.png";
-                                        $img_webp = isset($item_image[$inv->item_code]) ? "/img/" . explode('.',$item_image[$inv->item_code][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
+                                        $img = isset($itemImage[$inv->item_code]) ? "/img/" . $itemImage[$inv->item_code][0]->image_path : "/icon/no_img.png";
+                                        $imgWebp = isset($itemImage[$inv->item_code]) ? "/img/" . explode('.',$itemImage[$inv->item_code][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
 
-                                        $img_count = array_key_exists($inv->item_code, $item_image) ? count($item_image[$inv->item_code]) : 0;
+                                        $imgCount = array_key_exists($inv->item_code, $itemImage) ? count($itemImage[$inv->item_code]) : 0;
                                     @endphp 
                                     <tr style="border-bottom: 0 !important;">
                                         <td class="text-center p-1">
                                             <span class="d-none">{{ strip_tags($inv->item_description) }}</span>
                                             <div class="d-flex flex-row justify-content-start align-items-center">
                                                 <div class="p-1 text-left">
-                                                    <a href="{{ asset('storage/') }}{{ $img }}" class="view-images" data-item-code="{{ $inv->item_code }}">
+                                                    <a href="{{ Storage::disk('upcloud')->url($img) }}" class="view-images" data-item-code="{{ $inv->item_code }}">
                                                         <picture>
-                                                            <source srcset="{{ asset('storage'.$img_webp) }}" type="image/webp" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-                                                            <source srcset="{{ asset('storage'.$img) }}" type="image/jpeg" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
-                                                            <img src="{{ asset('storage'.$img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
+                                                            <source srcset="{{ Storage::disk('upcloud')->url($imgWebp) }}" type="image/webp" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
+                                                            <source srcset="{{ Storage::disk('upcloud')->url($img) }}" type="image/jpeg" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
+                                                            <img src="{{ Storage::disk('upcloud')->url($img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" width="40" height="40">
                                                         </picture>
                                                     </a>
                                                 </div>
@@ -104,9 +104,9 @@
                             </table>
                             <div class="container text-left pt-4">
                                 <label style="font-size: 9pt;">Remarks</label>
-                                <textarea cols="30" rows="10" class="form-control" style="font-size: 9pt;" readonly>{{ $beginning_inventory->remarks }}</textarea>
+                                <textarea cols="30" rows="10" class="form-control" style="font-size: 9pt;" readonly>{{ $beginningInventory->remarks }}</textarea>
                             </div>
-                            @if ($beginning_inventory->status != 'Cancelled')
+                            @if ($beginningInventory->status != 'Cancelled')
                             <div class="container p-2">
                                 <button class="btn btn-secondary w-100" data-toggle="modal" data-target="#cancel-Modal">Cancel</button>
 
@@ -121,7 +121,7 @@
                                                 </button>
                                             </div>
                                             <div class="modal-body">
-                                                @if ($products_sold)
+                                                @if ($productsSold)
                                                     <div class="callout callout-danger text-justify" style="font-size: 9pt !important;">
                                                         <i class="fas fa-info-circle"></i> Canceling beginnning inventory record will also cancel submitted product sold records of the following:
                                                     </div>
@@ -132,7 +132,7 @@
                                                                 <th class="text-center" style="width: 20%;">Qty</th>
                                                                 <th class="text-center" style="width: 20%;">Amount</th>
                                                             </tr>
-                                                            @foreach($products_sold as $item)
+                                                            @foreach($productsSold as $item)
                                                                 <tr>
                                                                     <td class="p-0" colspan=3>
                                                                         <div class="p-0 row">
@@ -140,9 +140,9 @@
                                                                                 <div class="row">
                                                                                     <div class="col-4">
                                                                                         <picture>
-                                                                                            <source srcset="{{ asset('storage'.$item['webp']) }}" type="image/webp">
-                                                                                            <source srcset="{{ asset('storage'.$item['image']) }}" type="image/jpeg">
-                                                                                            <img src="{{ asset('storage'.$item['image']) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $item['image'])[0], '-') }}" width="40" height="40">
+                                                                                            <source srcset="{{ Storage::disk('upcloud')->url($item['webp']) }}" type="image/webp">
+                                                                                            <source srcset="{{ Storage::disk('upcloud')->url($item['image']) }}" type="image/jpeg">
+                                                                                            <img src="{{ Storage::disk('upcloud')->url($item['image']) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $item['image'])[0], '-') }}" width="40" height="40">
                                                                                         </picture>
                                                                                     </div>
                                                                                     <div class="col-8" style="display: flex; justify-content: center; align-items: center;">
@@ -176,7 +176,7 @@
                                                 @endif
                                             </div>
                                             <div class="modal-footer">
-                                                <a href="/cancel/approved_beginning_inv/{{ $beginning_inventory->name }}" class="btn btn-primary w-100 submit-once">Confirm</a>
+                                                <a href="/cancel/approved_beginning_inv/{{ $beginningInventory->name }}" class="btn btn-primary w-100 submit-once">Confirm</a>
                                             </div>
                                         </div>
                                     </div>

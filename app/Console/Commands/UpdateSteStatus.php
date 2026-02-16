@@ -2,12 +2,13 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Traits\GeneralTrait;
+use Illuminate\Console\Command;
 
 class UpdateSteStatus extends Command
 {
     use GeneralTrait;
+
     /**
      * The name and signature of the console command.
      *
@@ -39,6 +40,8 @@ class UpdateSteStatus extends Command
      */
     public function handle()
     {
-        return $this->updateSteStatus();
+        $result = $this->updateSteStatus();
+
+        return $result ? self::SUCCESS : self::FAILURE;
     }
 }

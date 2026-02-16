@@ -37,7 +37,7 @@
                                         <th class="text-center p-1 align-middle" style="width: 75%">Item Code</th>
                                         <th class="text-center p-1 align-middle" style="width: 25%">Action</th>
                                     </thead>
-                                    @forelse ($damaged_arr as $i => $item)
+                                    @forelse ($damagedArr as $i => $item)
                                         <tr>
                                             <td class="text-center p-1 align-middle" style="width: 75%">
                                                 <div class="d-none"><!-- For Search -->
@@ -106,7 +106,7 @@
                                                                     </tr>
                                                                     <tr>
                                                                         <td colspan="2" class="text-justify p-1 align-middle" style="border-top: 0 !important;">
-                                                                            <p>{!! strip_tags($item['item_description']) !!}</p>
+                                                                            <p>{!! $item['item_description'] !!}</p>
                                                                             <p class="mt-1"><b>Reason: </b> {{ $item['damage_description'] }}</p>
                                                                         </td>
                                                                     </tr>
@@ -147,7 +147,7 @@
                                                 <div class="d-none"><!-- For Search -->
                                                     {{ $item['item_code'] }}
                                                 </div>
-                                                <div class="item-description">{!! strip_tags($item['item_description']) !!}</div>
+                                                <div class="item-description">{!! $item['item_description'] !!}</div>
                                                 <span class="d-block mt-1 font-weight-bold">{{ $item['store'] }}</span>
                                                 <b>Reason: </b> {{ $item['damage_description'] }} <br>
                                                 <b>Qty: </b> {{ number_format($item['damaged_qty']) }} <small style="white-space: nowrap">{{ $item['uom'] }}</small>
@@ -161,7 +161,7 @@
                                </table>
                                <div class="mt-3 ml-3 clearfix pagination" style="display: block;">
                                     <div class="col-md-4 float-right">
-                                        {{ $damaged_items->links() }}
+                                        {{ $damagedItems->links() }}
                                     </div>
                                 </div>
                             </div>
@@ -175,10 +175,7 @@
 
 @section('style')
     <style>
-        table {
-            table-layout: fixed;
-            width: 100%;   
-        }
+        table { width: 100%; }
         .morectnt span {
             display: none;
         }

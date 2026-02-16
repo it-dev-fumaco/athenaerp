@@ -73,7 +73,6 @@
         </style>
     </head>
     @php
-        // Embed images as base64 so DomPDF can render them without resolving file paths (avoids Windows/path issues)
         $imageToDataUri = function ($path) {
             if (!$path || !is_string($path) || !file_exists($path)) {
                 return null;
@@ -82,11 +81,11 @@
             $data = @file_get_contents($path);
             return $data !== false ? 'data:' . $mime . ';base64,' . base64_encode($data) : null;
         };
-        $fumaco_logo_path = public_path('storage/fumaco_logo.png');
-        if (!file_exists($fumaco_logo_path)) {
-            $fumaco_logo_path = storage_path('app/public/fumaco_logo.png');
+        $fumacoLogoPath = public_path('storage/fumaco_logo.png');
+        if (!file_exists($fumacoLogoPath)) {
+            $fumacoLogoPath = storage_path('app/public/fumaco_logo.png');
         }
-        $fumaco_logo_src = $imageToDataUri($fumaco_logo_path);
+        $fumacoLogoSrc = $imageToDataUri($fumacoLogoPath);
         $margin = '1.2in';
         $rows = 1;
         if(strlen($project) > 29){
@@ -101,7 +100,7 @@
         <table style="width: 100% !important; border-collapse: collapse;"> 
             <tr>
                 <td style="width: 43%; padding: 0 !important; vertical-align: top !important">
-                    @if($fumaco_logo_src)<img src="{{ $fumaco_logo_src }}" alt="" style="width: 230px;">@endif
+                    @if($fumacoLogoSrc)<img src="{{ $fumacoLogoSrc }}" alt="" style="width: 230px;">@endif
                 </td>
                 <td style="width: 55%; font-size: 11pt;">
                     <p style="text-transform: uppercase !important; margin: 0; line-height: .75rem;">
@@ -117,7 +116,7 @@
         <table style="width: 100% !important; border-collapse: collapse;">
             <tr>
                 <td style="width: 28%; vertical-align: top; padding-top: 15px;">
-                    @if($fumaco_logo_src)<img src="{{ $fumaco_logo_src }}" style="width: 80%;">@endif
+                    @if($fumacoLogoSrc)<img src="{{ $fumacoLogoSrc }}" style="width: 80%;">@endif
                 </td>
                 <td style="width: 15%;font-size: .6rem; padding: 0 15px 10px 0 !important; line-height: .5rem;">
                     www.fumaco.com
@@ -150,53 +149,45 @@
                     @php $slot2_src = null; @endphp
                     @for ($i = 1; $i <= 3; $i++)
                         @php
-                            // Use precomputed base64 data URI from controller when present (most reliable)
-                            $img_src = isset($row['image_data_uris'][$i]) && $row['image_data_uris'][$i] ? $row['image_data_uris'][$i] : null;
-                            if (!$img_src) {
-                                $img_path = null;
-                                if (isset($row['images']['image'.$i]) && $row['images']['image'.$i]) {
-                                    if (isset($is_standard) && $is_standard) {
-                                        $filepath = isset($row['images']['image'.$i]['filepath']) ? $row['images']['image'.$i]['filepath'] : null;
-                                        if ($filepath) {
-                                            $img_path = public_path($filepath);
-                                            if (!file_exists($img_path)) {
-                                                $img_path = storage_path('app/public/'.preg_replace('#^storage/#', '', $filepath));
-                                            }
-                                        }
-                                    } else {
-                                        $img_name = trim((string)($row['images']['image'.$i] ?? ''));
-                                        if ($img_name) {
-                                            $img_path = public_path('storage/brochures/'.strtoupper($project).'/'.$img_name);
-                                            if (!$img_path || !file_exists($img_path)) {
-                                                $img_path = storage_path('app/public/brochures/'.strtoupper($project).'/'.$img_name);
-                                            }
-                                            if (!$img_path || !file_exists($img_path)) {
-                                                $img_path = public_path('storage/brochures/'.$img_name);
-                                            }
-                                            if (!$img_path || !file_exists($img_path)) {
-                                                $img_path = storage_path('app/public/brochures/'.$img_name);
-                                            }
-                                            if (!$img_path || !file_exists($img_path)) {
-                                                $img_path = null;
-                                            }
+                            $imgSrc = isset($row['image_data_uris'][$i]) && $row['image_data_uris'][$i] ? $row['image_data_uris'][$i] : null;
+                            if (!$imgSrc && isset($row['images']['image'.$i]) && $row['images']['image'.$i]) {
+                                $imgPath = null;
+                                if (isset($isStandard) && $isStandard) {
+                                    $filepath = $row['images']['image'.$i]['filepath'] ?? null;
+                                    if ($filepath) {
+                                        $imgPath = public_path($filepath);
+                                        if (!file_exists($imgPath)) {
+                                            $imgPath = storage_path('app/public/'.preg_replace('#^storage/#', '', $filepath));
                                         }
                                     }
-                                    if ($img_path && !file_exists($img_path)) {
-                                        $img_path = null;
+                                } else {
+                                    $imgName = trim((string)($row['images']['image'.$i] ?? ''));
+                                    if ($imgName) {
+                                        $tryPaths = [
+                                            public_path('storage/brochures/'.strtoupper($project).'/'.$imgName),
+                                            storage_path('app/public/brochures/'.strtoupper($project).'/'.$imgName),
+                                            public_path('storage/brochures/'.$imgName),
+                                            storage_path('app/public/brochures/'.$imgName),
+                                        ];
+                                        foreach ($tryPaths as $p) {
+                                            if ($p && file_exists($p)) {
+                                                $imgPath = $p;
+                                                break;
+                                            }
+                                        }
                                     }
                                 }
-                                $img_src = $img_path ? $imageToDataUri($img_path) : null;
+                                $imgSrc = ($imgPath ?? null) && file_exists($imgPath ?? '') ? $imageToDataUri($imgPath) : null;
                             }
-                            // Never show the same image in slot 3 as in slot 2
                             if ($i === 2) {
-                                $slot2_src = $img_src;
+                                $slot2_src = $imgSrc;
                             }
-                            if ($i === 3 && $slot2_src !== null && $img_src === $slot2_src) {
-                                $img_src = null;
+                            if ($i === 3 && isset($slot2_src) && $slot2_src !== null && $imgSrc === $slot2_src) {
+                                $imgSrc = null;
                             }
                         @endphp
-                        @if ($img_src)
-                            <img src="{{ $img_src }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 15px !important; max-height: 775px !important;">
+                        @if ($imgSrc)
+                            <img src="{{ $imgSrc }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 15px !important; max-height: 775px !important;">
                         @endif
                     @endfor
                     &nbsp;

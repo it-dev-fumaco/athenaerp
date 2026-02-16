@@ -5,15 +5,16 @@
 
 @section('content')
     <div class="container-fluid align-center">
+        <div id="item-attribute-search-app"></div>
         <div class="col-md-10 text-center" style="margin: 0 auto !important;">
-            <form action="/search" class="form-inline mb-2" method="GET">
+            <form action="/search" class="form-inline mb-2" method="GET" id="item-attribute-search-form">
                 <div class="form-group" style="margin: 0 auto !important;">   
                     <label>Item Code </label>
                     <input type="text" class="form-control m-2" id="itemCode" name="item_code" value="{{ request('item_code') }}" required/>
                     <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
                 </div>
             </form>
-            <div class="col-md-8 text-center" style="margin: 0 auto !important;">
+            <div class="col-md-8 text-center" style="margin: 0 auto !important;" id="item-attribute-search-results">
                 @if( request('item_code') == "")
                     <span>Enter item code to start searching</span>
                 @elseif(count($itemAttrib) > 0)
@@ -68,7 +69,6 @@
             </div>
         </div>
     </div>
-        
 @endsection
 
 @section('script')

@@ -1,5 +1,5 @@
 <ul class="products-list product-list-in-card pl-2 pr-2">
-    @forelse ($recent_uploads as $recent)
+    @forelse ($recentUploads as $recent)
     <li class="item pl-2 pr-2">
       <a href="/preview/{{ strtoupper($recent['project']) }}/{{ $recent['filename'] }}" class="d-block m-0 p-0">{{ $recent['project'] }}</a>
       <small class="text-muted" style="font-size: 12px;">Filename: {{ $recent['filename'] }}</small>

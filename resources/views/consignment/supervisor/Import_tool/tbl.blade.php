@@ -1,6 +1,6 @@
 @if (!collect($items)->min('active'))
     @php
-        $unassigned_items = collect($items)->where('active', 0);
+        $unassignedItems = collect($items)->where('active', 0);
     @endphp
     <div class="alert alert-warning font-weight-bold text-center w-100" style="font-size: 13px;">
         <span class="d-block">Row(s) highlighted in <b>RED</b> are not assigned to any item in ERP.</span>
@@ -33,7 +33,7 @@
                                 $n = 0;
                             @endphp
                             <tbody>
-                                @foreach ($unassigned_items as $i => $item)
+                                @foreach ($unassignedItems as $i => $item)
                                 <tr>
                                     <td class="text-center align-middle font-weight-bold" style="width: 50px !important;">{{ $n + 1 }}</td>
                                     <td class="align-middle" style="width: 400px !important;">
@@ -80,7 +80,7 @@
             <dt class="col-3">Project:</dt>
             <dd class="col-9">{{ $project }}</dd>
             <dt class="col-3">Customer PO No.:</dt>
-            <dd class="col-9">{{ $customer_purchase_order }}</dd>
+            <dd class="col-9">{{ $customerPurchaseOrder }}</dd>
         </dl>
     </div>
    
@@ -104,7 +104,7 @@
                 @php
                     $i = 1;
                 @endphp
-                @foreach ($items as $item_code => $item)
+                @foreach ($items as $itemCode => $item)
                     @php
                         $price = $item['sold'] > 0 ? ($item['amount'] / $item['sold']) : 0;
                     @endphp
@@ -147,11 +147,11 @@
             <input type="hidden" name="customer" value="{{ $customer }}">
             <input type="hidden" name="project" value="{{ $project }}">
             <input type="hidden" name="branch_warehouse" value="{{ $branch }}">
-            <input type="hidden" name="po_no" value="{{ $customer_purchase_order }}">
+            <input type="hidden" name="po_no" value="{{ $customerPurchaseOrder }}">
             @php
                 $i = 0;
             @endphp
-            @foreach ($items as $item_code => $item)
+            @foreach ($items as $itemCode => $item)
             @php
                 $price = $item['sold'] > 0 ? ($item['amount'] / $item['sold']) : 0;
                 $index = $i++;

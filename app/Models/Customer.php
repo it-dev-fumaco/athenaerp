@@ -8,9 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 class Customer extends Model
 {
     use HasFactory;
+
     protected $table = 'tabCustomer';
+
     protected $connection = 'mysql';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
 }

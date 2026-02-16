@@ -9,7 +9,7 @@
             <p style="display:block;line-height: 15px; font-size: 12pt;">MREQ ID: <b>{{ $name }}</b></p>
             <p style="display:block;line-height: 15px; font-size: 12pt;">Branch: <b>{{ $branch }}</b></p>
             <p style="display:block;line-height: 15px; font-size: 12pt;">Promodiser: <b>{{ $owner }}</b></p>
-            <p style="display:block;line-height: 15px; font-size: 12pt;">Transaction Date: <b>{{ Carbon\Carbon::parse($transaction_date)->format('F d, Y') }}</b></p>
+            <p style="display:block;line-height: 15px; font-size: 12pt;">Transaction Date: <b>{{ Carbon\Carbon::parse($transactionDate)->format('F d, Y') }}</b></p>
             <br>
             <table style="border: 1px solid black;border-collapse: collapse; font-size: 10pt;">
                 <thead>

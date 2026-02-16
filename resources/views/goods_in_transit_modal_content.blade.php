@@ -1,11 +1,11 @@
 @php
-    $submit_url = $data['status'] == 'For Checking' ? '/in_transit/receive/'.$data['name'] : '/in_transit/transfer/'.$data['name'];
+    $submitUrl = $data['status'] == 'For Checking' ? '/in_transit/receive/'.$data['name'] : '/in_transit/transfer/'.$data['name'];
     $refdoc = explode('-', $data['ref_no'])[0];
 @endphp
-<form method="POST" action="{{ $submit_url }}">
+<form method="POST" action="{{ $submitUrl }}">
     @csrf
     <input type="hidden" value="{{ $refdoc }}" name="reference_doctype">
-    <div class="modal-dialog" style="min-width: 35% !important;">
+    <div class="modal-dialog modal-generic-narrow" style="min-width: 35%; max-width: 95%;">
         <div class="modal-content">
             <div class="modal-header {{ $data['status'] == 'For Checking' ? 'bg-primary' : 'bg-info' }}">
                 @if ($data['status'] == 'For Checking')
@@ -52,7 +52,7 @@
                                         </div>
                                         <div class="col-8 mt-3">
                                             <span class="d-block font-weight-bold">{{ $data['item_code'] }}</span>
-                                            <small class="d-block text-justify">{{ strip_tags($data['description']) }}</small>
+                                            <small class="d-block text-justify">{!! $data['description'] !!}</small>
                                             <dl>
                                                 <dt>Available Qty</dt>
                                                 <dd><span style="font-size: 12pt;" class="badge {{ ($data['available_qty'] > 0) ? 'badge-success' : 'badge-danger' }}">{{ $data['available_qty'] . ' ' . $data['stock_uom'] }}</span></dd>

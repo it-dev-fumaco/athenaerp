@@ -10,13 +10,17 @@ class BeginningInventoryItem extends Model
     use HasFactory;
 
     protected $connection = 'mysql';
+
     protected $primaryKey = 'name';
+
     public $timestamps = false;
+
     protected $keyType = 'string';
 
     protected $table = 'tabConsignment Beginning Inventory Item';
 
-    public function defaultImage(){
+    public function defaultImage()
+    {
         return $this->hasOne(ItemImages::class, 'parent', 'item_code');
     }
 }

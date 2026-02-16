@@ -85,7 +85,7 @@
 														</a>
 													</div>
 													<div class="text-justify">
-														<span>@{{ x.description }}</span>
+														<span ng-bind-html="trustAsHtml(x.description)"></span>
 													</div>
 													<div class="text-left mt-2">
 														<div class="row">
@@ -123,7 +123,7 @@
 													<span class="badge badge-success" style="font-size: 8pt;" ng-if="x.status === 'Received'">Received</span>
 													<span class="badge badge-info" style="font-size: 8pt;" ng-if="x.status === 'Issued'">Pending Transfer Request</span>
 												</div>
-												<span class="d-block">@{{ x.description }}</span>
+												<span class="d-block" ng-bind-html="trustAsHtml(x.description)"></span>
 											</td>
 											<td class="text-center d-none d-lg-table-cell">
 												<p><span style="font-size: 14pt;">@{{ x.qty }}</span> <span>@{{ x.uom }}</span></p>
@@ -222,7 +222,8 @@
 		}
 	});
 
-	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location) {
+	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location, $sce) {
+		$scope.trustAsHtml = function(html) { return html ? $sce.trustAsHtml(html) : ''; };
 		$scope.loadData = () => {
 			$scope.custom_loading_spinner = true;
 			$http.get("/in_transit?arr=1").then((response) => {

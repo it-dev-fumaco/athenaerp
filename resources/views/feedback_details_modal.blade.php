@@ -31,7 +31,7 @@
                                 <div class="col-8 mt-3">
                                     <span class="d-block font-weight-bold">{{ $q['item_code'] }}</span>
                                     <input type="text" name="itemCode" value="{{ $q['item_code'] }}" hidden/>
-                                    <small class="d-block text-justify">{{ $q['description'] }}</small>
+                                    <small class="d-block text-justify">{!! $q['description'] !!}</small>
                                     <input type="text" name="itemDesc" value="{{ $q['description'] }}" hidden/>
                                     <div class="row mt-2">
                                         <div class="col-6">

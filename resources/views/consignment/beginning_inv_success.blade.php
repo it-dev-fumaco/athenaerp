@@ -19,7 +19,7 @@
 
                                 @if (!session()->has('cancelled'))
                                     <div class="text-center mb-2" style="font-size: 9pt;">
-                                        <span class="d-block font-weight-bold mt-3">{{ $item_count }}</span>
+                                        <span class="d-block font-weight-bold mt-3">{{ $itemCount }}</span>
                                         <small class="d-block">No. of Items</small>
                                         <span class="d-block font-weight-bold mt-3">{{ \Carbon\Carbon::parse(session()->get('transaction_date'))->format('F d, Y') }}</span>
                                         <small class="d-block">Transaction Date</small>

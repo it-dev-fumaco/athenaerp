@@ -21,4 +21,4 @@
     </tbody>
 </table>
 
-<div class="d-flex justify-content-center mx-2" id="attribute-values-pagination">{{ $data->links() }}</div>
+<div class="d-flex justify-content-center mx-2" id="attribute-values-pagination">{{ $data->onEachSide(1)->links() }}</div>

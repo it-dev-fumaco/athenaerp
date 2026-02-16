@@ -13,31 +13,31 @@
         </thead>
         <tbody>
             @php
-                $generated_count = 0;
+                $generatedCount = 0;
             @endphp
             @foreach ($content as $row)
                 @php
                     $attributes = isset($row['attrib']) ? $row['attrib'] : [];
                     $checker = isset($row['attributes']) ? collect($row['attributes'])->pluck('attribute_value')->filter()->values()->all() : [];
 
-                    $is_empty = $checker ? 0 : 1;
+                    $isEmpty = $checker ? 0 : 1;
 
-                    if(!$is_empty){
-                        $generated_count += 1;
+                    if(!$isEmpty){
+                        $generatedCount += 1;
                     }
                 @endphp
-                <tr style="background-color: {{ $is_empty ? 'rgb(247, 93, 93)' : 'rgba(0,0,0,0)' }}">
+                <tr style="background-color: {{ $isEmpty ? 'rgb(247, 93, 93)' : 'rgba(0,0,0,0)' }}">
                     @foreach ($headers as $col)
                         @if($col)
                             @php
-                                $col_value = '-';
+                                $colValue = '-';
                                 if(isset($attributes[$col])){
-                                    $col_value = $attributes[$col];
+                                    $colValue = $attributes[$col];
                                 }else if(isset($row[$col])){
-                                    $col_value = $row[$col];
+                                    $colValue = $row[$col];
                                 }
                             @endphp
-                            <td style="white-space: nowrap;">{{ $col_value }}</td>
+                            <td style="white-space: nowrap;">{{ $colValue }}</td>
                         @endif
                     @endforeach
                 </tr>
@@ -61,6 +61,6 @@
 
 <script>
     $(document).ready(function (){
-        $('#generated-prod-count').text('{{ $generated_count }}');
+        $('#generated-prod-count').text('{{ $generatedCount }}');
     });
 </script>

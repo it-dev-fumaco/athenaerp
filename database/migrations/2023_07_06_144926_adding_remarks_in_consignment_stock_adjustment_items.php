@@ -13,7 +13,9 @@ class AddingRemarksInConsignmentStockAdjustmentItems extends Migration
      */
     public function up()
     {
-        if (Schema::hasColumn('tabConsignment Stock Adjustment Items', 'remarks')) return;
+        if (Schema::hasColumn('tabConsignment Stock Adjustment Items', 'remarks')) {
+            return;
+        }
         Schema::table('tabConsignment Stock Adjustment Items', function (Blueprint $table) {
             $table->string('remarks')->nullable();
         });

@@ -20,10 +20,10 @@
             <td class="text-center">{{ '₱ ' . number_format($row->base_rate, 2, '.', ',') }}</td>
             <td class="text-center">
                 @php
-                    $valuation_rate = array_key_exists($row->name, $item_valuation_rates) ? $item_valuation_rates[$row->name] : 0;
+                    $valuationRate = data_get($itemValuationRates, $row->name, 0);
                 @endphp
-                @if ($valuation_rate > 0)
-                {{ '₱ ' . number_format($valuation_rate, 2, '.', ',') }}
+                @if ($valuationRate > 0)
+                {{ '₱ ' . number_format($valuationRate, 2, '.', ',') }}
                 @else
                 N/A
                 @endif

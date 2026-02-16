@@ -81,7 +81,7 @@
 												<span class="badge badge-warning mr-2" ng-if="x.status === 'For Checking'">@{{ x.status }}</span>
 												<i class="fas fa-arrow-right ml-2 mr-2"></i> 
 												<span>@{{ x.s_warehouse }}</span>
-												<span class="d-block">@{{ x.description }}</span>
+												<span class="d-block" ng-bind-html="trustAsHtml(x.description)"></span>
 												<span class="d-none d-lg-block mt-3" ng-hide="x.part_nos == ''"><b>Part No(s):</b> @{{ x.part_nos }}</span>
 												<small class="d-none d-lg-block mt-2" ng-hide="x.owner == null"><b>Requested by:</b> @{{ x.owner }}</small>
 												<div class="d-block d-lg-none">
@@ -151,7 +151,7 @@
 <div class="modal fade" id="ste-modal">
 	<form method="POST" action="/submit_transaction">
 		@csrf
-		<div class="modal-dialog" style="min-width: 35% !important;"></div>
+		<div class="modal-dialog modal-generic-narrow" style="min-width: 35%; max-width: 95%;"></div>
 	</form>
 </div>
 
@@ -313,7 +313,8 @@
 	});
 
 	var app = angular.module('myApp', []);
-	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location) {
+	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location, $sce) {
+		$scope.trustAsHtml = function(html) { return html ? $sce.trustAsHtml(html) : ''; };
 		$http.get("/get_parent_warehouses").then(function (response) {
 			$scope.wh = response.data.wh;
 		});

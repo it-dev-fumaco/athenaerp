@@ -6,7 +6,7 @@
         <th class="text-center">Action</th>
     </thead>
     <tbody>
-        @forelse ($item_attributes as $attribute)
+        @forelse ($itemAttributes as $attribute)
         <tr>
             <td class="text-center align-middle p-2">{{ $attribute->idx }}</td>
             <td class="align-middle p-2">{{ $attribute->attribute }}</td>
@@ -22,7 +22,7 @@
         </tr>
         @empty
         <tr>
-            <td colspan="4" class="text-center align-middle">No item attribute found for <b>{{ $item_code }}</b>.</td>
+            <td colspan="4" class="text-center align-middle">No item attribute found for <b>{{ $itemCode }}</b>.</td>
         </tr>
         @endforelse
     </tbody>

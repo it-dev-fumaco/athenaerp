@@ -20,7 +20,7 @@ return [
     |
     */
 
-    'default_driver' => 'cwebp',
+    'default_driver' => 'php-gd',
 
     /*
     |--------------------------------------------------------------------------
@@ -42,7 +42,7 @@ return [
         */
         'cwebp' => [
             // 'path' => '/usr/bin/cwebp',
-            'path' => env('WEBP_PATH')
+            'path' => env('WEBP_PATH'),
         ],
 
         /*
