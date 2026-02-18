@@ -58,7 +58,6 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
 use ZipArchive;
-use Illuminate\Support\Facades\File;
 
 class MainController extends Controller
 {
