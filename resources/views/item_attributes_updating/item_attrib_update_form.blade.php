@@ -18,7 +18,7 @@
         </div>
         @if(\Session::has('notFound'))
             <div class="col-md-8 offset-md-2 alert alert-danger text-center mt-2">
-                <span id="notFound">{!! \Session::get('notFound') !!}</span>
+                <span id="notFound">{{ \Session::get('notFound') }}</span>
             </div>
 
             <div class="col-md-8 offset-md-2 text-center">
@@ -43,7 +43,7 @@
                     <div class="col-md-12">
                         @if(\Session::has('success'))
                             <div class="col-md-12 alert alert-success text-center">
-                                <span id="successMessage">{!! \Session::get('success') !!}</span>
+                                <span id="successMessage">{{ \Session::get('success') }}</span>
                             </div>
                         @endif
                     </div>

@@ -1,5 +1,5 @@
 <div id="item-list" class="container-fluid p-0 ul_list" style="border: 1px solid #ccc;">
-  @forelse ($q as $item)
+  @forelse ($itemsPaginator as $item)
     @php
       $img = data_get($imageCollection, $item->name, $noImg);
     @endphp

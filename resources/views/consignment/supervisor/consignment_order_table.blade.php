@@ -9,7 +9,7 @@
     <tbody>
         @forelse ($result as $row)
         @php
-            $erpUrl = env('ERP_API_BASE_URL');
+            $erpUrl = config('services.erp.api_base_url');
             $id = $row['name'];
             switch ($row['status']) {
                 case 'For Approval':

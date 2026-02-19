@@ -114,12 +114,12 @@ class Item extends Model
             return $query->whereRaw('1 = 0');
         }
 
-        $q = $query->where('variant_of', $variantOf);
+        $query->where('variant_of', $variantOf);
         if ($excludeName) {
-            $q->where('name', '!=', $excludeName);
+            $query->where('name', '!=', $excludeName);
         }
 
-        return $q;
+        return $query;
     }
 
     /**

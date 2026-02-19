@@ -11,7 +11,7 @@
                 <label class="m-0 img-btn d-block">
                     <input type="radio" name="selected_image" value="{{ $cii['filename'] }}" required>
                     <div class="c-img rounded">
-                        <img src="{{ $cii['filepath'] }}" alt="{{ $cii['filename'] }}" class="img-responsive img-thumbnail" style="width: 100% !important;">
+                        <img src="{{ $cii['filepath'] ? Storage::disk('upcloud')->url($cii['filepath']) : '' }}" alt="{{ $cii['filename'] }}" class="img-responsive img-thumbnail" style="width: 100% !important;">
                     </div>
                 </label>
             </div>

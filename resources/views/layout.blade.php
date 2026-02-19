@@ -526,7 +526,7 @@
 	</style>
 	@yield('style')
 	<!-- Google tag (gtag.js) -->
-	@if (env('APP_ENV') != 'local')
+	@if (config('app.env') !== 'local')
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-M1ZN4YBE16"></script>
 	<script>
 	window.dataLayer = window.dataLayer || [];

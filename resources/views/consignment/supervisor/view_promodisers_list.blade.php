@@ -72,13 +72,13 @@
                                         <td class="text-center p-0 align-middle">
                                             @foreach ($row['stores'] as $store)
                                             <span class="d-block border-bottom p-1 {{ in_array($store, array_keys($storesWithBeginningInventory)) ? 'bg-success' : 'bg-gray' }}">
-                                                {!! array_key_exists($store, $storesWithBeginningInventory) ? \Carbon\Carbon::parse($storesWithBeginningInventory[$store])->format('m-d-Y') : '&nbsp;' !!}
+                                                {{ array_key_exists($store, $storesWithBeginningInventory) ? \Carbon\Carbon::parse($storesWithBeginningInventory[$store])->format('m-d-Y') : '&nbsp;' }}
                                             </span>
                                             @endforeach
                                         </td>
                                         <td class="text-center p-1 align-middle">
                                             @if ($row['login_status'])
-                                            {!! $row['login_status'] !!}
+                                            {{ $row['login_status'] }}
                                             @else
                                             <span class="text-muted">-</span>
                                             @endif

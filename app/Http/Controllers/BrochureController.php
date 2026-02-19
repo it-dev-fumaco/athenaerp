@@ -645,7 +645,7 @@ class BrochureController extends Controller
                 ];
             }
 
-            $fumacoLogo = asset('storage/fumaco_logo.png');
+            $fumacoLogo = Storage::disk('upcloud')->url('fumaco_logo.png');
 
             if ($preview) {
                 return view('brochure.preview_loop', compact('content', 'project', 'customer', 'fumacoLogo'));
@@ -696,30 +696,34 @@ class BrochureController extends Controller
                 if (! Storage::disk('upcloud')->exists('item-images/'.$filename) && $filename) {
                     $filename = explode('.', $filename)[0].'.webp';
                 }
-                // $base64 = $this->base64Image('/img/'.$filename);
-
                 $currentImages[] = [
                     'filename' => $filename,
-                    'filepath' => Storage::disk('upcloud')->path('item-images/'.$filename),
+                    'filepath' => $filename ? 'item-images/'.$filename : null,
                 ];
             }
 
             $brochureImages = ItemBrochureImage::where('parent', $data['item_code'])->select('image_filename', 'idx', 'image_path', 'name')->orderByRaw('LENGTH(idx) ASC')->orderBy('idx', 'ASC')->get();
 
+            $images = [];
             for ($i = 0; $i < 3; $i++) {
                 $row = $i + 1;
-                $filepath = null;
+                $storageKey = null;
                 if (isset($brochureImages[$i])) {
-                    $filepath = $brochureImages[$i]->image_path.$brochureImages[$i]->image_filename;
-                    $filepath = Storage::disk('upcloud')->path('item-brochures/'.$filepath);
+                    $pathPrefix = $brochureImages[$i]->image_path;
+                    if ($pathPrefix === null || trim((string) $pathPrefix) === '' || ! Str::startsWith(trim((string) $pathPrefix), 'item-brochures')) {
+                        $pathPrefix = 'item-brochures/';
+                    } else {
+                        $pathPrefix = rtrim($pathPrefix, '/').'/';
+                    }
+                    $storageKey = $pathPrefix.$brochureImages[$i]->image_filename;
                 }
                 $images['image'.$row] = [
                     'id' => isset($brochureImages[$i]) ? $brochureImages[$i]->name : null,
-                    'filepath' => $filepath,
+                    'filepath' => $storageKey,
                 ];
             }
 
-            $fumacoLogo = asset('storage/fumaco_logo.png');
+            $fumacoLogo = Storage::disk('upcloud')->url('fumaco_logo.png');
 
             if (isset($request->get_images) && $request->get_images) {
                 return view('brochure.brochure_images', compact('images', 'currentImages'));
@@ -760,6 +764,8 @@ class BrochureController extends Controller
                     'remarks' => $remarks,
                 ];
 
+                $content = $this->resolveStandardBrochureImageDataUris($content, $images);
+
                 $isStandard = true;
                 DB::commit();
 
@@ -768,8 +774,10 @@ class BrochureController extends Controller
                 return $pdf->stream($newFilename.'.pdf');
             }
 
-            $imgCheck = collect($currentImages)->map(function ($q) {
-                return Storage::disk('upcloud')->exists($q['filepath']) ? 1 : 0;
+            $imgCheck = collect($currentImages)->map(function ($imageRow) {
+                $key = $imageRow['filepath'] ?? null;
+
+                return $key && Storage::disk('upcloud')->exists($key) ? 1 : 0;
             })->max();
 
             return view('brochure.preview_standard_brochure', compact('data', 'attributes', 'images', 'currentImages', 'imgCheck', 'remarks', 'fumacoLogo'));
@@ -888,6 +896,7 @@ class BrochureController extends Controller
                     'modified_by' => Auth::user()->wh_user,
                     'idx' => $request->image_idx,
                     'image_filename' => $storedFilename,
+                    'image_path' => 'item-brochures/',
                 ]);
             } else {
                 ItemBrochureImage::insert([
@@ -899,7 +908,7 @@ class BrochureController extends Controller
                     'parent' => $itemCode,
                     'idx' => $request->image_idx,
                     'image_filename' => $storedFilename,
-                    'image_path' => Storage::disk('upcloud')->path('item-brochures/'.$imagePath),
+                    'image_path' => 'item-brochures/',
                 ]);
             }
 
@@ -919,7 +928,7 @@ class BrochureController extends Controller
 
             DB::commit();
 
-            $dataSrc = Storage::disk('upcloud')->path('item-brochures/'.$imagePath.$storedFilename);
+            $dataSrc = Storage::disk('upcloud')->url($imagePath.$storedFilename);
 
             Log::info('uploadImageForStandard success', [
                 'item_code' => $itemCode,
@@ -1001,6 +1010,78 @@ class BrochureController extends Controller
 
             return ApiResponse::failure('Something went wrong. Please try again.');
         }
+    }
+
+    /**
+     * Resolve standard (single-item) brochure images from upcloud for PDF embedding.
+     * Writes JPEGs to temp files and passes local paths so DomPDF can load them reliably.
+     */
+    private function resolveStandardBrochureImageDataUris(array $content, array $images): array
+    {
+        if (empty($content)) {
+            return $content;
+        }
+        $content[0]['image_data_uris'] = [1 => null, 2 => null, 3 => null];
+        $content[0]['image_local_paths'] = [1 => null, 2 => null, 3 => null];
+        $disk = Storage::disk('upcloud');
+        $tempDir = storage_path('app/temp/brochure-pdf');
+        if (! File::isDirectory($tempDir)) {
+            File::makeDirectory($tempDir, 0755, true);
+        }
+        for ($i = 1; $i <= 3; $i++) {
+            $key = $images['image'.$i]['filepath'] ?? null;
+            if (! $key || ! $disk->exists($key)) {
+                continue;
+            }
+            $data = $disk->get($key);
+            if ($data === null || $data === '') {
+                continue;
+            }
+            $jpegData = $this->imageDataToJpegBytes($data, $key);
+            if ($jpegData === null) {
+                continue;
+            }
+            $tempFile = $tempDir.'/brochure_'.$i.'_'.uniqid().'.jpg';
+            if (file_put_contents($tempFile, $jpegData) !== false) {
+                $content[0]['image_local_paths'][$i] = $tempFile;
+            }
+        }
+
+        return $content;
+    }
+
+    /**
+     * Convert image bytes to JPEG bytes; resizes large images. Returns raw JPEG string or null.
+     */
+    private function imageDataToJpegBytes(string $data, string $pathOrKey): ?string
+    {
+        $img = @imagecreatefromstring($data);
+        if ($img === false) {
+            return null;
+        }
+        $w = imagesx($img);
+        $h = imagesy($img);
+        $maxDim = 800;
+        if ($w > $maxDim || $h > $maxDim) {
+            $ratio = min($maxDim / $w, $maxDim / $h);
+            $nw = (int) round($w * $ratio);
+            $nh = (int) round($h * $ratio);
+            $resized = imagecreatetruecolor($nw, $nh);
+            if ($resized !== false) {
+                imagecopyresampled($resized, $img, 0, 0, 0, 0, $nw, $nh, $w, $h);
+                imagedestroy($img);
+                $img = $resized;
+            }
+        }
+        ob_start();
+        imagejpeg($img, null, 85);
+        $jpegData = ob_get_clean();
+        imagedestroy($img);
+        if ($jpegData === false || $jpegData === '') {
+            return null;
+        }
+
+        return $jpegData;
     }
 
     /**

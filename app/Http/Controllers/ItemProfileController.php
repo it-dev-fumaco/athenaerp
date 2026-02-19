@@ -65,12 +65,7 @@ class ItemProfileController extends Controller
             $locations = $request->location;
 
             if ($locations) {
-                foreach ($locations as $warehouse => $location) {
-                    Bin::query()
-                        ->where('warehouse', $warehouse)
-                        ->where('item_code', $request->item_code)
-                        ->update(['location' => strtoupper($location)]);
-                }
+                Bin::updateLocationsForItem($request->item_code, $locations);
             }
 
             DB::commit();
@@ -157,17 +152,17 @@ class ItemProfileController extends Controller
             ->groupBy('item_code')
             ->pluck('actual_qty', 'item_code')
             ->toArray();
-        foreach ($productionItemAlternatives as $a) {
-            $a = (object) $a;
-            $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? '/item-images/'.$itemAlternativeImages[$a->item_code] : '/icon/no_img.png';
+        foreach ($productionItemAlternatives as $productionAltRow) {
+            $productionAltRow = (object) $productionAltRow;
+            $itemAlternativeImage = Arr::exists($itemAlternativeImages, $productionAltRow->item_code) ? '/item-images/'.$itemAlternativeImages[$productionAltRow->item_code] : '/icon/no_img.png';
             $itemAlternativeImage = $this->base64Image($itemAlternativeImage);
 
-            $actualStocks = Arr::get($productionItemAltActualStock, $a->item_code, 0);
+            $actualStocks = Arr::get($productionItemAltActualStock, $productionAltRow->item_code, 0);
 
             if (count($itemAlternatives) < 7) {
                 $itemAlternatives[] = [
-                    'item_code' => $a->item_code,
-                    'description' => $a->description,
+                    'item_code' => $productionAltRow->item_code,
+                    'description' => $productionAltRow->description,
                     'item_alternative_image' => $itemAlternativeImage,
                     'actual_stocks' => $actualStocks,
                 ];
@@ -178,8 +173,8 @@ class ItemProfileController extends Controller
 
         if (! $bundled) {
             $itemAttributes = ItemVariantAttribute::query()->where('parent', $itemCode)->orderBy('idx', 'asc')->pluck('attribute_value', 'attribute')->toArray();
-            $q = Item::query()->where('variant_of', $itemDetails->variant_of)->where('name', '!=', $itemDetails->name)->orderBy('modified', 'desc')->get();
-            $alternativeItemCodes = collect($q)->pluck('name');
+            $variantItems = Item::query()->variantSiblings($itemDetails->variant_of, $itemDetails->name)->orderBy('modified', 'desc')->get();
+            $alternativeItemCodes = $variantItems->pluck('name');
 
             $actualStocksQuery = Bin::query()->whereIn('item_code', $alternativeItemCodes)->selectRaw('item_code, SUM(actual_qty) as actual_qty')->groupBy('item_code')->get();
             $actualStocks = collect($actualStocksQuery)->groupBy('item_code');
@@ -207,25 +202,25 @@ class ItemProfileController extends Controller
                 ->get();
             $alternativesIssuedAt = collect($atIssuedQuery)->groupBy('item_code');
 
-            $itemAlternativeImages = ItemImages::query()->whereIn('parent', collect($q)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent')->toArray();
+            $itemAlternativeImages = ItemImages::query()->whereIn('parent', $variantItems->pluck('name'))->orderBy('idx', 'asc')->pluck('image_path', 'parent')->toArray();
 
-            foreach ($q as $a) {
-                $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? '/item-images/'.$itemAlternativeImages[$a->item_code] : '/icon/no_img.png';
+            foreach ($variantItems as $variantItem) {
+                $itemAlternativeImage = Arr::exists($itemAlternativeImages, $variantItem->name) ? '/item-images/'.$itemAlternativeImages[$variantItem->name] : '/icon/no_img.png';
                 $itemAlternativeImage = $this->base64Image($itemAlternativeImage);
 
                 $totalReserved = $totalConsumed = 0;
-                if (Arr::exists($alternativeReserves, $a->item_code)) {
-                    $totalReserved = $alternativeReserves[$a->item_code]->sum('reserved_qty');
-                    $totalConsumed = $alternativeReserves[$a->item_code]->sum('consumed_qty');
+                if (Arr::exists($alternativeReserves, $variantItem->name)) {
+                    $totalReserved = $alternativeReserves[$variantItem->name]->sum('reserved_qty');
+                    $totalConsumed = $alternativeReserves[$variantItem->name]->sum('consumed_qty');
                 }
 
-                $totalIssuedSte = Arr::exists($alternativesIssuedSte, $a->item_code) ? $alternativesIssuedSte[$a->item_code]->sum('qty') : 0;
-                $totalIssetAt = Arr::exists($alternativesIssuedAt, $a->item_code) ? $alternativesIssuedAt[$a->item_code]->sum('qty') : 0;
+                $totalIssuedSte = Arr::exists($alternativesIssuedSte, $variantItem->name) ? $alternativesIssuedSte[$variantItem->name]->sum('qty') : 0;
+                $totalIssetAt = Arr::exists($alternativesIssuedAt, $variantItem->name) ? $alternativesIssuedAt[$variantItem->name]->sum('qty') : 0;
 
                 $totalIssued = $totalIssuedSte + $totalIssetAt;
                 $remainingReserved = $totalReserved - $totalConsumed;
 
-                $actualStock = $actualStocks[$a->item_code][0] ?? null;
+                $actualStock = $actualStocks[$variantItem->name][0] ?? null;
                 if (is_array($actualStock)) {
                     $actualStock = (object) $actualStock;
                 }
@@ -235,8 +230,8 @@ class ItemProfileController extends Controller
 
                 if (count($itemAlternatives) < 7) {
                     $itemAlternatives[] = [
-                        'item_code' => $a->item_code,
-                        'description' => $a->description,
+                        'item_code' => $variantItem->name,
+                        'description' => $variantItem->description,
                         'item_alternative_image' => $itemAlternativeImage,
                         'actual_stocks' => $availableQty,
                     ];
@@ -244,31 +239,31 @@ class ItemProfileController extends Controller
             }
 
             if (count($itemAlternatives) <= 0) {
-                $q = Item::query()
+                $classificationItems = Item::query()
                     ->where('item_classification', $itemDetails->item_classification)
                     ->where('name', '!=', $itemDetails->name)
                     ->limit(100)
                     ->orderBy('modified', 'desc')
                     ->get();
-                $itemAlternativeImages = ItemImages::query()->whereIn('parent', collect($q)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent')->toArray();
+                $itemAlternativeImages = ItemImages::query()->whereIn('parent', $classificationItems->pluck('name'))->orderBy('idx', 'asc')->pluck('image_path', 'parent')->toArray();
 
-                foreach ($q as $a) {
-                    $itemAlternativeImage = Arr::exists($itemAlternativeImages, $a->item_code) ? '/item-images/'.$itemAlternativeImages[$a->item_code] : '/icon/no_img.png';
+                foreach ($classificationItems as $altItem) {
+                    $itemAlternativeImage = Arr::exists($itemAlternativeImages, $altItem->name) ? '/item-images/'.$itemAlternativeImages[$altItem->name] : '/icon/no_img.png';
                     $itemAlternativeImage = $this->base64Image($itemAlternativeImage);
 
                     $totalReserved = $totalConsumed = 0;
-                    if (Arr::exists($alternativeReserves, $a->item_code)) {
-                        $totalReserved = $alternativeReserves[$a->item_code]->sum('reserved_qty');
-                        $totalConsumed = $alternativeReserves[$a->item_code]->sum('consumed_qty');
+                    if (Arr::exists($alternativeReserves, $altItem->name)) {
+                        $totalReserved = $alternativeReserves[$altItem->name]->sum('reserved_qty');
+                        $totalConsumed = $alternativeReserves[$altItem->name]->sum('consumed_qty');
                     }
 
-                    $totalIssuedSte = Arr::exists($alternativesIssuedSte, $a->item_code) ? $alternativesIssuedSte[$a->item_code]->sum('qty') : 0;
-                    $totalIssetAt = Arr::exists($alternativesIssuedAt, $a->item_code) ? $alternativesIssuedAt[$a->item_code]->sum('qty') : 0;
+                    $totalIssuedSte = Arr::exists($alternativesIssuedSte, $altItem->name) ? $alternativesIssuedSte[$altItem->name]->sum('qty') : 0;
+                    $totalIssetAt = Arr::exists($alternativesIssuedAt, $altItem->name) ? $alternativesIssuedAt[$altItem->name]->sum('qty') : 0;
 
                     $totalIssued = $totalIssuedSte + $totalIssetAt;
                     $remainingReserved = $totalReserved - $totalConsumed;
 
-                    $actualStock = $actualStocks[$a->item_code][0] ?? null;
+                    $actualStock = $actualStocks[$altItem->name][0] ?? null;
                     if (is_array($actualStock)) {
                         $actualStock = (object) $actualStock;
                     }
@@ -278,8 +273,8 @@ class ItemProfileController extends Controller
 
                     if (count($itemAlternatives) < 7) {
                         $itemAlternatives[] = [
-                            'item_code' => $a->item_code,
-                            'description' => $a->description,
+                            'item_code' => $altItem->name,
+                            'description' => $altItem->description,
                             'item_alternative_image' => $itemAlternativeImage,
                             'actual_stocks' => $availableQty,
                         ];
@@ -512,13 +507,15 @@ class ItemProfileController extends Controller
         $selected = $request->idx ? $request->idx : 0;
 
         $images = collect($images)->map(function ($image) {
-            $image->image = $image->image_path;
-            $image->image_path = $image->image_path ? Storage::disk('upcloud')->path($image->image_path) : Storage::disk('upcloud')->path('icon/no_img.png');
+            $originalPath = $image->image_path;
+            $image->image = $originalPath;
+            $image->image_path = $originalPath ? Storage::disk('upcloud')->url($originalPath) : Storage::disk('upcloud')->url('icon/no_img.png');
 
             $image->original = 1;
-            if (Storage::disk('upcloud')->exists(Storage::disk('upcloud')->path(explode('.', $image->image_path)[0]).'.webp')) {
+            $webpKey = $originalPath ? explode('.', $originalPath)[0].'.webp' : null;
+            if ($webpKey && Storage::disk('upcloud')->exists($webpKey)) {
                 $image->original = 0;
-                $image->image = Storage::disk('upcloud')->path(explode('.', $image->image_path)[0]).'.webp';
+                $image->image = Storage::disk('upcloud')->url($webpKey);
             }
 
             return $image;
@@ -532,7 +529,7 @@ class ItemProfileController extends Controller
         $images = ItemImages::query()->where('parent', $itemCode)->orderBy('idx', 'asc')->pluck('image_path', 'name');
 
         return collect($images)->map(function ($image) {
-            return Storage::disk('upcloud')->path("img/$image");
+            return Storage::disk('upcloud')->url("img/$image");
         });
     }
 

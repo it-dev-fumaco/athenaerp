@@ -33,7 +33,7 @@
                                             if (isset($images['image1']['filepath']) && $images['image1']['filepath']) {
                                                 $img1Actual = null;
                                                 $img1Temp = 'd-none';
-                                                $img1Src = asset($images['image1']['filepath']);
+                                                $img1Src = Storage::disk('upcloud')->url($images['image1']['filepath']);
                                                 $img1Id = $images['image1']['id'];
                                             } else {
                                                 $img1Actual = 'd-none';
@@ -44,7 +44,7 @@
                                             if (isset($images['image2']['filepath']) && $images['image2']['filepath']) {
                                                 $img2Actual = null;
                                                 $img2Temp = 'd-none';
-                                                $img2Src = asset($images['image2']['filepath']);
+                                                $img2Src = Storage::disk('upcloud')->url($images['image2']['filepath']);
                                                 $img2Id = $images['image2']['id'];
                                             } else {
                                                 $img2Actual = 'd-none';
@@ -55,7 +55,7 @@
                                             if (isset($images['image3']['filepath']) && $images['image3']['filepath']) {
                                                 $img3Actual = null;
                                                 $img3Temp = 'd-none';
-                                                $img3Src = asset($images['image3']['filepath']);
+                                                $img3Src = Storage::disk('upcloud')->url($images['image3']['filepath']);
                                                 $img3Id = $images['image3']['id'];
                                             } else {
                                                 $img3Actual = 'd-none';
@@ -187,7 +187,7 @@
                                     @php
                                         $img = isset($images['image'.$i]['filepath']) && $images['image'.$i]['filepath'] ? $images['image'.$i]['filepath'] : null;
                                     @endphp
-                                    <img id="item-0{{ $i }}-print-image" src="{{ $img ? asset($img) : '' }}" class="{{ !$img ? 'd-none' : null }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 20px !important;">
+                                    <img id="item-0{{ $i }}-print-image" src="{{ $img ? Storage::disk('upcloud')->url($img) : '' }}" class="{{ !$img ? 'd-none' : null }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 20px !important;">
                                 @endfor
                                 &nbsp;
                             </div>
@@ -272,7 +272,7 @@
                                                 </div>
                                             </div>
                                             <div class="text-center mt-4" style="min-height: 200px;">
-                                                <img src="{{ asset('storage/icon/no_img.png') }}" width="230" class="img-thumbnail mb-3 d-none" id="img-preview">
+                                                <img src="{{ Storage::disk('upcloud')->url('icon/no_img.png') }}" width="230" class="img-thumbnail mb-3 d-none" id="img-preview">
                                             </div>
                                         </div>
                                     </div>
@@ -590,7 +590,7 @@
             var file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
             if (!file) {
                 $('#browse-file-text').text('Browse File');
-                $('#img-preview').addClass('d-none').attr('src', '{{ asset('storage/icon/no_img.png') }}');
+                $('#img-preview').addClass('d-none').attr('src', '{{ Storage::disk('upcloud')->url('icon/no_img.png') }}');
                 $('#upload-btn').attr('disabled', true);
                 return;
             }
@@ -609,7 +609,7 @@
         });
 
         $(document).on('hidden.bs.modal', '.modal', function () {
-            $('#img-preview').addClass('d-none').attr('src', '{{ asset('storage/icon/no_img.png') }}');
+            $('#img-preview').addClass('d-none').attr('src', '{{ Storage::disk('upcloud')->url('icon/no_img.png') }}');
             $('#browse-file-text').text('Browse File');
             $('#image-upload-form-1')[0].reset();
             $('#image-upload-form')[0].reset();

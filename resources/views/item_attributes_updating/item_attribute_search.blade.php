@@ -22,7 +22,7 @@
                             <div class="col-md-12">
                                 @if(\Session::has('success'))
                                     <div class="col-md-12 alert alert-success text-center">
-                                        <span id="successMessage">{!! \Session::get('success') !!}</span>
+                                        <span id="successMessage">{{ \Session::get('success') }}</span>
                                     </div>
                                 @endif
                             </div>

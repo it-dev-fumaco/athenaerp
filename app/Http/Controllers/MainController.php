@@ -959,11 +959,15 @@ class MainController extends Controller
 
         $steRemarks = collect($steRemarks)->groupBy('name')->toArray();
 
-        // Batch load reference docs by type to avoid N+1
+        // Batch load reference docs by type to avoid N+1 (whitelist to prevent table-name injection)
         $psRef = ['Packing Slip', 'Picking Slip'];
+        $allowedReferenceTypes = ['Packing Slip', 'Sales Order', 'Stock Entry', 'Delivery Note', 'Material Request', 'Purchase Order', 'Work Order'];
         $refsByType = [];
         foreach ($logs as $row) {
             $referenceType = (in_array($row->reference_type, $psRef)) ? 'Packing Slip' : $row->reference_type;
+            if (! in_array($referenceType, $allowedReferenceTypes, true)) {
+                continue;
+            }
             $refsByType[$referenceType] = ($refsByType[$referenceType] ?? []) + [$row->reference_parent => true];
         }
         $referencesByType = [];
@@ -2784,11 +2788,12 @@ class MainController extends Controller
 
     public function downloadImage($webp)
     {
-        if (! Storage::disk('upcloud')->exists(Storage::disk('upcloud')->path($webp))) {
+        if (! Storage::disk('upcloud')->exists($webp)) {
             return ApiResponse::failure('File not found', 404);
         }
 
-        $image = imagecreatefromwebp(Storage::disk('upcloud')->path($webp));
+        $contents = Storage::disk('upcloud')->get($webp);
+        $image = @imagecreatefromstring($contents);
 
         if (! $image) {
             return ApiResponse::failure('Failed to convert the image', 500);
@@ -2893,7 +2898,7 @@ class MainController extends Controller
 
     public function uploadFiles(Request $request)
     {
-        $now = Carbon::now();
+        $now = now();
         if ($request->hasFile('itemFile')) {
             $files = $request->file('itemFile');
             $itemFiles = [];
