@@ -139,7 +139,7 @@ class SearchController extends Controller
 
         $itemWarehouses = array_column($itemInventory->toArray(), 'warehouse');
 
-        $itemInventory = collect($itemInventory)->groupBy('item_code')->toArray();
+        $itemInventory = collect($itemInventory)->groupBy('item_code');
 
         $stockReservation = StockReservation::whereIn('item_code', $itemCodes)
             ->whereIn('warehouse', $itemWarehouses)
@@ -147,7 +147,7 @@ class SearchController extends Controller
             ->selectRaw('SUM(reserve_qty) as total_reserved_qty, SUM(consumed_qty) as total_consumed_qty, CONCAT(item_code, "-", warehouse) as item')
             ->groupBy('item_code', 'warehouse')
             ->get();
-        $stockReservation = collect($stockReservation)->groupBy('item')->toArray();
+        $stockReservation = collect($stockReservation)->groupBy('item');
 
         $steTotalIssued = StockEntryDetail::where('docstatus', 0)
             ->where('status', 'Issued')
@@ -156,7 +156,7 @@ class SearchController extends Controller
             ->selectRaw('SUM(qty) as total_issued, CONCAT(item_code, "-", s_warehouse) as item')
             ->groupBy('item_code', 's_warehouse')
             ->get();
-        $steTotalIssued = collect($steTotalIssued)->groupBy('item')->toArray();
+        $steTotalIssued = collect($steTotalIssued)->groupBy('item');
 
         $atTotalIssued = AthenaTransaction::query()
             ->from('tabAthena Transactions as at')
@@ -175,7 +175,7 @@ class SearchController extends Controller
             ->groupBy('at.item_code', 'at.source_warehouse')
             ->get();
 
-        $atTotalIssued = collect($atTotalIssued)->groupBy('item')->toArray();
+        $atTotalIssued = collect($atTotalIssued)->groupBy('item');
 
         $lowLevelStock = ItemReorder::query()
             ->whereIn('parent', $itemCodes)
@@ -183,7 +183,7 @@ class SearchController extends Controller
             ->selectRaw('SUM(warehouse_reorder_level) as total_warehouse_reorder_level, CONCAT(parent, "-", warehouse) as item')
             ->groupBy('parent', 'warehouse')
             ->get();
-        $lowLevelStock = collect($lowLevelStock)->groupBy('item')->toArray();
+        $lowLevelStock = collect($lowLevelStock)->groupBy('item');
 
         $itemImages = ItemImages::whereIn('parent', $itemCodes)->orderBy('idx', 'asc')->pluck('image_path', 'parent');
         $itemImages = collect($itemImages)->map(function ($image) {
@@ -222,8 +222,8 @@ class SearchController extends Controller
                 ->orderBy('transaction_date', 'desc')
                 ->get();
 
-            $lastPurchaseOrderRates = collect($lastPurchaseOrder)->groupBy('item_code')->toArray();
-            $lastLandedCostVoucherRates = collect($lastLandedCostVoucher)->groupBy('item_code')->toArray();
+            $lastPurchaseOrderRates = collect($lastPurchaseOrder)->groupBy('item_code');
+            $lastLandedCostVoucherRates = collect($lastLandedCostVoucher)->groupBy('item_code');
 
             $websitePrices = ItemPrice::where('price_list', 'Website Price List')
                 ->where('selling', 1)
@@ -244,15 +244,16 @@ class SearchController extends Controller
 
         $itemList = [];
         foreach ($items as $row) {
-            $image = Arr::get($itemImages, $row->item_code, $noImgPlaceholder);
+            $itemCode = data_get($row, 'item_code');
+            $image = Arr::get($itemImages, $itemCode, $noImgPlaceholder);
 
-            $partNos = Arr::get($partNosQuery, $row->item_code);
+            $partNos = Arr::get($partNosQuery, $itemCode);
 
             $siteWarehouses = [];
             $consignmentWarehouses = [];
-            $itemInventoryArr = Arr::get($itemInventory, $row->item_code, []);
+            $itemInventoryArr = Arr::get($itemInventory, $itemCode, []);
             foreach ($itemInventoryArr as $value) {
-                $binKey = $value->item_code.'-'.$value->warehouse;
+                $binKey = data_get($value, 'item_code').'-'.data_get($value, 'warehouse');
                 $reservedQty = Arr::get($stockReservation, "{$binKey}.0.total_reserved_qty", 0);
 
                 $consumedQty = Arr::get($stockReservation, "{$binKey}.0.total_consumed_qty", 0);
@@ -263,52 +264,52 @@ class SearchController extends Controller
                 $reservedQty = $reservedQty - $consumedQty;
                 $reservedQty = $reservedQty > 0 ? $reservedQty : 0;
 
-                $actualQty = $value->actual_qty;
+                $actualQty = data_get($value, 'actual_qty');
 
                 $warehouseReorderLevel = data_get($lowLevelStock, "{$binKey}.0.total_warehouse_reorder_level", 0);
 
                 $issuedReservedQty = ($reservedQty + $issuedQty) - $consumedQty;
 
                 $availableQty = ($actualQty > $issuedReservedQty) ? $actualQty - $issuedReservedQty : 0;
-                if ($value->parent_warehouse == 'P2 Consignment Warehouse - FI' && ! $isPromodiser) {
+                if (data_get($value, 'parent_warehouse') == 'P2 Consignment Warehouse - FI' && ! $isPromodiser) {
                     $consignmentWarehouses[] = [
-                        'warehouse' => $value->warehouse,
-                        'location' => $value->location,
+                        'warehouse' => data_get($value, 'warehouse'),
+                        'location' => data_get($value, 'location'),
                         'reserved_qty' => $reservedQty,
-                        'actual_qty' => $value->actual_qty,
+                        'actual_qty' => data_get($value, 'actual_qty'),
                         'available_qty' => $availableQty,
-                        'consigned_qty' => $value->consigned_qty > 0 ? $value->consigned_qty : 0,
-                        'stock_uom' => $value->stock_uom ? $value->stock_uom : $row->stock_uom,
+                        'consigned_qty' => data_get($value, 'consigned_qty', 0) > 0 ? data_get($value, 'consigned_qty', 0) : 0,
+                        'stock_uom' => data_get($value, 'stock_uom') ? data_get($value, 'stock_uom') : data_get($row, 'stock_uom'),
                         'warehouse_reorder_level' => $warehouseReorderLevel,
-                        'parent_warehouse' => $value->parent_warehouse,
+                        'parent_warehouse' => data_get($value, 'parent_warehouse'),
                     ];
                 } else {
-                    if (Auth::user()->user_group == 'Promodiser' && $value->parent_warehouse == 'P2 Consignment Warehouse - FI') {
-                        $availableQty = $value->consigned_qty > 0 ? $value->consigned_qty : 0;
+                    if (Auth::user()->user_group == 'Promodiser' && data_get($value, 'parent_warehouse') == 'P2 Consignment Warehouse - FI') {
+                        $availableQty = data_get($value, 'consigned_qty', 0) > 0 ? data_get($value, 'consigned_qty', 0) : 0;
                     }
 
                     $siteWarehouses[] = [
-                        'warehouse' => $value->warehouse,
-                        'location' => $value->location,
+                        'warehouse' => data_get($value, 'warehouse'),
+                        'location' => data_get($value, 'location'),
                         'reserved_qty' => $reservedQty,
-                        'actual_qty' => $value->actual_qty,
+                        'actual_qty' => data_get($value, 'actual_qty'),
                         'available_qty' => $availableQty,
-                        'consigned_qty' => $value->consigned_qty > 0 ? $value->consigned_qty : 0,
-                        'stock_uom' => $value->stock_uom ? $value->stock_uom : $row->stock_uom,
+                        'consigned_qty' => data_get($value, 'consigned_qty', 0) > 0 ? data_get($value, 'consigned_qty', 0) : 0,
+                        'stock_uom' => data_get($value, 'stock_uom') ? data_get($value, 'stock_uom') : data_get($row, 'stock_uom'),
                         'warehouse_reorder_level' => $warehouseReorderLevel,
-                        'parent_warehouse' => $value->parent_warehouse,
+                        'parent_warehouse' => data_get($value, 'parent_warehouse'),
                     ];
                 }
             }
 
-            $lastPurchaseOrderRates = collect($lastPurchaseOrder)->groupBy('item_code')->toArray();
-            $lastLandedCostVoucherRates = collect($lastLandedCostVoucher)->groupBy('item_code')->toArray();
+            $lastPurchaseOrderRates = collect($lastPurchaseOrder)->groupBy('item_code');
+            $lastLandedCostVoucherRates = collect($lastLandedCostVoucher)->groupBy('item_code');
 
             $itemRate = 0;
-            $lastPurchaseOrderArr = data_get($lastPurchaseOrderRates, "{$row->item_code}.0", []);
+            $lastPurchaseOrderArr = data_get($lastPurchaseOrderRates, "{$itemCode}.0", []);
             if ($lastPurchaseOrderArr) {
                 if (data_get($lastPurchaseOrderArr, 'supplier_group') == 'Imported') {
-                    $lastLandedCostVoucherItem = data_get($lastLandedCostVoucherRates, "{$row->item_code}.0", []);
+                    $lastLandedCostVoucherItem = data_get($lastLandedCostVoucherRates, "{$itemCode}.0", []);
 
                     if ($lastLandedCostVoucherItem) {
                         $itemRate = data_get($lastLandedCostVoucherItem, 'valuation_rate', 0);
@@ -319,7 +320,7 @@ class SearchController extends Controller
             }
 
             if ($itemRate <= 0) {
-                $itemRate = $row->custom_item_cost;
+                $itemRate = data_get($row, 'custom_item_cost');
             }
 
             $minimumSellingPrice = $itemRate * $minimumPriceComputation;
@@ -328,31 +329,31 @@ class SearchController extends Controller
                 $defaultPrice = ($itemRate * $standardPriceComputation) * 1.12;
             }
 
-            $websitePrice = Arr::get($websitePrices, $row->item_code, 0);
+            $websitePrice = Arr::get($websitePrices, $itemCode, 0);
 
             $defaultPrice = ($websitePrice > 0) ? $websitePrice : $defaultPrice;
 
             $packageDimension = null;
             if (
-                $row->weight_per_unit > 0 ||
-                $row->package_length > 0 ||
-                $row->package_width > 0 ||
-                $row->package_height > 0
+                data_get($row, 'weight_per_unit', 0) > 0 ||
+                data_get($row, 'package_length', 0) > 0 ||
+                data_get($row, 'package_width', 0) > 0 ||
+                data_get($row, 'package_height', 0) > 0
             ) {
-                $packageDimension = '<span class="text-muted">Net Weight:</span> <b>'.($row->weight_per_unit > 0 ? (float) $row->weight_per_unit.' '.$row->weight_uom : '-').'</b>, ';
-                $packageDimension .= '<span class="text-muted">Length:</span> <b>'.($row->package_length > 0 ? (float) $row->package_length.' '.$row->package_dimension_uom : '-').'</b>, ';
-                $packageDimension .= '<span class="text-muted">Width:</span>  <b>'.($row->package_width > 0 ? (float) $row->package_width.' '.$row->package_dimension_uom : '-').'</b>, ';
-                $packageDimension .= '<span class="text-muted">Height:</span> <b>'.($row->package_height > 0 ? (float) $row->package_height.' '.$row->package_dimension_uom : '-').'</b>';
+                $packageDimension = '<span class="text-muted">Net Weight:</span> <b>'.(data_get($row, 'weight_per_unit', 0) > 0 ? (float) data_get($row, 'weight_per_unit').' '.data_get($row, 'weight_uom') : '-').'</b>, ';
+                $packageDimension .= '<span class="text-muted">Length:</span> <b>'.(data_get($row, 'package_length', 0) > 0 ? (float) data_get($row, 'package_length').' '.data_get($row, 'package_dimension_uom') : '-').'</b>, ';
+                $packageDimension .= '<span class="text-muted">Width:</span>  <b>'.(data_get($row, 'package_width', 0) > 0 ? (float) data_get($row, 'package_width').' '.data_get($row, 'package_dimension_uom') : '-').'</b>, ';
+                $packageDimension .= '<span class="text-muted">Height:</span> <b>'.(data_get($row, 'package_height', 0) > 0 ? (float) data_get($row, 'package_height').' '.data_get($row, 'package_dimension_uom') : '-').'</b>';
             }
 
             $itemList[] = [
-                'name' => $row->item_code,
-                'description' => $row->description,
+                'name' => $itemCode,
+                'description' => data_get($row, 'description'),
                 'image' => $image,
                 'part_nos' => $partNos,
-                'item_group' => $row->item_group,
-                'stock_uom' => $row->stock_uom,
-                'item_classification' => $row->item_classification,
+                'item_group' => data_get($row, 'item_group'),
+                'stock_uom' => data_get($row, 'stock_uom'),
+                'item_classification' => data_get($row, 'item_classification'),
                 'item_inventory' => $siteWarehouses,
                 'consignment_warehouses' => $consignmentWarehouses,
                 'default_price' => $defaultPrice,
@@ -436,12 +437,14 @@ class SearchController extends Controller
     {
         $itemGroup = Arr::get($igsCollection, "{$parent}.0", []);
         $itemGroups = session()->get('igs_array');
-        if ($itemGroup) {
-            if (! in_array($itemGroup->item_group_name, $itemGroups)) {
-                session()->push('igs_array', $itemGroup->item_group_name);
+        $itemGroupName = data_get($itemGroup, 'item_group_name');
+        $parentItemGroup = data_get($itemGroup, 'parent_item_group');
+        if ($itemGroupName !== null) {
+            if (! in_array($itemGroupName, $itemGroups)) {
+                session()->push('igs_array', $itemGroupName);
             }
 
-            $this->checkItemGroupTree($itemGroup->parent_item_group, $igsCollection);
+            $this->checkItemGroupTree($parentItemGroup, $igsCollection);
 
             return 1;
         }
@@ -454,35 +457,47 @@ class SearchController extends Controller
         $lvlArr = [];
         if ($igsArray) {
             foreach ($group as $lvl) {
-                $nextLevel = Arr::exists($all, $lvl[0]->name) ? collect($all[$lvl[0]->name])->groupBy('name') : [];
-                if (in_array($lvl[0]->name, $igsArray)) {
+                $first = data_get($lvl, 0);
+                $name = data_get($first, 'name');
+                $isGroup = data_get($first, 'is_group');
+                if ($name === null) {
+                    continue;
+                }
+                $nextLevel = Arr::exists($all, $name) ? collect($all[$name])->groupBy('name') : [];
+                if (in_array($name, $igsArray)) {
                     if ($nextLevel) {
                         $nxt = $this->itemGroupTree($currentLvl, $nextLevel, $all, $igsArray);
-                        $lvlArr[$lvl[0]->name] = [
+                        $lvlArr[$name] = [
                             'lvl'.$currentLvl => $nxt,
-                            'is_group' => $lvl[0]->is_group,
+                            'is_group' => $isGroup,
                         ];
                     } else {
-                        $lvlArr[$lvl[0]->name] = [
+                        $lvlArr[$name] = [
                             'lvl'.$currentLvl => $nextLevel,
-                            'is_group' => $lvl[0]->is_group,
+                            'is_group' => $isGroup,
                         ];
                     }
                 }
             }
         } else {
             foreach ($group as $lvl) {
-                $nextLevel = Arr::exists($all, $lvl[0]->name) ? collect($all[$lvl[0]->name])->groupBy('name') : [];
+                $first = data_get($lvl, 0);
+                $name = data_get($first, 'name');
+                $isGroup = data_get($first, 'is_group');
+                if ($name === null) {
+                    continue;
+                }
+                $nextLevel = Arr::exists($all, $name) ? collect($all[$name])->groupBy('name') : [];
                 if ($nextLevel) {
                     $nxt = $this->itemGroupTree($currentLvl, $nextLevel, $all);
-                    $lvlArr[$lvl[0]->name] = [
+                    $lvlArr[$name] = [
                         'lvl'.$currentLvl => $nxt,
-                        'is_group' => $lvl[0]->is_group,
+                        'is_group' => $isGroup,
                     ];
                 } else {
-                    $lvlArr[$lvl[0]->name] = [
+                    $lvlArr[$name] = [
                         'lvl'.$currentLvl => $nextLevel,
-                        'is_group' => $lvl[0]->is_group,
+                        'is_group' => $isGroup,
                     ];
                 }
             }

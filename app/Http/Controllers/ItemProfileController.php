@@ -331,10 +331,10 @@ class ItemProfileController extends Controller
                     $variantsDefaultPrice = 0;
                     $variantRate = 0;
                     if (Arr::exists($variantsLastPurchaseOrderRates, $variant)) {
-                        if ($variantsLastPurchaseOrderRates[$variant][0]->supplier_group == 'Imported') {
+                        if (data_get($variantsLastPurchaseOrderRates[$variant][0], 'supplier_group') == 'Imported') {
                             $variantRate = data_get($variantsLastLandedCostVoucherRates, "{$variant}.0.valuation_rate", 0);
                         } else {
-                            $variantRate = $variantsLastPurchaseOrderRates[$variant][0]->base_rate;
+                            $variantRate = data_get($variantsLastPurchaseOrderRates[$variant][0], 'base_rate', 0);
                         }
                     }
 

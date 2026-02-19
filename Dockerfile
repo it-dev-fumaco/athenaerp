@@ -32,8 +32,8 @@ RUN apt-get update && apt-get install -y \
         intl \
         opcache \
         ldap \
-    && pecl install redis \
-    && docker-php-ext-enable redis \
+    && pecl install redis xdebug \
+    && docker-php-ext-enable redis xdebug \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Composer
@@ -44,6 +44,13 @@ RUN echo "memory_limit=256M" >> /usr/local/etc/php/conf.d/app.ini \
     && echo "upload_max_filesize=100M" >> /usr/local/etc/php/conf.d/app.ini \
     && echo "post_max_size=100M" >> /usr/local/etc/php/conf.d/app.ini \
     && echo "variables_order=EGPCS" >> /usr/local/etc/php/conf.d/app.ini
+
+# Xdebug: connect back to host (Cursor/VS Code on port 9003)
+RUN echo "xdebug.mode=debug" > /usr/local/etc/php/conf.d/xdebug.ini \
+    && echo "xdebug.client_host=host.docker.internal" >> /usr/local/etc/php/conf.d/xdebug.ini \
+    && echo "xdebug.client_port=9003" >> /usr/local/etc/php/conf.d/xdebug.ini \
+    && echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/xdebug.ini \
+    && echo "xdebug.log_level=0" >> /usr/local/etc/php/conf.d/xdebug.ini
 
 # OPcache: cache compiled PHP (faster page loads with volume mount)
 RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini \

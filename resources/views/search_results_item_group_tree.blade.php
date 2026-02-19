@@ -10,7 +10,7 @@
 				</a>
             </span>
 			@if($nextLevel)
-				@include('search_results_item_group_tree', ['all' => $all, 'groups' => $nextLevel->toArray(), 'current_lvl' => $currentLvl + 1, 'prev_obj' => $group])
+				@include('search_results_item_group_tree', ['all' => $all, 'groups' => $nextLevel->toArray(), 'current_lvl' => ($current_lvl ?? 1) + 1, 'prev_obj' => $group])
 			@endif
 		</li>
 	@endforeach
