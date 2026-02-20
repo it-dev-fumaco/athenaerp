@@ -50,6 +50,54 @@ trait GeneralTrait
         return $query ?: null;
     }
 
+    /**
+     * Bulk fetch stock reservations for item-warehouse pairs (same SO/reservation context).
+     * Returns map of "item_code-warehouse" => StockReservation (first by creation) or null.
+     *
+     * @param  array<array{0: string, 1: string}>  $itemWarehousePairs  Array of [item_code, warehouse] pairs
+     * @return array<string, \App\Models\StockReservation|null>
+     */
+    public function getStockReservationBulk(array $itemWarehousePairs, $salesPerson, $project, $consignmentWarehouse, $orderType = null, $poNo = null): array
+    {
+        if (empty($itemWarehousePairs)) {
+            return [];
+        }
+
+        $itemCodes = array_unique(array_column($itemWarehousePairs, 0));
+        $warehouses = array_unique(array_column($itemWarehousePairs, 1));
+
+        $baseQuery = StockReservation::query()
+            ->whereIn('item_code', $itemCodes)
+            ->whereIn('warehouse', $warehouses)
+            ->whereIn('status', ['Active', 'Partially Issued'])
+            ->orderBy('creation', 'asc');
+
+        if ($salesPerson) {
+            $baseQuery->where('sales_person', trim($salesPerson))->where('project', $project);
+        } elseif ($consignmentWarehouse) {
+            $baseQuery->where('consignment_warehouse', $consignmentWarehouse);
+        } elseif ($orderType == 'Shopping Cart' && $poNo) {
+            $baseQuery->where('reference_no', $poNo);
+        } else {
+            return array_fill_keys(array_map(fn ($p) => "{$p[0]}-{$p[1]}", $itemWarehousePairs), null);
+        }
+
+        $rows = $baseQuery->get();
+        $map = [];
+        foreach ($itemWarehousePairs as [$itemCode, $warehouse]) {
+            $key = "{$itemCode}-{$warehouse}";
+            $map[$key] = null;
+        }
+        foreach ($rows as $row) {
+            $key = "{$row->item_code}-{$row->warehouse}";
+            if (array_key_exists($key, $map) && $map[$key] === null) {
+                $map[$key] = $row;
+            }
+        }
+
+        return $map;
+    }
+
     public function getWarehouseParent($childWarehouse)
     {
         $warehouse = Warehouse::where('disabled', 0)->where('name', $childWarehouse)->first();

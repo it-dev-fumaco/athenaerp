@@ -680,6 +680,10 @@ class MainController extends Controller
             $availableQtyMap = $this->getAvailableQtyBulk($itemWarehousePairs);
 
             $soDetails = SalesOrder::query()->where('name', $q->sales_order)->first();
+            $reservationPairsForBulk = $query->map(fn ($row) => [$row->item_code, $q->warehouse])->unique()->values()->toArray();
+            $stockReservationByKey = $soDetails
+                ? $this->getStockReservationBulk($reservationPairsForBulk, $soDetails->sales_person, $soDetails->project, null, $soDetails->order_type, $soDetails->po_no)
+                : [];
 
             foreach ($query as $row) {
                 $availableQtyRow = $availableQtyMap["{$row->item_code}-{$row->warehouse}"] ?? 0;
@@ -693,10 +697,7 @@ class MainController extends Controller
                     'warehouse' => $row->warehouse,
                 ];
 
-                $stockReservationDetails = [];
-                if ($soDetails) {
-                    $stockReservationDetails = $this->getStockReservation($row->item_code, $q->warehouse, $soDetails->sales_person, $soDetails->project, null, $soDetails->order_type, $soDetails->po_no);
-                }
+                $stockReservationDetails = $stockReservationByKey["{$row->item_code}-{$q->warehouse}"] ?? null;
             }
         }
 
@@ -1846,6 +1847,9 @@ class MainController extends Controller
 
             $owners = User::query()->whereIn('email', collect($q)->pluck('owner'))->pluck('full_name', 'email');
 
+            $itemCodes = collect($q)->pluck('item_code')->unique()->values()->all();
+            $partNosByItem = ItemSupplier::query()->whereIn('parent', $itemCodes)->get()->groupBy('parent');
+
             foreach ($q as $d) {
                 $feedbackDate = Carbon::parse($d->modified)->format('M. d, Y - h:i A');
                 $feedbackQty = 0;
@@ -1867,8 +1871,7 @@ class MainController extends Controller
                     $durationInTransit = Carbon::parse($dateConfirmed)->diff(now())->days.' Day(s)';
                 }
 
-                $partNos = ItemSupplier::query()->where('parent', $d->item_code)->pluck('supplier_part_no');
-                $partNos = implode(', ', $partNos->toArray());
+                $partNos = collect($partNosByItem->get($d->item_code, []))->pluck('supplier_part_no')->implode(', ');
 
                 $owner = Arr::get($owners, $d->owner, $d->owner);
                 $owner = ucwords(str_replace('.', ' ', explode('@', $owner)[0]));

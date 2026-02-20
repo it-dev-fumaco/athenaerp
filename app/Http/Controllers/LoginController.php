@@ -21,10 +21,7 @@ class LoginController extends Controller
             return redirect('/');
         }
 
-        $backgroundImage1 = $this->base64Image('/img/img1.png');
-        $backgroundImage2 = $this->base64Image('/img/img2.png');
-
-        return view('login_v2', compact('backgroundImage1', 'backgroundImage2'));
+        return view('login_v2');
     }
 
     public function login(LoginRequest $request)

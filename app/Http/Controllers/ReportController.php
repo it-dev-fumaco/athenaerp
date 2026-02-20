@@ -101,9 +101,10 @@ class ReportController extends Controller
 
         $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
+        $itemsMap = Item::whereIn('name', $itemCodes)->get()->keyBy('name');
         $result = [];
         foreach ($itemCodes as $itemCode) {
-            $itemInfo = Item::find($itemCode);
+            $itemInfo = $itemsMap->get($itemCode);
             $itemDescription = $itemInfo ? $itemInfo->description : null;
             $perMonth = [];
             foreach ($months as $monthIndex => $month) {

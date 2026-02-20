@@ -439,11 +439,17 @@ class BrochureController extends Controller
             $list = session()->get('brochure_list.items');
             $list = isset($list) ? collect($list)->sortBy('idx')->toArray() : [];
 
-            $itemCodes = collect($list)->pluck('item_code');
+            $itemCodes = collect($list)->pluck('item_code')->unique()->values()->all();
         }
 
-        $itemArr = Item::whereIn('name', $itemCodes)->get();
-        $itemArr = collect($itemArr)->groupBy('name');
+        $itemArr = collect();
+        if (! empty($itemCodes)) {
+            $itemArr = Item::query()
+                ->whereIn('name', $itemCodes)
+                ->select('name', 'item_name')
+                ->get()
+                ->groupBy('name');
+        }
 
         return view('brochure.brochure_floater', compact('itemArr', 'list'));
     }

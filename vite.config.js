@@ -12,7 +12,7 @@ export default defineConfig({
     },
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/brochure.js'],
+            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/brochure.js', 'resources/js/login.js'],
             refresh: true,
         }),
         vue({

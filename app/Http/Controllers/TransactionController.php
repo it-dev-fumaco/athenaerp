@@ -382,10 +382,13 @@ class TransactionController extends Controller
 
             if ($request->has_reservation && $request->deduct_reserve) {
                 $soDetails = SalesOrder::find($request->sales_order);
+                $itemWarehousePairs = $packedItems->map(fn ($packed) => [$packed->item_code, $request->warehouse])->unique()->values()->toArray();
+                $stockReservationMap = $soDetails
+                    ? $this->getStockReservationBulk($itemWarehousePairs, $soDetails->sales_person, $soDetails->project, null, $soDetails->order_type, $soDetails->po_no)
+                    : [];
+
                 foreach ($packedItems as $packed) {
-                    if ($soDetails) {
-                        $stockReservationDetails = $this->getStockReservation($packed->item_code, $request->warehouse, $soDetails->sales_person, $soDetails->project, null, $soDetails->order_type, $soDetails->po_no);
-                    }
+                    $stockReservationDetails = $stockReservationMap["{$packed->item_code}-{$request->warehouse}"] ?? null;
 
                     if ($stockReservationDetails) {
                         $consumedQty = $stockReservationDetails->consumed_qty + $request->qty;

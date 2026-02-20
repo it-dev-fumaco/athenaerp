@@ -10,6 +10,7 @@ use App\Traits\GeneralTrait;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -53,14 +54,21 @@ class ProductionController extends Controller
                 ->whereRaw('produced_qty > feedback_qty')
                 ->get();
 
+            $fgWarehouses = $q->pluck('fg_warehouse')->unique()->filter()->values()->all();
+            $parentWarehouses = $this->getWarehouseParentsBulk($fgWarehouses);
+
+            $operationIds = $q->pluck('operation_id')->unique()->filter(fn ($id) => $id)->values()->all();
+            $operationsMap = $operationIds
+                ? MESOperation::whereIn('operation_id', $operationIds)->get()->keyBy('operation_id')
+                : collect();
+
             foreach ($q as $row) {
-                $parentWarehouse = $this->getWarehouseParent($row->fg_warehouse);
+                $parentWarehouse = Arr::get($parentWarehouses, $row->fg_warehouse);
 
                 $owner = ucwords(str_replace('.', ' ', explode('@', $row->created_by)[0]));
 
                 $operationId = ($row->operation_id) ? $row->operation_id : 0;
-                $operationName = MESOperation::find($operationId);
-                $operationName = ($operationName) ? $operationName->operation_name : '--';
+                $operationName = $operationId ? ($operationsMap->get($operationId)?->operation_name ?? '--') : '--';
 
                 $list[] = [
                     'production_order' => $row->production_order,
@@ -100,31 +108,37 @@ class ProductionController extends Controller
             ->orderBy('idx', 'asc')
             ->get();
 
+        $altRequiredByMain = DB::table('tabWork Order Item')
+            ->where('parent', $productionOrder)
+            ->whereNotNull('item_alternative_for')
+            ->where('item_alternative_for', '!=', 'new_item')
+            ->selectRaw('item_alternative_for, sum(required_qty) as total')
+            ->groupBy('item_alternative_for')
+            ->pluck('total', 'item_alternative_for');
+
+        $consumedByItem = \App\Models\StockEntry::query()
+            ->from('tabStock Entry as ste')
+            ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+            ->where('ste.work_order', $productionOrder)
+            ->whereNull('sted.t_warehouse')
+            ->where('ste.purpose', 'Manufacture')
+            ->where('ste.docstatus', 1)
+            ->selectRaw('sted.item_code, sum(sted.qty) as qty')
+            ->groupBy('sted.item_code')
+            ->pluck('qty', 'item_code');
+
         $arr = [];
         foreach ($productionOrderItemsQry as $row) {
-            $itemRequiredQty = $row->required_qty;
-            $itemRequiredQty += DB::table('tabWork Order Item')
-                ->where('parent', $productionOrder)
-                ->where('item_alternative_for', $row->item_code)
-                ->whereNotNull('item_alternative_for')
-                ->sum('required_qty');
+            $itemRequiredQty = (float) $row->required_qty + (float) ($altRequiredByMain[$row->item_code] ?? 0);
 
-            $consumedQty = \App\Models\StockEntry::query()
-                ->from('tabStock Entry as ste')
-                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                ->where('ste.work_order', $productionOrder)
-                ->whereNull('sted.t_warehouse')
-                ->where('sted.item_code', $row->item_code)
-                ->where('purpose', 'Manufacture')
-                ->where('ste.docstatus', 1)
-                ->sum('qty');
+            $consumedQty = (float) ($consumedByItem[$row->item_code] ?? 0);
 
             $balanceQty = ($row->transferred_qty - $consumedQty);
 
             $remainingRequiredQty = ($fgCompletedQty - $balanceQty);
 
             if ($balanceQty <= 0 || $fgCompletedQty > $balanceQty) {
-                $alternativeItemsQry = $this->getAlternativeItems($productionOrder, $row->item_code, $remainingRequiredQty);
+                $alternativeItemsQry = $this->getAlternativeItems($productionOrder, $row->item_code, $remainingRequiredQty, $consumedByItem);
             } else {
                 $alternativeItemsQry = [];
             }
@@ -166,7 +180,10 @@ class ProductionController extends Controller
         return $arr;
     }
 
-    public function getAlternativeItems($productionOrder, $itemCode, $remainingRequiredQty)
+    /**
+     * @param  \Illuminate\Support\Collection<string, mixed>|null  $consumedByItem  Optional precomputed map item_code => consumed qty
+     */
+    public function getAlternativeItems($productionOrder, $itemCode, $remainingRequiredQty, $consumedByItem = null)
     {
         $q = DB::table('tabWork Order Item')
             ->where('parent', $productionOrder)
@@ -178,15 +195,17 @@ class ProductionController extends Controller
         $arr = [];
         foreach ($q as $row) {
             if ($remaining > 0) {
-                $consumedQty = \App\Models\StockEntry::query()
-                    ->from('tabStock Entry as ste')
-                    ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
-                    ->where('ste.work_order', $productionOrder)
-                    ->whereNull('sted.t_warehouse')
-                    ->where('sted.item_code', $row->item_code)
-                    ->where('purpose', 'Manufacture')
-                    ->where('ste.docstatus', 1)
-                    ->sum('qty');
+                $consumedQty = $consumedByItem !== null
+                    ? (float) ($consumedByItem[$row->item_code] ?? 0)
+                    : (float) \App\Models\StockEntry::query()
+                        ->from('tabStock Entry as ste')
+                        ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                        ->where('ste.work_order', $productionOrder)
+                        ->whereNull('sted.t_warehouse')
+                        ->where('sted.item_code', $row->item_code)
+                        ->where('ste.purpose', 'Manufacture')
+                        ->where('ste.docstatus', 1)
+                        ->sum('qty');
 
                 $balanceQty = ($row->transferred_qty - $consumedQty);
                 $requiredQty = ($balanceQty > $remaining) ? $remaining : $balanceQty;
