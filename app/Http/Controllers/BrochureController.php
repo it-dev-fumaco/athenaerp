@@ -3,42 +3,48 @@
 namespace App\Http\Controllers;
 
 use App\Http\Helpers\ApiResponse;
+use App\Http\Requests\AddToBrochureListRequest;
+use App\Http\Requests\ReadBrochureExcelRequest;
+use App\Http\Requests\UpdateBrochureAttributesRequest;
+use App\Http\Requests\UploadBrochureImageRequest;
+use App\Http\Requests\UploadStandardBrochureImageRequest;
 use App\Models\Item;
-use App\Models\ItemAttribute;
 use App\Models\ItemBrochureImage;
 use App\Models\ItemImages;
 use App\Models\ItemVariantAttribute;
 use App\Models\ProductBrochureLog;
 use App\Pipelines\BrochureUploadPipeline;
+use App\Services\BrochureAttributeService;
+use App\Services\BrochureExcelService;
+use App\Services\BrochureImageService;
+use App\Services\BrochurePdfService;
 use App\Traits\GeneralTrait;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Buglinjo\LaravelWebp\Facades\Webp;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
-use PhpOffice\PhpSpreadsheet\Reader\Xlsx as ReaderXlsx;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx as WriterXlsx;
+use RuntimeException;
 
 class BrochureController extends Controller
 {
     use GeneralTrait;
 
     public function __construct(
-        protected BrochureUploadPipeline $brochureUploadPipeline
+        protected BrochureUploadPipeline $brochureUploadPipeline,
+        protected BrochureImageService $brochureImageService,
+        protected BrochurePdfService $brochurePdfService,
+        protected BrochureAttributeService $brochureAttributeService,
+        protected BrochureExcelService $brochureExcelService
     ) {}
 
     public function viewForm(Request $request)
     {
         if ($request->ajax()) {
             $recents = ProductBrochureLog::recentUploads($request->search);
-
             $recentUploads = $recents->map(fn ($row) => [
                 'project' => $row->project,
                 'filename' => $row->filename,
@@ -52,26 +58,22 @@ class BrochureController extends Controller
         return view('brochure.form');
     }
 
-    public function readExcelFile(Request $request)
+    public function readExcelFile(ReadBrochureExcelRequest $request)
     {
         DB::beginTransaction();
         try {
-            if (! $request->hasFile('selected-file')) {
-                DB::rollBack();
-
-                return ApiResponse::failure('No file uploaded.');
-            }
-
             $attachedFile = $request->file('selected-file');
 
             if ($request->is_readonly) {
-                $fileContents = $this->readFile($attachedFile);
+                $fileContents = $this->brochureExcelService->readFile($attachedFile);
                 $content = $fileContents['content'];
                 $project = isset($fileContents['project']) && $fileContents['project']
-                    ? trim(str_replace('/', '-', $fileContents['project']))
+                    ? trim(str_replace('/', '-', (string) $fileContents['project']))
                     : '-';
                 $customer = $fileContents['customer'];
                 $headers = $fileContents['headers'];
+
+                DB::rollBack();
 
                 return view('brochure.modal_product_list', compact('content', 'project', 'customer', 'headers'));
             }
@@ -79,7 +81,7 @@ class BrochureController extends Controller
             $passable = (object) [
                 'request' => $request,
                 'file' => $attachedFile,
-                'readFileCallable' => fn ($file) => $this->readFile($file),
+                'readFileCallable' => fn ($file) => $this->brochureExcelService->readFile($file),
             ];
 
             $response = $this->brochureUploadPipeline->run($passable);
@@ -107,36 +109,34 @@ class BrochureController extends Controller
     {
         try {
             ini_set('max_execution_time', '300');
-            $projectParam = trim($project);
+            $projectParam = trim((string) $project);
             $file = Storage::disk('upcloud')->path('item-brochures/'.$projectParam.'/'.$filename);
 
             if (! file_exists($file)) {
                 return redirect('brochure')->with('error', 'File '.$filename.' does not exist.');
             }
 
-            $fileContents = $this->readFile($file);
-
-            $content = collect($fileContents['content'])->map(function ($q) {
-                if ($q['id'] && collect($q['attributes'])->pluck('attribute_value')->filter()->values()->all()) {
-                    return $q;
+            $fileContents = $this->brochureExcelService->readFile($file);
+            $content = collect($fileContents['content'])->map(function ($row) {
+                if ($row['id'] && collect($row['attributes'])->pluck('attribute_value')->filter()->values()->all()) {
+                    return $row;
                 }
+
+                return null;
             })->filter()->values()->all();
-            $projectFromFile = trim($fileContents['project']);
+            $projectFromFile = trim((string) $fileContents['project']);
             $project = $projectFromFile ?: $projectParam;
             $tableOfContents = $fileContents['table_of_contents'];
 
             if (isset($request->pdf) && $request->pdf) {
                 $storage = Storage::disk('upcloud')->files('item-brochures/'.strtoupper($project));
-
                 $series = null;
                 if ($storage) {
                     $series = count($storage) > 1 ? count($storage) : 1;
                     $series = '-'.(string) $series;
                 }
-
                 $newFilename = Str::slug($project, '-').'-'.now()->format('Y-m-d').$series;
-
-                $content = $this->resolveBrochureImagePathsForPdf($content, $project, false);
+                $content = $this->brochurePdfService->resolveBrochureImagePathsForPdf($content, $project, false);
                 $pdf = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename'));
 
                 return $pdf->stream($newFilename.'.pdf');
@@ -144,73 +144,35 @@ class BrochureController extends Controller
 
             return view('brochure.print_preview', compact('content', 'tableOfContents', 'project', 'filename'));
         } catch (\Throwable $th) {
-            // throw $th;
             return redirect('brochure')->with('error', 'An error occured. Please try again.');
         }
     }
 
-    public function uploadImage(Request $request)
+    public function uploadImage(UploadBrochureImageRequest $request)
     {
         DB::beginTransaction();
         try {
-            if (! $request->hasFile('selected-file')) {
-                return ApiResponse::failure('No file selected.');
-            }
-
             $file = $request->file('selected-file');
-            $allowedExtensions = ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG', 'webp', 'WEBP'];
-
             $folder = $request->project;
             $dir = $request->filename;
 
-            $fileExt = pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION);
-            if (! in_array($fileExt, $allowedExtensions)) {
-                return ApiResponse::failure('Sorry, only .jpeg, .jpg, .png and .webp files are allowed.');
-            }
+            $filename = $this->brochureImageService->storeSpreadsheetImage($file, $folder);
 
-            $filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME).'.'.$file->getClientOriginalExtension();
-            $destinationPath = Storage::disk('upcloud')->path('item-brochures/'.strtoupper($folder));
-
-            if (! is_dir($destinationPath)) {
-                mkdir($destinationPath, 0755, true);
-            }
-
-            $file->move($destinationPath, $filename);
-
-            $excelFile = Storage::disk('upcloud')->path('item-brochures/'.strtoupper($folder).'/'.$dir);
-
-            if (! file_exists($excelFile)) {
+            $excelPath = Storage::disk('upcloud')->path('item-brochures/'.strtoupper($folder).'/'.$dir);
+            if (! file_exists($excelPath)) {
                 DB::rollBack();
 
                 return ApiResponse::failure('Brochure file not found. Save the brochure first.');
             }
 
-            $reader = new ReaderXlsx;
-            $spreadsheet = $reader->load($excelFile);
-            $sheet = $spreadsheet->getActiveSheet();
-            $highestColumn = $sheet->getHighestColumn();
-            $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn);
-
-            $row = (int) $request->row;
-            $column = null;
-            for ($col = 1; $col <= $highestColumnIndex; $col++) {
-                $value = $sheet->getCell([$col, 4])->getValue();
-                if ($value == $request->column) {
-                    $column = $col;
-                    break;
-                }
-            }
-
+            $column = $this->brochureExcelService->findColumnIndexByHeader($excelPath, $request->column);
             if ($column === null) {
                 DB::rollBack();
 
                 return ApiResponse::failure('Column not found in spreadsheet.');
             }
 
-            $sheet->setCellValue([$column, $row], $filename);
-
-            $writer = new WriterXlsx($spreadsheet);
-            $writer->save($excelFile);
+            $this->brochureExcelService->setCellValueAndSave($excelPath, $column, (int) $request->row, $filename);
 
             $transactionDate = now()->toDateTimeString();
             ProductBrochureLog::insert([
@@ -229,12 +191,19 @@ class BrochureController extends Controller
 
             DB::commit();
 
-            $data = [
+            return ApiResponse::success('Image uploaded.', [
                 'src' => $filename,
                 'item_image_id' => $request->item_image_id,
-            ];
+            ]);
+        } catch (RuntimeException $e) {
+            DB::rollBack();
+            Log::error('Brochure image upload failed: '.$e->getMessage(), [
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
 
-            return ApiResponse::success('Image uploaded.', $data);
+            return ApiResponse::failure($e->getMessage());
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Brochure image upload failed: '.$e->getMessage(), [
@@ -251,121 +220,23 @@ class BrochureController extends Controller
         }
     }
 
-    public function readFile($file)
-    {
-        $path = is_object($file) && method_exists($file, 'getRealPath')
-            ? $file->getRealPath()
-            : $file;
-        $reader = new ReaderXlsx;
-        $spreadsheet = $reader->load($path);
-        $sheet = $spreadsheet->getActiveSheet();
-
-        // Get the highest row and column numbers referenced in the worksheet
-        $highestRow = $sheet->getHighestRow();  // e.g. 10
-        $highestColumn = $sheet->getHighestColumn();  // e.g 'F'
-
-        // Get the highest row and column numbers referenced in the worksheet
-        $highestRow = $sheet->getHighestRow();  // e.g. 10
-        $highestColumn = $sheet->getHighestColumn();  // e.g 'F'
-
-        $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn);  // e.g. 5
-
-        $headerRowArr = [];
-        for ($col = 1; $col <= $highestColumnIndex; $col++) {
-            $value = $sheet->getCell([$col, 4])->getValue();
-
-            $headerRowArr[$col] = $value;
-        }
-
-        $content = $tableOfContents = $tblModal = $attrib = [];
-        $project = $customer = null;
-        for ($row = 5; $row <= $highestRow; $row++) {
-            $result = $images = [];
-            for ($col = 5; $col <= $highestColumnIndex; $col++) {
-                $value = $sheet->getCell([$col, $row])->getValue();
-                if (Arr::has($headerRowArr, $col)) {
-                    $result[] = [
-                        'attribute_name' => $headerRowArr[$col],
-                        'attribute_value' => $value,
-                    ];
-
-                    $attrib[$headerRowArr[$col]] = $value != '-' ? $value : null;
-
-                    if ($headerRowArr[$col] == 'Image 1') {
-                        $images['image1'] = $sheet->getCell([$col, $row])->getValue();
-                    }
-                    if ($headerRowArr[$col] == 'Image 2') {
-                        $images['image2'] = $sheet->getCell([$col, $row])->getValue();
-                    }
-                    if ($headerRowArr[$col] == 'Image 3') {
-                        $images['image3'] = $sheet->getCell([$col, $row])->getValue();
-                    }
-                }
-            }
-
-            $itemName = $sheet->getCell([1, $row])->getValue();
-
-            // for ajax table
-            $attrib['Item Name'] = $itemName;
-            $fittingType = $sheet->getCell([2, $row])->getValue();
-            $attrib['Fitting Type'] = $fittingType != '-' ? $fittingType : null;
-            $desc = $sheet->getCell([3, $row])->getValue();
-            $attrib['Description'] = $desc != '-' ? $desc : null;
-            $loc = $sheet->getCell([4, $row])->getValue();
-            $attrib['Location'] = $loc != '-' ? $loc : null;
-            // for ajax table
-
-            $project = ! $project ? $sheet->getCell([2, 2])->getValue() : $project;
-            $customer = ! $customer ? $sheet->getCell([2, 3])->getValue() : $customer;
-
-            $content[] = [
-                'id' => Str::slug($itemName, '-'),
-                'row' => $row,
-                'project' => $sheet->getCell([2, 2])->getValue(),
-                'item_name' => $itemName,
-                'images' => $images,
-                'reference' => $sheet->getCell([2, $row])->getValue(),
-                'description' => $sheet->getCell([3, $row])->getValue(),
-                'location' => $sheet->getCell([4, $row])->getValue(),
-                'attributes' => $result,
-                'attrib' => $attrib,  // for ajax table
-            ];
-
-            $tableOfContents[] = [
-                'id' => Str::slug($itemName, '-'),
-                'text' => $itemName,
-            ];
-        }
-
-        return [
-            'content' => $content,
-            'table_of_contents' => $tableOfContents,
-            'project' => $project,
-            'customer' => $customer,
-            'headers' => $headerRowArr,
-        ];
-    }
-
     public function downloadBrochure($project, $file)
     {
         try {
-            if (! Storage::disk('upcloud')->exists('brochures/'.strtoupper($project).'/'.$file)) {  // check if file exists
+            if (! Storage::disk('upcloud')->exists('brochures/'.strtoupper($project).'/'.$file)) {
                 return ApiResponse::failureLegacy('File not found');
             }
 
             $storage = Storage::disk('upcloud')->files('brochures/'.strtoupper($project));
-
             $series = null;
             if ($storage) {
                 $series = count($storage) > 1 ? count($storage) : 1;
                 $series = '-'.(string) $series;
             }
-
             $newFilename = Str::slug($project, '-').'-'.now()->format('Y-m-d').$series;
             $ext = explode('.', $file);
-            $ext = isset($ext[1]) ? $ext[1] : 'xlsx';
+            $ext = $ext[1] ?? 'xlsx';
             $newName = $newFilename.'.'.$ext;
-
             $origPath = strtoupper($project).'/'.$file;
 
             return response()->json([
@@ -384,7 +255,6 @@ class BrochureController extends Controller
         try {
             if ($request->id) {
                 ItemBrochureImage::where('name', $request->id)->delete();
-
                 DB::commit();
 
                 return ApiResponse::success('Image removed.');
@@ -394,39 +264,20 @@ class BrochureController extends Controller
             $dir = $request->filename;
             $loc = $folder && $dir ? strtoupper($folder).'/'.$dir : null;
 
-            if ($loc && file_exists(Storage::disk('upcloud')->path('item-brochures/'.$loc))) {
-                $excelFile = Storage::disk('upcloud')->path('item-brochures/'.$loc);
-
-                $reader = new ReaderXlsx;
-                $spreadsheet = $reader->load($excelFile);
-                $sheet = $spreadsheet->getActiveSheet();
-                // Get the highest row and column numbers referenced in the worksheet
-                $highestColumn = $sheet->getHighestColumn();  // e.g 'F'
-                $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn);  // e.g. 5
-
-                $row = $request->row;
-                $column = null;
-                for ($col = 1; $col <= $highestColumnIndex; $col++) {
-                    $value = $sheet->getCell([$col, 4])->getValue();
-                    if ($value == $request->column) {
-                        $column = $col;
-                        break;
+            if ($loc) {
+                $excelPath = Storage::disk('upcloud')->path('item-brochures/'.$loc);
+                if (file_exists($excelPath)) {
+                    $column = $this->brochureExcelService->findColumnIndexByHeader($excelPath, $request->column);
+                    if ($column !== null) {
+                        $this->brochureExcelService->setCellValueAndSave($excelPath, $column, (int) $request->row, null);
                     }
+                    DB::commit();
                 }
-
-                if ($column !== null) {
-                    $sheet->setCellValue([$column, $row], null);
-                }
-
-                $writer = new WriterXlsx($spreadsheet);
-                $writer->save($excelFile);
-
-                DB::commit();
             }
 
             return ApiResponse::success('Image removed.');
         } catch (Exception $e) {
-            DB::rollback();
+            DB::rollBack();
 
             return ApiResponse::failure('Something went wrong. Please try again.');
         }
@@ -438,7 +289,6 @@ class BrochureController extends Controller
         if (session()->has('brochure_list')) {
             $list = session()->get('brochure_list.items');
             $list = isset($list) ? collect($list)->sortBy('idx')->toArray() : [];
-
             $itemCodes = collect($list)->pluck('item_code')->unique()->values()->all();
         }
 
@@ -454,22 +304,19 @@ class BrochureController extends Controller
         return view('brochure.brochure_floater', compact('itemArr', 'list'));
     }
 
-    public function addToBrochureList(Request $request)
+    public function addToBrochureList(AddToBrochureListRequest $request)
     {
         DB::beginTransaction();
         try {
             $save = isset($request->save) ? 1 : 0;
-            $itemCodes = $request->item_codes ? $request->item_codes : [];
-            $fittingType = $request->fitting_type ? $request->fitting_type : [];
-            $location = $request->location ? $request->location : [];
-
-            $idArr = $request->id_arr ? $request->id_arr : [];
-
-            $itemBrochureDescription = $request->description ? $request->description : [];
-            $itemBrochureName = $request->item_name ? $request->item_name : [];
-
-            $project = $request->project ? $request->project : null;
-            $customer = $request->customer ? $request->customer : null;
+            $itemCodes = $request->item_codes ?? [];
+            $fittingType = $request->fitting_type ?? [];
+            $location = $request->location ?? [];
+            $idArr = $request->id_arr ?? [];
+            $itemBrochureDescription = $request->description ?? [];
+            $itemBrochureName = $request->item_name ?? [];
+            $project = $request->project ?? null;
+            $customer = $request->customer ?? null;
 
             $counter = session()->get('brochure_list.items');
             $counter = isset($counter) ? count($counter) + 1 : 1;
@@ -478,38 +325,23 @@ class BrochureController extends Controller
             session()->put('brochure_list.customer', $customer);
 
             foreach ($itemCodes as $idx => $itemCode) {
-                if ($save) {
-                    $id = isset($idArr[$idx]) ? $idArr[$idx] : $itemCode.'-0';
-                } else {
-                    $id = $itemCode.'-'.$counter;
-                }
-
+                $id = $save
+                    ? ($idArr[$idx] ?? $itemCode.'-0')
+                    : $itemCode.'-'.$counter;
                 $details = [
                     'item_code' => $itemCode,
-                    'fitting_type' => isset($fittingType[$id]) ? $fittingType[$id] : null,
-                    'location' => isset($location[$id]) ? $location[$id] : null,
+                    'fitting_type' => $fittingType[$id] ?? null,
+                    'location' => $location[$id] ?? null,
                     'idx' => $idx,
                 ];
-
                 session()->put('brochure_list.items.'.$id, $details);
-
-                if (isset($itemBrochureDescription[$itemCode]) || isset($itemBrochureName[$itemCode])) {
-                    $update = [
-                        'modified' => now()->toDateTimeString(),
-                        'modified_by' => Auth::user()->wh_user,
-                    ];
-
-                    if (isset($itemBrochureDescription[$itemCode])) {
-                        $update['item_brochure_description'] = $itemBrochureDescription[$itemCode];
-                    }
-
-                    if (isset($itemBrochureName[$itemCode])) {
-                        $update['item_brochure_name'] = $itemBrochureName[$itemCode];
-                    }
-
-                    Item::where('name', $itemCode)->update($update);
-                }
             }
+
+            $this->brochureAttributeService->syncItemBrochureFields(
+                $itemCodes,
+                $itemBrochureDescription,
+                $itemBrochureName
+            );
 
             DB::commit();
 
@@ -517,7 +349,7 @@ class BrochureController extends Controller
 
             return ApiResponse::successWith('Item added to list.', ['show_notif' => $showNotif]);
         } catch (\Throwable $th) {
-            DB::rollback();
+            DB::rollBack();
 
             return ApiResponse::failure('An error occured. Please try again.');
         }
@@ -534,14 +366,12 @@ class BrochureController extends Controller
         try {
             $session = session()->get('brochure_list');
             $brochureList = isset($session['items']) ? collect($session['items'])->sortBy('idx')->toArray() : [];
-
-            $project = isset($session['project']) ? $session['project'] : null;
-            $customer = isset($session['customer']) ? $session['customer'] : null;
-
+            $project = $session['project'] ?? null;
+            $customer = $session['customer'] ?? null;
             $itemCodes = collect($brochureList)->pluck('item_code');
 
-            $itemDetailsQry = Item::whereIn('name', collect($brochureList)->pluck('item_code'))->get();
-            $itemDetailsGroup = collect($itemDetailsQry)->groupBy('name');
+            $itemDetailsQry = Item::whereIn('name', $itemCodes)->get();
+            $itemDetailsGroup = $itemDetailsQry->groupBy('name');
 
             $preview = isset($request->preview) && $request->preview ? 1 : 0;
             $pdf = isset($request->pdf) && $request->pdf ? 1 : 0;
@@ -555,45 +385,46 @@ class BrochureController extends Controller
             $attributesQry = ItemVariantAttribute::query()
                 ->join('tabItem Attribute as attr', 'attr.name', 'tabItem Variant Attribute.attribute')
                 ->whereIn('tabItem Variant Attribute.parent', $itemCodes)
-                ->when($preview || $pdf, function ($q) {
-                    return $q->where('tabItem Variant Attribute.hide_in_brochure', 0);
-                })
+                ->when($preview || $pdf, fn ($query) => $query->where('tabItem Variant Attribute.hide_in_brochure', 0))
                 ->select('tabItem Variant Attribute.parent', 'tabItem Variant Attribute.attribute', 'tabItem Variant Attribute.attribute_value', 'attr.name', 'attr.attr_name', 'tabItem Variant Attribute.brochure_idx', 'tabItem Variant Attribute.hide_in_brochure')
                 ->orderByRaw('LENGTH(`tabItem Variant Attribute`.`brochure_idx`) ASC')
                 ->orderBy('tabItem Variant Attribute.brochure_idx', 'ASC')
                 ->orderBy('tabItem Variant Attribute.idx')
                 ->get();
-            $attributeGroup = collect($attributesQry)->groupBy('parent');
+            $attributeGroup = $attributesQry->groupBy('parent');
 
             $currentItemImagesQry = ItemImages::whereIn('parent', $itemCodes)->get();
-            $currentItemImagesGroup = collect($currentItemImagesQry)->groupBy('parent');
+            $currentItemImagesGroup = $currentItemImagesQry->groupBy('parent');
 
-            $brochureImagesQry = ItemBrochureImage::whereIn('parent', $itemCodes)->select('parent', 'image_filename', 'idx', 'image_path', 'name')->orderByRaw('LENGTH(idx) ASC')->orderBy('idx', 'ASC')->get();
-            $brochureImagesGroup = collect($brochureImagesQry)->groupBy('parent')->toArray();
+            $brochureImagesQry = ItemBrochureImage::whereIn('parent', $itemCodes)
+                ->select('parent', 'image_filename', 'idx', 'image_path', 'name')
+                ->orderByRaw('LENGTH(idx) ASC')
+                ->orderBy('idx', 'ASC')
+                ->get();
+            $brochureImagesGroup = $brochureImagesQry->groupBy('parent')->toArray();
 
             $content = [];
             $no = 1;
             foreach ($brochureList as $key => $details) {
-                if (in_array($key, ['project', 'customer'])) {
+                if (in_array($key, ['project', 'customer'], true)) {
                     continue;
                 }
 
                 $itemCode = $details['item_code'];
-
-                $itemDetails = isset($itemDetailsGroup[$itemCode]) ? $itemDetailsGroup[$itemCode][0] : null;
+                $itemDetails = $itemDetailsGroup[$itemCode][0] ?? null;
                 if (is_array($itemDetails)) {
                     $itemDetails = (object) $itemDetails;
                 }
                 if (! $itemDetails) {
                     continue;
                 }
-                /** @var object $itemDetails */
-                $attributes = isset($attributeGroup[$itemCode]) ? $attributeGroup[$itemCode] : [];
-                $currentItemImages = isset($currentItemImagesGroup[$itemCode]) ? $currentItemImagesGroup[$itemCode] : [];
-                $brochureImages = isset($brochureImagesGroup[$itemCode]) ? $brochureImagesGroup[$itemCode] : [];
 
-                $itemName = $itemDetails->item_brochure_name ? $itemDetails->item_brochure_name : $itemDetails->item_name;
-                $itemDescription = $itemDetails->item_brochure_description ? $itemDetails->item_brochure_description : $itemDetails->description;
+                $attributes = $attributeGroup[$itemCode] ?? [];
+                $currentItemImages = $currentItemImagesGroup[$itemCode] ?? [];
+                $brochureImages = $brochureImagesGroup[$itemCode] ?? [];
+
+                $itemName = $itemDetails->item_brochure_name ?: $itemDetails->item_name;
+                $itemDescription = $itemDetails->item_brochure_description ?: $itemDetails->description;
 
                 $attrib = [];
                 $attributesArr = [];
@@ -614,11 +445,9 @@ class BrochureController extends Controller
                         continue;
                     }
                     $filename = $e->image_path;
-                    $base64 = $this->base64Image("/img/$filename");
-
                     $currentImages[] = [
                         'filename' => $filename,
-                        'filepath' => "storage/img/$filename",
+                        'filepath' => 'storage/img/'.$filename,
                     ];
                 }
 
@@ -662,20 +491,17 @@ class BrochureController extends Controller
                 $filename = Str::slug($project, '-');
                 $newFilename = Str::slug($project, '-').'-'.now()->format('Y-m-d');
                 $remarks = '';
+                $pdfDoc = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename', 'isStandard', 'remarks'));
 
-                $pdf = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename', 'isStandard', 'remarks'));
-
-                return $pdf->stream($newFilename.'.pdf');
+                return $pdfDoc->stream($newFilename.'.pdf');
             }
 
             return view('brochure.multiple_brochure', compact('content', 'project', 'customer'));
         } catch (\Throwable $th) {
-            // throw $th;
             return redirect()->back()->with('error', 'An error occured. Please try again.');
         }
     }
 
-    // /generate_brochure
     public function generateBrochure(Request $request)
     {
         DB::beginTransaction();
@@ -695,11 +521,12 @@ class BrochureController extends Controller
 
             $remarks = Item::where('name', $data['item_code'])->value('item_brochure_remarks');
 
+            $upcloudDisk = Storage::disk('upcloud');
             $currentItemImages = ItemImages::where('parent', $data['item_code'])->get();
             $currentImages = [];
             foreach ($currentItemImages as $e) {
                 $filename = $e->image_path;
-                if (! Storage::disk('upcloud')->exists('item-images/'.$filename) && $filename) {
+                if ($filename && ! $upcloudDisk->exists('item-images/'.$filename)) {
                     $filename = explode('.', $filename)[0].'.webp';
                 }
                 $currentImages[] = [
@@ -708,7 +535,11 @@ class BrochureController extends Controller
                 ];
             }
 
-            $brochureImages = ItemBrochureImage::where('parent', $data['item_code'])->select('image_filename', 'idx', 'image_path', 'name')->orderByRaw('LENGTH(idx) ASC')->orderBy('idx', 'ASC')->get();
+            $brochureImages = ItemBrochureImage::where('parent', $data['item_code'])
+                ->select('image_filename', 'idx', 'image_path', 'name')
+                ->orderByRaw('LENGTH(idx) ASC')
+                ->orderBy('idx', 'ASC')
+                ->get();
 
             $images = [];
             for ($i = 0; $i < 3; $i++) {
@@ -724,7 +555,7 @@ class BrochureController extends Controller
                     $storageKey = $pathPrefix.$brochureImages[$i]->image_filename;
                 }
                 $images['image'.$row] = [
-                    'id' => isset($brochureImages[$i]) ? $brochureImages[$i]->name : null,
+                    'id' => $brochureImages[$i]->name ?? null,
                     'filepath' => $storageKey,
                 ];
             }
@@ -741,21 +572,22 @@ class BrochureController extends Controller
                 $filename = $request->filename;
 
                 $attrib = [];
+                $attributesArr = [];
                 foreach ($attributes as $att) {
                     $attrib[$att->attribute] = $att->attribute_value;
                     $attributesArr[] = [
-                        'attribute_name' => $att->attr_name ? $att->attr_name : $att->attribute,
+                        'attribute_name' => $att->attr_name ?: $att->attribute,
                         'attribute_value' => $att->attribute_value,
                     ];
                 }
 
-                Item::where('name', $request->item_code)->update([
-                    'item_brochure_name' => $request->item_name,
-                    'item_brochure_description' => $request->description,
-                    'modified' => now()->toDateTimeString(),
-                    'modified_by' => Auth::user()->wh_user,
-                ]);
+                $this->brochureAttributeService->updateItemBrochureFields(
+                    $request->item_code,
+                    $request->item_name,
+                    $request->description
+                );
 
+                $content = [];
                 $content[] = [
                     'id' => Str::slug($request->item_name, '-'),
                     'row' => 1,
@@ -770,30 +602,30 @@ class BrochureController extends Controller
                     'remarks' => $remarks,
                 ];
 
-                $content = $this->resolveStandardBrochureImageDataUris($content, $images);
+                $content = $this->brochurePdfService->resolveStandardBrochureImageDataUris($content, $images);
 
                 $isStandard = true;
                 DB::commit();
 
-                $pdf = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename', 'isStandard', 'remarks', 'fumacoLogo'));
+                $pdfDoc = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename', 'isStandard', 'remarks', 'fumacoLogo'));
 
-                return $pdf->stream($newFilename.'.pdf');
+                return $pdfDoc->stream($newFilename.'.pdf');
             }
 
-            $imgCheck = collect($currentImages)->map(function ($imageRow) {
+            $imgCheck = collect($currentImages)->map(function ($imageRow) use ($upcloudDisk) {
                 $key = $imageRow['filepath'] ?? null;
 
-                return $key && Storage::disk('upcloud')->exists($key) ? 1 : 0;
+                return $key && $upcloudDisk->exists($key) ? 1 : 0;
             })->max();
 
             return view('brochure.preview_standard_brochure', compact('data', 'attributes', 'images', 'currentImages', 'imgCheck', 'remarks', 'fumacoLogo'));
         } catch (\Throwable $th) {
-            DB::rollback();
+            DB::rollBack();
             throw $th;
         }
     }
 
-    public function uploadImageForStandard(Request $request)
+    public function uploadImageForStandard(UploadStandardBrochureImageRequest $request)
     {
         DB::beginTransaction();
         try {
@@ -815,95 +647,54 @@ class BrochureController extends Controller
 
             if ($request->existing) {
                 $filename = $request->selected_image;
-                $base = pathinfo($filename, PATHINFO_FILENAME);
-                $webpFilename = $base.'.webp';
+                $storedFilename = $this->brochureImageService->getExistingImageStoredFilename($filename, 'item-images/');
                 $imagePath = 'item-images/';
-                $storedFilename = Storage::disk('upcloud')->exists($imagePath.$webpFilename)
-                    ? $webpFilename
-                    : $filename;
             }
 
             if ($request->hasFile('selected-file')) {
                 $file = $request->file('selected-file');
-                $allowedExtensions = ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG', 'webp', 'WEBP'];
+                if (! $this->brochureImageService->validateImageExtension($file)) {
+                    DB::rollBack();
 
-                $fileExt = pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION);
-
-                if (! in_array($fileExt, $allowedExtensions)) {
                     return ApiResponse::failure('Sorry, only .jpeg, .jpg and .png files are allowed.');
                 }
 
-                $filenamewithextension = $file->getClientOriginalName();
-                $filename = pathinfo($filenamewithextension, PATHINFO_FILENAME);
+                $filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
                 $filename = str_replace(' ', '-', $filename);
 
-                $extension = $file->getClientOriginalExtension();
-
-                // Paths for storage
-                $imagePath = 'item-brochures/';
-                // $jpegFilename = "$filename.$extension";
-                $webpFilename = "$filename.webp";
-
-                // Save the original file
-                // Storage::putFileAs($imagePath, $file, $jpegFilename);
-
-                // Create and save the WebP version
-                $shouldCleanupWebp = false;
                 try {
-                    if (strtolower($fileExt) != 'webp') {
-                        $webp = Webp::make($file);
+                    $result = $this->brochureImageService->convertToWebpAndStore($file, 'item-brochures/');
+                    $storedFilename = $result['storedFilename'];
+                    $imagePath = $result['imagePath'];
+                } catch (RuntimeException $e) {
+                    Log::warning('Brochure image store failed', ['error' => $e->getMessage()]);
+                    DB::rollBack();
 
-                        if (! File::exists(public_path('temp'))) {
-                            File::makeDirectory(public_path('temp'), 0755, true);
-                        }
-
-                        $webpPath = public_path("temp/$webpFilename");
-                        $webp->save($webpPath);
-                        $shouldCleanupWebp = true;
-                    } else {
-                        $webpPath = $file->getPathname();
-                    }
-
-                    $webStream = fopen($webpPath, 'r');
-                    Storage::disk('upcloud')->put("$imagePath$webpFilename", $webStream);
-                    if (is_resource($webStream)) {
-                        fclose($webStream);
-                    }
-                    $storedFilename = $webpFilename;
-
-                    if ($shouldCleanupWebp && File::exists($webpPath)) {
-                        unlink($webpPath);
-                    }
-                } catch (\Throwable $e) {
-                    Log::warning('WebP conversion failed, saving original image', [
-                        'error' => $e->getMessage(),
-                        'original_name' => $filenamewithextension,
-                    ]);
-
-                    $storedFilename = "$filename.$extension";
-                    $fallbackStream = fopen($file->getPathname(), 'r');
-                    Storage::disk('upcloud')->put("$imagePath$storedFilename", $fallbackStream);
-                    if (is_resource($fallbackStream)) {
-                        fclose($fallbackStream);
-                    }
+                    return ApiResponse::failure('Image upload failed. Please try again.');
                 }
             } elseif (! $request->existing) {
+                DB::rollBack();
+
                 return ApiResponse::failure('No image was provided.');
             }
 
             if (! $storedFilename || ! $imagePath) {
+                DB::rollBack();
+
                 return ApiResponse::failure('Image upload failed. Please try again.');
             }
 
-            $existingImageIdx = ItemBrochureImage::where('parent', $itemCode)->where('idx', $request->image_idx)->first();
-            if ($existingImageIdx) {
-                ItemBrochureImage::where('name', $existingImageIdx->name)->update([
-                    'modified' => $transactionDate,
-                    'modified_by' => Auth::user()->wh_user,
-                    'idx' => $request->image_idx,
-                    'image_filename' => $storedFilename,
-                    'image_path' => 'item-brochures/',
-                ]);
+            $existingImage = ItemBrochureImage::where('parent', $itemCode)->where('idx', $request->image_idx)->first();
+            $updateData = [
+                'modified' => $transactionDate,
+                'modified_by' => Auth::user()->wh_user,
+                'idx' => $request->image_idx,
+                'image_filename' => $storedFilename,
+                'image_path' => 'item-brochures/',
+            ];
+
+            if ($existingImage) {
+                $existingImage->update($updateData);
             } else {
                 ItemBrochureImage::insert([
                     'name' => uniqid(),
@@ -925,7 +716,7 @@ class BrochureController extends Controller
                 'modified_by' => Auth::user()->wh_user,
                 'owner' => Auth::user()->wh_user,
                 'project' => $project,
-                'filename' => $filename,
+                'filename' => $filename ?? $storedFilename,
                 'created_by' => Auth::user()->wh_user,
                 'transaction_date' => $transactionDate,
                 'remarks' => 'For '.$itemCode,
@@ -944,7 +735,7 @@ class BrochureController extends Controller
 
             return ApiResponse::successWith('Image uploaded.', ['src' => $dataSrc]);
         } catch (\Throwable $e) {
-            DB::rollback();
+            DB::rollBack();
             Log::error('uploadImageForStandard failed', [
                 'error' => $e->getMessage(),
                 'project' => $request->project,
@@ -974,211 +765,27 @@ class BrochureController extends Controller
         return view('brochure.manage_item_attributes', compact('attributes', 'itemCode', 'remarks'));
     }
 
-    public function updateBrochureAttributes(Request $request)
+    public function updateBrochureAttributes(UpdateBrochureAttributesRequest $request)
     {
         DB::beginTransaction();
         try {
-            $transactionDate = now()->toDateTimeString();
-            $requestAttributes = $request->attribute;
-            $currentAttributes = $request->current_attribute;
             $hiddenAttributes = collect($request->hidden_attributes)->filter()->values()->all();
-            $idx = 0;
-            foreach ($requestAttributes as $attributeName => $newAttributeName) {
-                if ($currentAttributes[$attributeName] != $newAttributeName) {
-                    ItemAttribute::where('name', $attributeName)->update([
-                        'attr_name' => $newAttributeName,
-                        'modified' => $transactionDate,
-                        'modified_by' => Auth::user()->wh_user,
-                    ]);
-                }
-            }
 
-            foreach ($currentAttributes as $name => $attribute) {
-                ItemVariantAttribute::where('parent', $request->item_code)->where('attribute', $attribute)->update([
-                    'brochure_idx' => $idx += 1,
-                    'hide_in_brochure' => in_array($attribute, $hiddenAttributes) ? 1 : 0,
-                    'modified_by' => Auth::user()->wh_user,
-                    'modified' => now()->toDateTimeString(),
-                ]);
-            }
-
-            Item::where('name', $request->item_code)->update([
-                'item_brochure_remarks' => $request->remarks,
-                'modified' => now()->toDateTimeString(),
-                'modified_by' => Auth::user()->wh_user,
-            ]);
+            $this->brochureAttributeService->updateBrochureAttributes(
+                $request->item_code,
+                $request->attribute ?? [],
+                $request->current_attribute,
+                $hiddenAttributes,
+                $request->remarks
+            );
 
             DB::commit();
 
             return ApiResponse::success('Item Attributes updated.');
         } catch (Exception $e) {
-            DB::rollback();
+            DB::rollBack();
 
             return ApiResponse::failure('Something went wrong. Please try again.');
         }
-    }
-
-    /**
-     * Resolve standard (single-item) brochure images from upcloud for PDF embedding.
-     * Writes JPEGs to temp files and passes local paths so DomPDF can load them reliably.
-     */
-    private function resolveStandardBrochureImageDataUris(array $content, array $images): array
-    {
-        if (empty($content)) {
-            return $content;
-        }
-        $content[0]['image_data_uris'] = [1 => null, 2 => null, 3 => null];
-        $content[0]['image_local_paths'] = [1 => null, 2 => null, 3 => null];
-        $disk = Storage::disk('upcloud');
-        $tempDir = storage_path('app/temp/brochure-pdf');
-        if (! File::isDirectory($tempDir)) {
-            File::makeDirectory($tempDir, 0755, true);
-        }
-        for ($i = 1; $i <= 3; $i++) {
-            $key = $images['image'.$i]['filepath'] ?? null;
-            if (! $key || ! $disk->exists($key)) {
-                continue;
-            }
-            $data = $disk->get($key);
-            if ($data === null || $data === '') {
-                continue;
-            }
-            $jpegData = $this->imageDataToJpegBytes($data, $key);
-            if ($jpegData === null) {
-                continue;
-            }
-            $tempFile = $tempDir.'/brochure_'.$i.'_'.uniqid().'.jpg';
-            if (file_put_contents($tempFile, $jpegData) !== false) {
-                $content[0]['image_local_paths'][$i] = $tempFile;
-            }
-        }
-
-        return $content;
-    }
-
-    /**
-     * Convert image bytes to JPEG bytes; resizes large images. Returns raw JPEG string or null.
-     */
-    private function imageDataToJpegBytes(string $data, string $pathOrKey): ?string
-    {
-        $img = @imagecreatefromstring($data);
-        if ($img === false) {
-            return null;
-        }
-        $w = imagesx($img);
-        $h = imagesy($img);
-        $maxDim = 800;
-        if ($w > $maxDim || $h > $maxDim) {
-            $ratio = min($maxDim / $w, $maxDim / $h);
-            $nw = (int) round($w * $ratio);
-            $nh = (int) round($h * $ratio);
-            $resized = imagecreatetruecolor($nw, $nh);
-            if ($resized !== false) {
-                imagecopyresampled($resized, $img, 0, 0, 0, 0, $nw, $nh, $w, $h);
-                imagedestroy($img);
-                $img = $resized;
-            }
-        }
-        ob_start();
-        imagejpeg($img, null, 85);
-        $jpegData = ob_get_clean();
-        imagedestroy($img);
-        if ($jpegData === false || $jpegData === '') {
-            return null;
-        }
-
-        return $jpegData;
-    }
-
-    /**
-     * Resolve brochure image paths and attach base64 data URIs so the PDF view can embed images reliably.
-     */
-    private function resolveBrochureImagePathsForPdf(array $content, string $project, bool $isStandard): array
-    {
-        $imageExtensions = '/\.(png|jpg|jpeg|gif|webp|bmp)$/i';
-
-        foreach ($content as $r => $row) {
-            $content[$r]['image_data_uris'] = [1 => null, 2 => null, 3 => null];
-
-            $filenames = [];
-            if ($isStandard) {
-                for ($i = 1; $i <= 3; $i++) {
-                    $fp = $row['images']['image'.$i]['filepath'] ?? null;
-                    $filenames[$i] = $fp ? basename($fp) : null;
-                }
-            } else {
-                for ($i = 1; $i <= 3; $i++) {
-                    $val = $row['images']['image'.$i] ?? null;
-                    $filenames[$i] = $val ? trim((string) $val) : null;
-                }
-                $fromAttrs = [];
-                foreach ($row['attributes'] ?? [] as $att) {
-                    $v = trim((string) ($att['attribute_value'] ?? ''));
-                    if ($v && preg_match($imageExtensions, $v)) {
-                        $fromAttrs[] = $v;
-                    }
-                }
-                $idx = 0;
-                for ($i = 1; $i <= 3; $i++) {
-                    if (empty($filenames[$i]) && isset($fromAttrs[$idx])) {
-                        $filenames[$i] = $fromAttrs[$idx];
-                        $idx++;
-                    }
-                }
-            }
-
-            for ($i = 1; $i <= 3; $i++) {
-                $name = $filenames[$i] ?? null;
-                if (! $name) {
-                    continue;
-                }
-
-                if ($i === 3 && isset($filenames[2]) && $filenames[2] !== null && $name === $filenames[2]) {
-                    if ($isStandard && isset($content[$r]['images']['image3'])) {
-                        $content[$r]['images']['image3'] = ['id' => null, 'filepath' => null];
-                    }
-                    continue;
-                }
-
-                $absolutePath = null;
-                if ($isStandard) {
-                    $filepath = $row['images']['image'.$i]['filepath'] ?? null;
-                    if ($filepath) {
-                        $absolutePath = public_path($filepath);
-                        if (! file_exists($absolutePath)) {
-                            $absolutePath = storage_path('app/public/'.preg_replace('#^storage/#', '', $filepath));
-                        }
-                    }
-                } else {
-                    $upcloudPath = Storage::disk('upcloud')->path('item-brochures/'.strtoupper($project).'/'.$name);
-                    $tryPaths = [
-                        $upcloudPath,
-                        Storage::disk('upcloud')->path('item-brochures/'.$name),
-                        Storage::disk('upcloud')->path('item-brochures/'.strtoupper($project).'/'.$name),
-                        Storage::disk('upcloud')->path('item-brochures/'.$name),
-                    ];
-                    foreach ($tryPaths as $p) {
-                        if ($p && file_exists($p)) {
-                            $absolutePath = $p;
-                            break;
-                        }
-                    }
-                }
-
-                if ($absolutePath && file_exists($absolutePath)) {
-                    $mime = @mime_content_type($absolutePath) ?: 'image/png';
-                    $data = @file_get_contents($absolutePath);
-                    if ($data !== false) {
-                        $dataUri = 'data:'.$mime.';base64,'.base64_encode($data);
-                        if ($i === 3 && isset($content[$r]['image_data_uris'][2]) && $content[$r]['image_data_uris'][2] === $dataUri) {
-                            continue;
-                        }
-                        $content[$r]['image_data_uris'][$i] = $dataUri;
-                    }
-                }
-            }
-        }
-
-        return $content;
     }
 }

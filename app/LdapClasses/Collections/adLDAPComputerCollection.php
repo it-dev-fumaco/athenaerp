@@ -36,7 +36,7 @@
  * @version 4.0.4
  *
  * @link http://adldap.sourceforge.net/
-*/
+ */
 
 namespace App\LdapClasses\Collections;
 

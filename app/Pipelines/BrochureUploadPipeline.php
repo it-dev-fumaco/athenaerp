@@ -24,14 +24,15 @@ class BrochureUploadPipeline
      */
     public function run(object $passable)
     {
+        // Storage before DB: store file first so we never commit DB and then fail on storage.
         $result = $this->pipeline
             ->send($passable)
             ->through([
                 ValidateBrochureFilePipe::class,
                 ReadBrochureSpreadsheetPipe::class,
                 EnsureBrochureDirectoryAndFilenamePipe::class,
-                PersistBrochureLogPipe::class,
                 StoreBrochureFilePipe::class,
+                PersistBrochureLogPipe::class,
             ])
             ->thenReturn();
 

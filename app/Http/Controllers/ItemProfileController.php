@@ -419,57 +419,57 @@ class ItemProfileController extends Controller
     public function uploadItemImage(Request $request)
     {
         $existingImages = $request->existing_images ?? [];
-    
+
         $query = ItemImages::query()
             ->where('parent', $request->item_code);
-    
-        if (!empty($existingImages)) {
+
+        if (! empty($existingImages)) {
             $query->whereNotIn('name', $existingImages);
         }
-    
+
         $removedImages = $query->pluck('image_path')->toArray();
-    
+
         // Delete from cloud
-        if (!empty($removedImages)) {
+        if (! empty($removedImages)) {
             Storage::disk('upcloud')->delete($removedImages);
         }
-    
+
         // Delete DB records
         $query->delete();
-    
+
         $now = now();
-    
+
         if ($request->hasFile('item_image')) {
-    
+
             $files = $request->file('item_image');
             $itemImagesArr = [];
-    
+
             foreach ($files as $i => $file) {
-    
+
                 // Unique filename
-                $filename = uniqid() . '-' . $request->item_code . '.webp';
+                $filename = uniqid().'-'.$request->item_code.'.webp';
                 $storageKey = "items/{$filename}";
-    
+
                 // Convert to webp
                 $webp = Webp::make($file);
-    
+
                 // Save temporarily
                 $tempPath = storage_path("app/temp/$filename");
-    
-                if (!File::exists(dirname($tempPath))) {
+
+                if (! File::exists(dirname($tempPath))) {
                     File::makeDirectory(dirname($tempPath), 0755, true);
                 }
-    
+
                 $webp->save($tempPath);
-    
+
                 // Upload to cloud
                 Storage::disk('upcloud')->put(
                     $storageKey,
                     file_get_contents($tempPath)
                 );
-    
+
                 unlink($tempPath);
-    
+
                 $itemImagesArr[] = [
                     'name' => uniqid(),
                     'creation' => $now,
@@ -483,19 +483,19 @@ class ItemProfileController extends Controller
                     'image_path' => $storageKey, // store only object key
                 ];
             }
-    
+
             ItemImages::insert($itemImagesArr);
-    
+
             return response()->json([
-                'message' => 'Item image for ' . $request->item_code . ' has been uploaded.'
+                'message' => 'Item image for '.$request->item_code.' has been uploaded.',
             ]);
         }
-    
+
         return response()->json([
-            'message' => 'Item image for ' . $request->item_code . ' has been updated.'
+            'message' => 'Item image for '.$request->item_code.' has been updated.',
         ]);
     }
-    
+
     public function loadItemImages($itemCode, Request $request)
     {
         $images = ItemImages::where('parent', $itemCode)->select('image_path', 'owner', 'modified_by', 'creation', 'modified')->orderBy('idx', 'asc')->get();
