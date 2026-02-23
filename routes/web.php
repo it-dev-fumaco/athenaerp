@@ -180,9 +180,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
         Route::get('/get_stock_reservation/{item_code?}', [StockReservationController::class, 'getStockReservation']);
         Route::get('/get_item_images/{item_code}', [ItemProfileController::class, 'getItemImages']);
         Route::get('/get_item_files/{item_code}/{file_category}', [MainController::class, 'getItemFiles']);
-        Route::get('/download/{path}', function ($path) {
-            return response()->download(storage_path('app/public/'.$path));
-        })->where('path', '.*')->name('file.download');
+        Route::get('/download/{path}', [MainController::class, 'downloadFile'])->where('path', '.*')->name('file.download');
         Route::post('/delete_item_file', [MainController::class, 'deleteItemFile']);
         Route::get('/get_low_stock_level_items', [MainController::class, 'getLowStockLevelItems']);
         Route::get('/allowed_parent_warehouses', [MainController::class, 'allowedParentWarehouses']);

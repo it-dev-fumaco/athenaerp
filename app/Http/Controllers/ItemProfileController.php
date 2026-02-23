@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Helpers\ApiResponse;
+use App\Http\Helpers\SafePath;
 use App\Http\Resources\ItemResource;
 use App\Models\AssignedWarehouses;
 use App\Models\AthenaTransaction;
@@ -446,8 +447,9 @@ class ItemProfileController extends Controller
 
             foreach ($files as $i => $file) {
 
-                // Unique filename
-                $filename = uniqid().'-'.$request->item_code.'.webp';
+                // Unique filename (unpredictable, no path in item_code)
+                $safeItemCode = SafePath::sanitizeSegment($request->item_code);
+                $filename = (string) \Illuminate\Support\Str::random(24).'-'.($safeItemCode ?: 'item').'.webp';
                 $storageKey = "items/{$filename}";
 
                 // Convert to webp
@@ -471,7 +473,7 @@ class ItemProfileController extends Controller
                 unlink($tempPath);
 
                 $itemImagesArr[] = [
-                    'name' => uniqid(),
+                    'name' => uniqid('', true),
                     'creation' => $now,
                     'modified' => $now,
                     'modified_by' => Auth::user()->wh_user,

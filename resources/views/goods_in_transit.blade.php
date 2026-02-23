@@ -252,7 +252,7 @@
 						showNotification("danger", response.message, "fa fa-info")
 					}
 
-					if('email_sent' in repsonse && !response.email_sent){
+					if('email_sent' in response && !response.email_sent){
 						showNotification("danger", 'Email not sent!', "fa fa-info")
 					}
 

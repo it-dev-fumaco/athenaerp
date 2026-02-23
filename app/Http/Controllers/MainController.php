@@ -6,6 +6,7 @@ use App\Constants\DocStatus;
 use App\Constants\StockEntryConstants;
 use App\Constants\WarehouseConstants;
 use App\Http\Helpers\ApiResponse;
+use App\Http\Helpers\SafePath;
 use App\Models\AssignedWarehouses;
 use App\Models\AthenaTransaction;
 use App\Models\BeginningInventory;
@@ -58,6 +59,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -2477,8 +2479,14 @@ class MainController extends Controller
         try {
             if ($request->hasFile('import_zip')) {
                 $file = $request->file('import_zip');
-                if (! in_array($file->getClientOriginalExtension(), ['zip', 'ZIP'])) {
+                $ext = strtolower($file->getClientOriginalExtension());
+                if ($ext !== 'zip') {
                     return redirect()->back()->with('error', 'Only .zip files are allowed.');
+                }
+
+                $maxZipBytes = 50 * 1024 * 1024; // 50 MB
+                if ($file->getSize() > $maxZipBytes) {
+                    return redirect()->back()->with('error', 'Zip file is too large. Maximum size is 50 MB.');
                 }
 
                 Storage::disk('upcloud')->makeDirectory('export/');
@@ -2496,20 +2504,29 @@ class MainController extends Controller
 
                 $importedFiles = Storage::disk('upcloud')->files('export/');
 
-                // Collect image files to save in DB
+                // Collect image files to save in DB (ignore path traversal or multi-segment paths)
                 $collectImagesArr = collect($importedFiles)->map(function ($filePath) {
-                    $image = explode('/', $filePath)[1];
+                    if (SafePath::pathContainsTraversal($filePath)) {
+                        return null;
+                    }
+                    $parts = explode('/', $filePath);
+                    $image = $parts[count($parts) - 1] ?? '';
+                    if ($image === '' || str_contains($image, '..')) {
+                        return null;
+                    }
 
                     $exploded = explode('.', $image);
                     $imageName = Arr::get($exploded, 0);
-                    $imageExtension = Arr::get($exploded, 1);
+                    $imageExtension = strtolower(Arr::get($exploded, 1, ''));
 
-                    if (! in_array($imageExtension, ['webp', 'WEBP', 'zip', 'ZIP'])) {
+                    if (! in_array($imageExtension, ['webp', 'zip'])) {
                         return [
                             'item_code' => Arr::get(explode('-', $imageName), 1),
                             'image' => $image,
                         ];
                     }
+
+                    return null;
                 });
 
                 $collectImagesArr = $collectImagesArr->filter(function ($value) {
@@ -2548,7 +2565,7 @@ class MainController extends Controller
                         // Save new images in DB
                         if (Arr::has($imagesArr, $itemCode)) {
                             foreach ($imagesArr[$itemCode] as $a => $image) {
-                                if (empty($image['image'])) {
+                                if (empty($image['image']) || SafePath::pathContainsTraversal($image['image'])) {
                                     continue;
                                 }
                                 $a = $a + 1;
@@ -2558,7 +2575,7 @@ class MainController extends Controller
                                 $webp = explode('.', $jpg)[0].'.webp';
 
                                 $newImages[] = [
-                                    'name' => uniqid(),
+                                    'name' => uniqid('', true),
                                     'creation' => $now->toDateTimeString(),
                                     'modified' => $now->toDateTimeString(),
                                     'modified_by' => Auth::user()->wh_user,
@@ -2571,12 +2588,16 @@ class MainController extends Controller
                                     'image_path' => $jpg,
                                 ];
 
-                                if (Storage::disk('upcloud')->exists('export/'.$image['image']) and ! Storage::disk('upcloud')->exists('img/'.$jpg)) {
-                                    Storage::disk('upcloud')->move('export/'.$image['image'], 'img/'.$jpg);
+                                $srcPath = 'export/'.$image['image'];
+                                $dstJpg = 'img/'.$jpg;
+                                $dstWebp = 'img/'.$webp;
+                                if (SafePath::pathUnderPrefix($srcPath, 'export') && Storage::disk('upcloud')->exists($srcPath) && ! SafePath::pathContainsTraversal($dstJpg) && ! Storage::disk('upcloud')->exists($dstJpg)) {
+                                    Storage::disk('upcloud')->move($srcPath, $dstJpg);
                                 }
 
-                                if (Storage::disk('upcloud')->exists('export/'.explode('.', $image['image'])[0].'.webp') and ! Storage::disk('upcloud')->exists('img/'.$webp)) {
-                                    Storage::disk('upcloud')->move('export/'.explode('.', $image['image'])[0].'.webp', 'img/'.$webp);
+                                $webpSrc = 'export/'.explode('.', $image['image'])[0].'.webp';
+                                if (SafePath::pathUnderPrefix($webpSrc, 'export') && Storage::disk('upcloud')->exists($webpSrc) && ! SafePath::pathContainsTraversal($dstWebp) && ! Storage::disk('upcloud')->exists($dstWebp)) {
+                                    Storage::disk('upcloud')->move($webpSrc, $dstWebp);
                                 }
                             }
                         }
@@ -2603,6 +2624,10 @@ class MainController extends Controller
 
     public function downloadImage($webp)
     {
+        if (SafePath::pathContainsTraversal($webp) || ! SafePath::pathUnderPrefix($webp, 'img')) {
+            return ApiResponse::failure('File not found', 404);
+        }
+
         if (! Storage::disk('upcloud')->exists($webp)) {
             return ApiResponse::failure('File not found', 404);
         }
@@ -2620,10 +2645,11 @@ class MainController extends Controller
         ob_end_clean();
 
         $name = explode('.', $webp)[0];
+        $safeName = SafePath::sanitizeSegment(basename($name));
 
         return Response::make($jpgData, 200, [
             'Content-Type' => 'image/jpeg',
-            'Content-Disposition' => "attachment; filename=$name.jpg",
+            'Content-Disposition' => 'attachment; filename="'.str_replace('"', '\\"', $safeName).'.jpg"',
         ]);
     }
 
@@ -2714,15 +2740,37 @@ class MainController extends Controller
     public function uploadFiles(Request $request)
     {
         $now = now();
+        $maxFileSizeBytes = 10 * 1024 * 1024; // 10 MB
+        $allowedExtensions = SafePath::allowedDocumentExtensions();
+
         if ($request->hasFile('itemFile')) {
+            $itemCode = SafePath::sanitizeSegment((string) $request->item_code);
+            if ($itemCode === '') {
+                return response()->json(['status' => false, 'message' => 'Invalid item code.'], 422);
+            }
+
             $files = $request->file('itemFile');
+            if (is_array($files)) {
+                $files = array_values($files);
+            } else {
+                $files = $files ? [$files] : [];
+            }
+
             $itemFiles = [];
             foreach ($files as $i => $file) {
-                $microTime = round(microtime(true));
-                $fileIndex = 0;
-                $filename = "{$microTime}{$fileIndex}-{$request->item_code}";
-                $originalExtension = $file->getClientOriginalExtension();
-                $storedFilename = "$filename.$originalExtension";
+                if (! $file->isValid()) {
+                    continue;
+                }
+                if ($file->getSize() > $maxFileSizeBytes) {
+                    return response()->json(['status' => false, 'message' => 'File too large. Maximum size is 10 MB.'], 422);
+                }
+                $originalExtension = strtolower($file->getClientOriginalExtension());
+                if (! in_array($originalExtension, $allowedExtensions, true)) {
+                    return response()->json(['status' => false, 'message' => 'File type not allowed.'], 422);
+                }
+
+                $safeName = Str::random(40).'-'.$itemCode;
+                $storedFilename = $safeName.'.'.$originalExtension;
                 Storage::putFileAs('itemFiles/', $file, $storedFilename);
 
                 if (! File::exists(public_path('temp'))) {
@@ -2730,7 +2778,7 @@ class MainController extends Controller
                 }
 
                 $itemFiles[] = [
-                    'name' => uniqid(),
+                    'name' => uniqid('', true),
                     'creation' => $now->toDateTimeString(),
                     'modified' => $now->toDateTimeString(),
                     'modified_by' => Auth::user()->wh_user,
@@ -2740,19 +2788,23 @@ class MainController extends Controller
                     'parentfield' => 'item_files',
                     'parenttype' => 'Item',
                     'file_category' => $request->fileType,
-                    'file_name' => $file->getClientOriginalName(),
+                    'file_name' => SafePath::sanitizeSegment($file->getClientOriginalName()) ?: $storedFilename,
                     'file_path' => 'itemFiles/'.$storedFilename,
                     'file_size' => $this->humanFileSize($file->getSize()),
                 ];
             }
 
-            DB::table('tabItem File')->insert($itemFiles);
+            if ($itemFiles !== []) {
+                DB::table('tabItem File')->insert($itemFiles);
+            }
 
             return response()->json([
                 'status' => true,
                 'message' => 'File for '.$request->item_code.' has been uploaded.',
             ]);
         }
+
+        return response()->json(['status' => false, 'message' => 'No file uploaded.'], 422);
     }
 
     public function getItemFiles($itemCode, $fileCategory = null)
@@ -2766,13 +2818,37 @@ class MainController extends Controller
         return view('tables.filesTable', compact('itemFiles'));
     }
 
+    /**
+     * Secure file download: path must be under storage/app/public (no path traversal).
+     */
+    public function downloadFile(string $path)
+    {
+        if (SafePath::pathContainsTraversal($path)) {
+            abort(404);
+        }
+
+        $root = storage_path('app/public');
+        $absolutePath = SafePath::resolveUnderRoot($root, $path);
+
+        if ($absolutePath === null || ! is_file($absolutePath)) {
+            abort(404);
+        }
+
+        return response()->download($absolutePath);
+    }
+
     public function deleteItemFile(Request $request)
     {
         $id = $request->file_id;
         $file = DB::table('tabItem File')->where('name', $id)->first();
 
-        if ($file && $file->file_path && Storage::disk('public')->exists($file->file_path)) {
-            Storage::disk('public')->delete($file->file_path);
+        if ($file && $file->file_path) {
+            if (SafePath::pathContainsTraversal($file->file_path) || ! SafePath::pathUnderPrefix($file->file_path, 'itemFiles')) {
+                return response()->json(['status' => false, 'message' => 'Invalid file.'], 422);
+            }
+            if (Storage::disk('public')->exists($file->file_path)) {
+                Storage::disk('public')->delete($file->file_path);
+            }
         }
 
         DB::table('tabItem File')->where('name', $id)->delete();

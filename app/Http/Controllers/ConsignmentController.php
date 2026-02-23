@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Helpers\ApiResponse;
+use App\Http\Helpers\SafePath;
 use App\Models\AssignedWarehouses;
 use App\Models\BeginningInventory;
 use App\Models\ConsignmentItemBarcode;
@@ -799,7 +800,7 @@ class ConsignmentController extends Controller
             $project = $request->project;
             $branch = $request->branch;
             $customerPurchaseOrder = $request->cpo;
-            $path = request()->file('selected_file')->storeAs('tmp', request()->file('selected_file')->getClientOriginalName().uniqid(), 'upcloud');
+            $path = request()->file('selected_file')->storeAs('tmp', \Illuminate\Support\Str::random(40).'-'.SafePath::sanitizeSegment(request()->file('selected_file')->getClientOriginalName() ?: 'file'), 'upcloud');
 
             $file = Storage::disk('upcloud')->path($path);
             $reader = new XlsxReaderXlsx;
