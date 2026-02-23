@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Helpers\ApiResponse;
+use App\Http\Helpers\SafePath;
 use App\Http\Requests\AddToBrochureListRequest;
 use App\Http\Requests\ReadBrochureExcelRequest;
 use App\Http\Requests\UpdateBrochureAttributesRequest;
@@ -110,6 +111,11 @@ class BrochureController extends Controller
         try {
             ini_set('max_execution_time', '300');
             $projectParam = trim((string) $project);
+            $filename = trim((string) $filename);
+            if (SafePath::pathContainsTraversal($projectParam) || SafePath::pathContainsTraversal($filename) || ! SafePath::pathUnderPrefix('item-brochures/'.$projectParam.'/'.$filename, 'item-brochures')) {
+                return redirect('brochure')->with('error', 'Invalid path.');
+            }
+
             $file = Storage::disk('upcloud')->path('item-brochures/'.$projectParam.'/'.$filename);
 
             if (! file_exists($file)) {
@@ -223,6 +229,12 @@ class BrochureController extends Controller
     public function downloadBrochure($project, $file)
     {
         try {
+            $project = trim((string) $project);
+            $file = trim((string) $file);
+            if (SafePath::pathContainsTraversal($project) || SafePath::pathContainsTraversal($file) || ! SafePath::pathUnderPrefix('brochures/'.strtoupper($project).'/'.$file, 'brochures')) {
+                return ApiResponse::failureLegacy('File not found');
+            }
+
             if (! Storage::disk('upcloud')->exists('brochures/'.strtoupper($project).'/'.$file)) {
                 return ApiResponse::failureLegacy('File not found');
             }
@@ -265,6 +277,9 @@ class BrochureController extends Controller
             $loc = $folder && $dir ? strtoupper($folder).'/'.$dir : null;
 
             if ($loc) {
+                if (SafePath::pathContainsTraversal($folder) || SafePath::pathContainsTraversal($dir) || ! SafePath::pathUnderPrefix('item-brochures/'.$loc, 'item-brochures')) {
+                    return ApiResponse::failure('Invalid path.');
+                }
                 $excelPath = Storage::disk('upcloud')->path('item-brochures/'.$loc);
                 if (file_exists($excelPath)) {
                     $column = $this->brochureExcelService->findColumnIndexByHeader($excelPath, $request->column);
