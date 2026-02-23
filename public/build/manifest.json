@@ -1,6 +1,10 @@
 {
-  "_runtime-dom.esm-bundler-D4uf7RjI.js": {
-    "file": "assets/runtime-dom.esm-bundler-D4uf7RjI.js",
+  "__plugin-vue_export-helper-DlAUqK2U.js": {
+    "file": "assets/_plugin-vue_export-helper-DlAUqK2U.js",
+    "name": "_plugin-vue_export-helper"
+  },
+  "_runtime-dom.esm-bundler-7JCKwX8J.js": {
+    "file": "assets/runtime-dom.esm-bundler-7JCKwX8J.js",
     "name": "runtime-dom.esm-bundler"
   },
   "resources/css/app.css": {
@@ -9,21 +13,38 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-Bb4VManK.js",
+    "file": "assets/app-BAkp7Ovc.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "imports": [
-      "_runtime-dom.esm-bundler-D4uf7RjI.js"
+      "_runtime-dom.esm-bundler-7JCKwX8J.js",
+      "__plugin-vue_export-helper-DlAUqK2U.js"
+    ],
+    "css": [
+      "assets/app-CpUE3w3v.css"
     ]
   },
   "resources/js/brochure.js": {
-    "file": "assets/brochure-CpFYWbC6.js",
+    "file": "assets/brochure-Bd3yLsGa.js",
     "name": "brochure",
     "src": "resources/js/brochure.js",
     "isEntry": true,
     "imports": [
-      "_runtime-dom.esm-bundler-D4uf7RjI.js"
+      "_runtime-dom.esm-bundler-7JCKwX8J.js"
+    ]
+  },
+  "resources/js/login.js": {
+    "file": "assets/login-BAPXbkar.js",
+    "name": "login",
+    "src": "resources/js/login.js",
+    "isEntry": true,
+    "imports": [
+      "_runtime-dom.esm-bundler-7JCKwX8J.js",
+      "__plugin-vue_export-helper-DlAUqK2U.js"
+    ],
+    "css": [
+      "assets/login-_c9NDv71.css"
     ]
   }
 }

@@ -62,11 +62,18 @@
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 
+const props = defineProps({
+  initialMonth: { type: [Number, String], default: null },
+  initialYear: { type: [Number, String], default: null },
+});
+
 const MONTHS = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-const el = document.getElementById('dashboard-inv-accuracy');
-const initialMonth = el?.dataset?.initialMonth ? parseInt(el.dataset.initialMonth, 10) : new Date().getMonth() + 1;
-const initialYear = el?.dataset?.initialYear ? parseInt(el.dataset.initialYear, 10) : new Date().getFullYear();
+const el = typeof document !== 'undefined' ? document.getElementById('dashboard-inv-accuracy') : null;
+const fallbackMonth = new Date().getMonth() + 1;
+const fallbackYear = new Date().getFullYear();
+const initialMonth = props.initialMonth != null ? Number(props.initialMonth) : (el?.dataset?.initialMonth ? parseInt(el.dataset.initialMonth, 10) : fallbackMonth);
+const initialYear = props.initialYear != null ? Number(props.initialYear) : (el?.dataset?.initialYear ? parseInt(el.dataset.initialYear, 10) : fallbackYear);
 
 const selectedMonth = ref(initialMonth);
 const selectedYear = ref(initialYear);

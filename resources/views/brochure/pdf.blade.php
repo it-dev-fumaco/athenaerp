@@ -149,7 +149,14 @@
                     @php $slot2_src = null; @endphp
                     @for ($i = 1; $i <= 3; $i++)
                         @php
-                            $imgSrc = isset($row['image_data_uris'][$i]) && $row['image_data_uris'][$i] ? $row['image_data_uris'][$i] : null;
+                            $imgSrc = null;
+                            if (isset($row['image_local_paths'][$i]) && $row['image_local_paths'][$i] && file_exists($row['image_local_paths'][$i])) {
+                                $path = $row['image_local_paths'][$i];
+                                $imgSrc = 'file:///' . str_replace('\\', '/', ltrim($path, '/'));
+                            }
+                            if (!$imgSrc && isset($row['image_data_uris'][$i]) && $row['image_data_uris'][$i]) {
+                                $imgSrc = $row['image_data_uris'][$i];
+                            }
                             if (!$imgSrc && isset($row['images']['image'.$i]) && $row['images']['image'.$i]) {
                                 $imgPath = null;
                                 if (isset($isStandard) && $isStandard) {
@@ -187,7 +194,7 @@
                             }
                         @endphp
                         @if ($imgSrc)
-                            <img src="{{ $imgSrc }}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 15px !important; max-height: 775px !important;">
+                            <img src="{!! $imgSrc !!}" width="100%" style="border: 2px solid #1C2833; margin-bottom: 15px !important; max-height: 775px !important;">
                         @endif
                     @endfor
                     &nbsp;

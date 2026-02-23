@@ -1,10 +1,11 @@
 /**
  * Vite + Vue entry. Axios/CSRF via bootstrap.js.
- * Vue mounts where #app and dashboard mount points exist (incremental migration).
+ * Vue mounts where #app, #dashboard-app, and other mount points exist (incremental migration).
  */
 import './bootstrap';
 import { createApp } from 'vue';
 import App from './App.vue';
+import DashboardApp from './components/DashboardApp.vue';
 import DashboardInventoryAccuracy from './components/DashboardInventoryAccuracy.vue';
 import DashboardLowStock from './components/DashboardLowStock.vue';
 import DashboardReservedItems from './components/DashboardReservedItems.vue';
@@ -22,38 +23,46 @@ import ItemProfileStockLedger from './components/ItemProfileStockLedger.vue';
 import ItemProfilePurchaseHistory from './components/ItemProfilePurchaseHistory.vue';
 import ItemProfileConsignmentStockMovement from './components/ItemProfileConsignmentStockMovement.vue';
 import SearchResultsList from './components/SearchResultsList.vue';
+import SearchResultsApp from './components/SearchResultsApp.vue';
 import StockReservationModals from './components/StockReservationModals.vue';
 import ItemAttributeSearch from './components/ItemAttributeSearch.vue';
 import ItemAttributeUpdateForm from './components/ItemAttributeUpdateForm.vue';
 
-const appEl = document.getElementById('app');
-if (appEl) {
-    createApp(App).mount('#app');
-}
+const dashboardAppEl = document.getElementById('dashboard-app');
+if (dashboardAppEl) {
+    createApp(DashboardApp, {
+        userGroup: dashboardAppEl.dataset.userGroup || '',
+    }).mount('#dashboard-app');
+} else {
+    const appEl = document.getElementById('app');
+    if (appEl) {
+        createApp(App).mount('#app');
+    }
 
-const invAccuracyEl = document.getElementById('dashboard-inv-accuracy');
-if (invAccuracyEl) {
-    createApp(DashboardInventoryAccuracy).mount('#dashboard-inv-accuracy');
-}
+    const invAccuracyEl = document.getElementById('dashboard-inv-accuracy');
+    if (invAccuracyEl) {
+        createApp(DashboardInventoryAccuracy).mount('#dashboard-inv-accuracy');
+    }
 
-const lowStockEl = document.getElementById('dashboard-low-stock');
-if (lowStockEl) {
-    createApp(DashboardLowStock).mount('#dashboard-low-stock');
-}
+    const lowStockEl = document.getElementById('dashboard-low-stock');
+    if (lowStockEl) {
+        createApp(DashboardLowStock).mount('#dashboard-low-stock');
+    }
 
-const reservedEl = document.getElementById('dashboard-reserved-items');
-if (reservedEl) {
-    createApp(DashboardReservedItems).mount('#dashboard-reserved-items');
-}
+    const reservedEl = document.getElementById('dashboard-reserved-items');
+    if (reservedEl) {
+        createApp(DashboardReservedItems).mount('#dashboard-reserved-items');
+    }
 
-const athenaLogsEl = document.getElementById('dashboard-athena-logs');
-if (athenaLogsEl) {
-    createApp(DashboardAthenaLogs).mount('#dashboard-athena-logs');
-}
+    const athenaLogsEl = document.getElementById('dashboard-athena-logs');
+    if (athenaLogsEl) {
+        createApp(DashboardAthenaLogs).mount('#dashboard-athena-logs');
+    }
 
-const recentReceivedEl = document.getElementById('dashboard-recently-received');
-if (recentReceivedEl) {
-    createApp(DashboardRecentlyReceived).mount('#dashboard-recently-received');
+    const recentReceivedEl = document.getElementById('dashboard-recently-received');
+    if (recentReceivedEl) {
+        createApp(DashboardRecentlyReceived).mount('#dashboard-recently-received');
+    }
 }
 
 const consignmentReplenishEl = document.getElementById('consignment-replenish');
@@ -128,7 +137,9 @@ if (itemProfileConsignmentStockMovementEl) {
 
 const searchResultsAppEl = document.getElementById('search-results-app');
 if (searchResultsAppEl) {
-    createApp(SearchResultsList).mount('#search-results-app');
+    createApp(SearchResultsApp, {
+        totalItems: searchResultsAppEl.dataset.total ?? '0',
+    }).mount('#search-results-app');
 }
 
 const stockReservationModalsEl = document.getElementById('stock-reservation-modals-app');

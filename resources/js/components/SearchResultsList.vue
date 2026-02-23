@@ -14,9 +14,12 @@
                   <a :href="row.image" :data-item-code="row.name" class="view-images">
                     <img :src="row.image" class="img w-100" alt="">
                   </a>
-                  <div class="text-center mt-2 mb-1">
-                    <a :href="'/get_item_details/' + row.name" class="btn btn-primary btn-xs btn-block">
-                      <i class="fa fa-search"></i> <span class="d-inline d-md-none" style="font-size: 10pt">View Item Details</span>
+                  <div class="text-center mt-2 mb-1 d-flex flex-row justify-content-center flex-wrap gap-1">
+                    <a :href="'/get_item_details/' + row.name" class="btn btn-primary btn-xs" title="View Item Details">
+                      <i class="fa fa-search"></i>
+                    </a>
+                    <a href="#" class="btn btn-primary btn-xs" title="View options" @click.prevent>
+                      <i class="fa fa-th-large"></i>
                     </a>
                   </div>
                 </div>
@@ -33,9 +36,9 @@
                       </dl>
                     </template>
                     <template v-else><br></template>
-                    <span v-if="row.part_nos" class="text-justify item-name"><b>Part No(s)</b> {{ row.part_nos }}</span>
+                    <span v-if="row.part_nos" class="text-justify item-name"><b>Part No(s)</b> {{ row.part_nos }} <i class="fa fa-info-circle text-muted ml-1" style="font-size: 10pt;"></i></span>
                     <p v-if="apiData.show_price && row.default_price > 0" class="mt-3 mb-2">
-                      <span class="d-block font-weight-bold" style="font-size: 15pt;">₱ {{ formatPrice(row.default_price) }}</span>
+                      <span class="d-block font-weight-bold" style="font-size: 15pt;">P {{ formatPrice(row.default_price) }}</span>
                       <span class="d-block" style="font-size: 9pt;">Standard Selling Price</span>
                     </p>
                   </div>
@@ -55,7 +58,9 @@
                           {{ inv.warehouse }}
                           <small v-if="inv.location" class="text-muted font-italic"> - {{ inv.location }}</small>
                         </td>
-                        <td class="text-center"><small class="text-muted">{{ inv.reserved_qty * 1 }} {{ inv.stock_uom }}</small></td>
+                        <td class="text-center">
+                          <span class="badge search-reserved-badge" :class="inv.reserved_qty > 0 ? 'badge-success' : 'badge-secondary'">{{ inv.reserved_qty * 1 }} {{ inv.stock_uom }}</span>
+                        </td>
                         <td class="text-center">
                           <span class="badge" :class="invBadgeClass(inv)" style="font-size: 14px;">{{ inv.available_qty * 1 }} <small>{{ inv.stock_uom }}</small></span>
                         </td>

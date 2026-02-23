@@ -12,7 +12,7 @@
                         <div class="row">
                             <div class="col">
                                 <div class="alert alert-success alert-dismissible fade show text-center" role="alert">
-                                    {!! session()->get('success') !!}
+                                    {{ session()->get('success') }}
                                 </div>
                             </div>
                         </div>
@@ -21,7 +21,7 @@
                         <div class="row">
                             <div class="col">
                                 <div class="alert alert-danger alert-dismissible fade show text-center" role="alert">
-                                    {!! session()->get('error') !!}
+                                    {{ session()->get('error') }}
                                 </div>
                             </div>
                         </div>

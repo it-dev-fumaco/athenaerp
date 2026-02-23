@@ -48,6 +48,21 @@ class Bin extends Model
     }
 
     /**
+     * Update location for an item in multiple warehouses.
+     *
+     * @param  array<string, string>  $warehouseToLocation  [warehouse => location]
+     */
+    public static function updateLocationsForItem(string $itemCode, array $warehouseToLocation): void
+    {
+        foreach ($warehouseToLocation as $warehouse => $location) {
+            static::query()
+                ->where('warehouse', $warehouse)
+                ->where('item_code', $itemCode)
+                ->update(['location' => strtoupper($location)]);
+        }
+    }
+
+    /**
      * Get available quantity (actual - reserved - website_reserved).
      */
     public function getAvailableQty(): float

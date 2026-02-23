@@ -43,7 +43,7 @@
 								<div class="form-top-left">
 									<h2><strong>ERP</strong>Inventory</h2>
 									@if($errors->any())
-									{!! $errors->first() !!}
+									{{ $errors->first() }}
 									@endif
 								</div>
 								<div class="form-top-right">

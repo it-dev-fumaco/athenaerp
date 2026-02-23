@@ -40,9 +40,20 @@
 									</span>
 								</div>
 							</div>
-							<div id="accordion" class="col-12 card card-gray card-outline m-0 p-0" style="max-height: 80vh">
+							<div id="accordion" class="col-12 card card-gray card-outline m-0 p-0 search-results-card" style="max-height: 80vh">
 								<div class="card m-0">
-									<div class="row m-0 p-0">
+									{{-- Two tabs per design: "+ Advanced Filters" and "Item List" (active) --}}
+									<ul class="nav nav-tabs card-header-tabs m-0 px-2 pt-2" role="tablist" style="border-bottom: 1px solid #dee2e6;">
+										<li class="nav-item">
+											<a class="nav-link collapsed" data-toggle="collapse" data-target="#collapseOne" aria-controls="collapseOne" href="#collapseOne" style="font-size: 11pt;">
+												<i class="fa fa-plus"></i>&nbsp;Advanced Filters
+											</a>
+										</li>
+										<li class="nav-item">
+											<span class="nav-link active" style="font-size: 11pt; cursor: default;">Item List</span>
+										</li>
+									</ul>
+									<div class="row m-0 p-0 pt-2">
 										<div class="col-8">
 											@php
 												$promodiserRestriction = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
@@ -53,13 +64,7 @@
 												</p>
 											</button>
 
-											<button class="float-left btn text-left pt-0 collapsed d-block" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-												<p class="card-title mt-2 ml-0" style="font-size: 10pt !important">
-													<i class="fa fa-plus"></i>&nbsp;Advanced Filters
-												</p>
-											</button>
-
-											<p class="card-title mt-2 ml-4 d-none d-xl-inline" style="font-size: 14px;">
+											<p class="card-title mt-2 ml-0 ml-xl-2 d-none d-xl-inline" style="font-size: 14px;">
 												@if(request('searchString') && request('searchString') != '') 
 													Search result(s) for "{{ request('searchString') }}"
 												@else
@@ -116,8 +121,8 @@
 												</div><!-- modal-dialog -->
 											</div><!-- modal -->
 										</div>
-										<div class="col-4 text-right">
-											<p class="font-weight-bold m-1 font-responsive d-inline total">TOTAL: <span class="badge badge-info font-responsive total">{{ number_format($totalItems) }}</span></p>
+										<div class="col-4 text-right d-none d-xl-block">
+											{{-- TOTAL shown in results area (SearchResultsApp) to match design --}}
 										</div>
 									</div>
 									
@@ -186,9 +191,14 @@
 											</div>
 										</div>
 									</div>
-									<div class="row">
-										<div class="col-2 d-none {{ $itemGroups ? 'd-xl-block' : null }}" style="max-height: 85vh">
+									<div class="row flex-xl-nowrap">
+										<div class="col-12 col-xl-2 d-none {{ $itemGroups ? 'd-xl-block' : null }} order-1" style="max-height: 85vh">
 											<div class="card mb-3 pt-0" style="max-height: 100% !important; overflow-y: auto">
+												{{-- "Finished Filters" blue bar per design --}}
+												<div class="search-results-finished-filters-bar px-2 py-2 d-flex align-items-center justify-content-between">
+													<span class="text-white font-weight-bold" style="font-size: 11pt;"><i class="fa fa-check mr-1"></i>Finished Filters</span>
+													<i class="fa fa-chevron-down text-white" style="font-size: 10pt;"></i>
+												</div>
 												<div class="tab-content" style="min-height: 100% !important">
 													<div class="tree container"><!-- Item Group -->
 														<ul style="padding-left: 0 !important" >
@@ -250,9 +260,10 @@
 												</div>
 											</div>
 										</div> --}}
-										<div id="search-results-app">
+										<div class="col-12 col-xl-{{ $itemGroups ? '10' : '12' }} order-2">
+										<div id="search-results-app" data-total="{{ (int) $totalItems }}">
 										<div id="search-results-list">
-										<div class="col-12 col-xl-{{ $itemGroups ? '10' : '12' }}">
+										<div class="col-12">
 											<div class="container-fluid m-0">
 												@forelse ($itemList as $row)
 													<div class="mb-1"></div>
@@ -716,6 +727,7 @@
 										</div>
 										</div><!-- #search-results-list -->
 										</div><!-- #search-results-app -->
+										</div><!-- .col-12.col-xl-10 results column -->
 										<script>window.__SEARCH_RESULTS_INITIAL_HTML__ = document.getElementById('search-results-list') && document.getElementById('search-results-list').innerHTML;</script>
 									</div>
 									
@@ -731,6 +743,27 @@
 </div>
 
 <style>
+	.search-results-card {
+		border-radius: 14px !important;
+		border: 1px solid rgba(13, 58, 110, 0.1) !important;
+		box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+	}
+	.search-results-finished-filters-bar {
+		background: #001F3F;
+		border-radius: 4px 4px 0 0;
+	}
+	@media (min-width: 1200px) {
+		.row.flex-xl-nowrap {
+			flex-wrap: nowrap;
+		}
+		.row.flex-xl-nowrap .col-xl-10 {
+			min-width: 0;
+		}
+	}
+	.search-results-card .card-header,
+	.search-results-card .card-body {
+		border-radius: 0;
+	}
 	/* Avoid overflow-x: hidden on html/body so wide tables can scroll; contain only the search page content */
 	.content.p-0.m-0 {
 		overflow-x: clip;

@@ -85,7 +85,7 @@
                             @if (\Session::has('message'))
                             <div class="alert {{ (\Session::get('status') == 1) ? 'alert-success' : 'alert-danger' }} alert-dismissible text-center">
                                 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-                                <i class="fas fa-check"></i> {!! \Session::get('message') !!}
+                                <i class="fas fa-check"></i> {{ \Session::get('message') }}
                             </div>
                             @endif
                             <table class="table table-bordered table-hover m-0">

@@ -418,6 +418,8 @@ class SearchController extends Controller
             ]);
         }
 
+        \Illuminate\Support\Facades\View::share('searchResultsTotal', $totalItems);
+
         return view('search_results', compact('itemList', 'items', 'all', 'itemGroups', 'itemGroupArray', 'breadcrumbs', 'totalItems', 'root', 'allowedDepartment', 'userDepartment', 'bundledItems', 'noImgPlaceholder'));
     }
 
@@ -516,13 +518,14 @@ class SearchController extends Controller
             $img = Arr::exists($itemImages, $request->img_key) ? $itemImages[$request->img_key]->image_path : $itemImages[$dir]->image_path;
             $currentKey = Arr::exists($itemImages, $request->img_key) ? $request->img_key : $dir;
 
+            $imgWebpKey = explode('.', $img)[0].'.webp';
             $imgArr = [
                 'item_code' => $request->item_code,
                 'alt' => Str::slug(explode('.', $itemImages[$currentKey]->image_path)[0]),
-                'orig_image_path' => Storage::disk('upcloud')->path($img),
+                'orig_image_path' => Storage::disk('upcloud')->url($img),
                 'orig_path' => Storage::disk('upcloud')->exists($img) ? 1 : 0,
-                'webp_image_path' => Storage::disk('upcloud')->path(explode('.', $img)[0].'.webp'),
-                'webp_path' => Storage::disk('upcloud')->exists(explode('.', $img)[0].'.webp') ? 1 : 0,
+                'webp_image_path' => Storage::disk('upcloud')->url($imgWebpKey),
+                'webp_path' => Storage::disk('upcloud')->exists($imgWebpKey) ? 1 : 0,
                 'current_img_key' => $currentKey,
             ];
 
@@ -532,7 +535,7 @@ class SearchController extends Controller
 
     public function loadSuggestionBox(Request $request)
     {
-        $q = Item::query()
+        $itemsPaginator = Item::query()
             ->where('disabled', 0)
             ->where('has_variants', 0)
             ->search($request->search_string)
@@ -540,7 +543,7 @@ class SearchController extends Controller
             ->orderBy('tabItem.modified', 'desc')
             ->paginate(8);
 
-        $itemCodes = collect($q->items())->pluck('name');
+        $itemCodes = collect($itemsPaginator->items())->pluck('name');
 
         $bundledItems = ProductBundle::query()->whereIn('name', $itemCodes)->pluck('name')->toArray();
 
@@ -551,6 +554,6 @@ class SearchController extends Controller
 
         $noImg = $this->base64Image('/icon/no_img.png');
 
-        return view('suggestion_box', compact('q', 'imageCollection', 'bundledItems', 'noImg'));
+        return view('suggestion_box', compact('itemsPaginator', 'imageCollection', 'bundledItems', 'noImg'));
     }
 }

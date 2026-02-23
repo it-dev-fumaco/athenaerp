@@ -73,7 +73,7 @@
                         </div>
                         <div class="card-body p-1">
                             @if(session()->has('error'))
-                            <div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">{!! session()->get('error') !!}</div>
+                            <div class="callout callout-danger font-responsive text-center pr-1 pl-1 pb-3 pt-3 m-2">{{ session()->get('error') }}</div>
                             @endif
                             <div id="pending-to-receive-container"></div>
                         </div>

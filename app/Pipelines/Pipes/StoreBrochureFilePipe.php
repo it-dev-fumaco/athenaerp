@@ -3,8 +3,8 @@
 namespace App\Pipelines\Pipes;
 
 use App\Contracts\Pipeline\Pipe;
-use Illuminate\Support\Facades\Storage;
 use Closure;
+use Illuminate\Support\Facades\Storage;
 
 class StoreBrochureFilePipe implements Pipe
 {

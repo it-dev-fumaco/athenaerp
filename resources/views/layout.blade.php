@@ -526,7 +526,7 @@
 	</style>
 	@yield('style')
 	<!-- Google tag (gtag.js) -->
-	@if (env('APP_ENV') != 'local')
+	@if (config('app.env') !== 'local')
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-M1ZN4YBE16"></script>
 	<script>
 	window.dataLayer = window.dataLayer || [];
@@ -609,7 +609,14 @@
 							</div>
 						</div>
 						<div class="d-none d-lg-block col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
-							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle">
+							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle flex-row align-items-center justify-content-end w-100">
+								@if (isset($searchResultsTotal) && $activePage === 'search_results')
+								<li class="nav-item d-flex align-items-center mr-3">
+									<span class="text-white mr-1" style="font-size: 12pt;">TOTAL:</span>
+									<span class="badge px-2 py-1" style="font-size: 12pt; background: rgba(255,255,255,0.25); color: #fff;">{{ number_format($searchResultsTotal) }}</span>
+									<a href="#" class="btn btn-sm ml-1 px-2 py-1" style="background: rgba(255,255,255,0.25); color: #fff; border: none;" title="View options" aria-label="View options"><i class="fas fa-list"></i></a>
+								</li>
+								@endif
 								<li class="nav-item dropdown col-xl-10 text-right p-0" style="margin: auto">
 									@if (Auth::check())
 										<span class="d-none brochures-icon" style="position: relative;">
@@ -1195,12 +1202,13 @@
 				});
 			});
 
+			var count_brochures_timeout;
 			$(document).on('mouseenter', '.brochures-icon', function (e){
-				count_brochures();
+				clearTimeout(count_brochures_timeout);
+				count_brochures_timeout = setTimeout(function(){ if (typeof count_brochures === 'function') count_brochures(); }, 150);
 			});
 
 			@if (Auth::check())
-				count_brochures();
 				function count_brochures(){
 					$.ajax({
 						type: 'GET',
@@ -1211,6 +1219,7 @@
 						error: function(jqXHR, textStatus, errorThrown) {}
 					});
 				}
+				setTimeout(count_brochures, 200);
 			@endif
 			
 			$(document).on('click', '.tab-ctrl', function (e){

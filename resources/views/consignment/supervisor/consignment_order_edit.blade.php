@@ -51,7 +51,7 @@
                                        
                                         <div class="col-6 text-right">
                                             @php
-                                                $erpUrl = env('ERP_API_BASE_URL');
+                                                $erpUrl = config('services.erp.api_base_url');
                                                 // Omit trigger_print=1 to avoid tab closing when user cancels print dialog
                                                 $printUrl = "$erpUrl/printview?doctype=Material%20Request&name=$details->name&format=Material%20Request%20Format&no_letterhead=0&letterhead=FUMACO%20Plant%202&settings=%7B%7D&_lang=en";
                                             @endphp

@@ -84,6 +84,7 @@ class DeliveryController extends Controller
                 ->union($stockAdjustmentsQuery)
                 ->union($checkinTransactions)
                 ->orderBy('transaction_date', 'desc')
+                ->limit(200)
                 ->get();
 
             return view('tbl_athena_logs', compact('list'));

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BrochureController;
 use App\Http\Controllers\Consignment\ConsignmentBeginningInventoryController;
 use App\Http\Controllers\Consignment\ConsignmentInventoryAuditController;
 use App\Http\Controllers\Consignment\ConsignmentPromodiserController;
@@ -7,7 +8,6 @@ use App\Http\Controllers\Consignment\ConsignmentReplenishController;
 use App\Http\Controllers\Consignment\ConsignmentSalesController;
 use App\Http\Controllers\Consignment\ConsignmentStockAdjustmentController;
 use App\Http\Controllers\Consignment\ConsignmentStockTransferController;
-use App\Http\Controllers\BrochureController;
 use App\Http\Controllers\ConsignmentController;
 use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\GuideController;
