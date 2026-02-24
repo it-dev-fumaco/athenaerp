@@ -14,12 +14,12 @@ class UploadBrochureImageRequest extends ApiFormRequest
         $allowed = implode(',', ['jpg', 'jpeg', 'png', 'webp']);
 
         return [
-            'selected-file' => ['required', 'file', 'mimes:'.$allowed],
-            'project' => ['required', 'string'],
-            'filename' => ['required', 'string'],
-            'row' => ['required', 'integer'],
-            'column' => ['required', 'string'],
-            'item_image_id' => ['nullable', 'string'],
+            'selected-file' => ['required', 'file', 'mimes:'.$allowed, 'max:10240'],
+            'project' => ['required', 'string', 'max:255'],
+            'filename' => ['required', 'string', 'max:255'],
+            'row' => ['required', 'numeric', 'min:1'],
+            'column' => ['required', 'string', 'max:255'],
+            'item_image_id' => ['nullable', 'string', 'max:255'],
         ];
     }
 
@@ -28,6 +28,7 @@ class UploadBrochureImageRequest extends ApiFormRequest
         return [
             'selected-file.required' => 'No file selected.',
             'selected-file.mimes' => 'Sorry, only .jpeg, .jpg, .png and .webp files are allowed.',
+            'selected-file.max' => 'The image may not be greater than 10 MB.',
         ];
     }
 }

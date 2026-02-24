@@ -112,17 +112,27 @@ class BrochureController extends Controller
             ini_set('max_execution_time', '300');
             $projectParam = trim((string) $project);
             $filename = trim((string) $filename);
-            if (SafePath::pathContainsTraversal($projectParam) || SafePath::pathContainsTraversal($filename) || ! SafePath::pathUnderPrefix('item-brochures/'.$projectParam.'/'.$filename, 'item-brochures')) {
+            $brochuresRelativePath = 'brochures/'.strtoupper($projectParam).'/'.$filename;
+            if (SafePath::pathContainsTraversal($projectParam) || SafePath::pathContainsTraversal($filename) || ! SafePath::pathUnderPrefix($brochuresRelativePath, 'brochures')) {
                 return redirect('brochure')->with('error', 'Invalid path.');
             }
 
-            $file = Storage::disk('upcloud')->path('item-brochures/'.$projectParam.'/'.$filename);
+            $upcloudDisk = Storage::disk('upcloud');
+            $storageExists = $upcloudDisk->exists($brochuresRelativePath);
 
-            if (! file_exists($file)) {
+            if (! $storageExists) {
                 return redirect('brochure')->with('error', 'File '.$filename.' does not exist.');
             }
 
-            $fileContents = $this->brochureExcelService->readFile($file);
+            $tempPath = tempnam(sys_get_temp_dir(), 'brochure_');
+            file_put_contents($tempPath, $upcloudDisk->get($brochuresRelativePath));
+            try {
+                $fileContents = $this->brochureExcelService->readFile($tempPath);
+            } finally {
+                if (is_file($tempPath)) {
+                    @unlink($tempPath);
+                }
+            }
             $content = collect($fileContents['content'])->map(function ($row) {
                 if ($row['id'] && collect($row['attributes'])->pluck('attribute_value')->filter()->values()->all()) {
                     return $row;
@@ -135,15 +145,16 @@ class BrochureController extends Controller
             $tableOfContents = $fileContents['table_of_contents'];
 
             if (isset($request->pdf) && $request->pdf) {
-                $storage = Storage::disk('upcloud')->files('item-brochures/'.strtoupper($project));
+                $storage = Storage::disk('upcloud')->files('brochures/'.strtoupper($project));
                 $series = null;
                 if ($storage) {
                     $series = count($storage) > 1 ? count($storage) : 1;
                     $series = '-'.(string) $series;
                 }
                 $newFilename = Str::slug($project, '-').'-'.now()->format('Y-m-d').$series;
+                $isStandard = false;
                 $content = $this->brochurePdfService->resolveBrochureImagePathsForPdf($content, $project, false);
-                $pdf = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename'));
+                $pdf = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename', 'isStandard'));
 
                 return $pdf->stream($newFilename.'.pdf');
             }
@@ -164,21 +175,42 @@ class BrochureController extends Controller
 
             $filename = $this->brochureImageService->storeSpreadsheetImage($file, $folder);
 
-            $excelPath = Storage::disk('upcloud')->path('item-brochures/'.strtoupper($folder).'/'.$dir);
-            if (! file_exists($excelPath)) {
+            $brochuresRelativePath = 'brochures/'.strtoupper($folder).'/'.$dir;
+            if (SafePath::pathContainsTraversal($folder) || SafePath::pathContainsTraversal($dir) || ! SafePath::pathUnderPrefix($brochuresRelativePath, 'brochures')) {
+                DB::rollBack();
+
+                return ApiResponse::failure('Invalid path.');
+            }
+            $upcloudDisk = Storage::disk('upcloud');
+            if (! $upcloudDisk->exists($brochuresRelativePath)) {
                 DB::rollBack();
 
                 return ApiResponse::failure('Brochure file not found. Save the brochure first.');
             }
 
-            $column = $this->brochureExcelService->findColumnIndexByHeader($excelPath, $request->column);
-            if ($column === null) {
-                DB::rollBack();
+            $tempPath = tempnam(sys_get_temp_dir(), 'brochure_');
+            try {
+                file_put_contents($tempPath, $upcloudDisk->get($brochuresRelativePath));
 
-                return ApiResponse::failure('Column not found in spreadsheet.');
+                $this->brochureExcelService->ensureImageColumnsExist($tempPath);
+
+                $column = $this->brochureExcelService->findColumnIndexByHeader($tempPath, $request->column);
+                if ($column === null) {
+                    DB::rollBack();
+
+                    return ApiResponse::failure(
+                        'Column "'.$request->column.'" not found. Add "Image 1", "Image 2", "Image 3" in row 4 of the Excel if missing.'
+                    );
+                }
+
+                $this->brochureExcelService->setCellValueAndSave($tempPath, $column, (int) $request->row, $filename);
+
+                $upcloudDisk->put($brochuresRelativePath, file_get_contents($tempPath));
+            } finally {
+                if (is_file($tempPath)) {
+                    @unlink($tempPath);
+                }
             }
-
-            $this->brochureExcelService->setCellValueAndSave($excelPath, $column, (int) $request->row, $filename);
 
             $transactionDate = now()->toDateTimeString();
             ProductBrochureLog::insert([
@@ -272,27 +304,49 @@ class BrochureController extends Controller
                 return ApiResponse::success('Image removed.');
             }
 
-            $folder = $request->project;
-            $dir = $request->filename;
-            $loc = $folder && $dir ? strtoupper($folder).'/'.$dir : null;
+            $folder = $request->project ? trim((string) $request->project) : null;
+            $dir = $request->filename ? trim((string) $request->filename) : null;
+            $column = $request->column ? trim((string) $request->column) : null;
+            $row = $request->row !== null && $request->row !== '' ? (int) $request->row : null;
 
-            if ($loc) {
-                if (SafePath::pathContainsTraversal($folder) || SafePath::pathContainsTraversal($dir) || ! SafePath::pathUnderPrefix('item-brochures/'.$loc, 'item-brochures')) {
-                    return ApiResponse::failure('Invalid path.');
+            if (! $folder || ! $dir || ! $column || $row === null || $row < 1) {
+                return ApiResponse::failure('Project, filename, column and row are required to remove an image.');
+            }
+
+            $brochuresRelativePath = 'brochures/'.strtoupper($folder).'/'.$dir;
+            if (SafePath::pathContainsTraversal($folder) || SafePath::pathContainsTraversal($dir) || ! SafePath::pathUnderPrefix($brochuresRelativePath, 'brochures')) {
+                return ApiResponse::failure('Invalid path.');
+            }
+
+            $upcloudDisk = Storage::disk('upcloud');
+            if (! $upcloudDisk->exists($brochuresRelativePath)) {
+                return ApiResponse::failure('Brochure file not found.');
+            }
+
+            $tempPath = tempnam(sys_get_temp_dir(), 'brochure_');
+            try {
+                file_put_contents($tempPath, $upcloudDisk->get($brochuresRelativePath));
+                $this->brochureExcelService->ensureImageColumnsExist($tempPath);
+                $columnIndex = $this->brochureExcelService->findColumnIndexByHeader($tempPath, $column);
+                if ($columnIndex === null) {
+                    return ApiResponse::failure('Column "'.$column.'" not found in the spreadsheet.');
                 }
-                $excelPath = Storage::disk('upcloud')->path('item-brochures/'.$loc);
-                if (file_exists($excelPath)) {
-                    $column = $this->brochureExcelService->findColumnIndexByHeader($excelPath, $request->column);
-                    if ($column !== null) {
-                        $this->brochureExcelService->setCellValueAndSave($excelPath, $column, (int) $request->row, null);
-                    }
-                    DB::commit();
+                $this->brochureExcelService->setCellValueAndSave($tempPath, $columnIndex, $row, null);
+                $upcloudDisk->put($brochuresRelativePath, file_get_contents($tempPath));
+            } finally {
+                if (is_file($tempPath)) {
+                    @unlink($tempPath);
                 }
             }
 
-            return ApiResponse::success('Image removed.');
+            DB::commit();
+
+            return ApiResponse::success('Image removed.', [
+                'item_image_id' => $request->item_image_id,
+            ]);
         } catch (Exception $e) {
             DB::rollBack();
+            Log::warning('Brochure remove image failed: '.$e->getMessage());
 
             return ApiResponse::failure('Something went wrong. Please try again.');
         }

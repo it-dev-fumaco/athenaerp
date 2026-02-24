@@ -17,25 +17,29 @@ class BrochureImageService
 
     /**
      * Store an uploaded image for spreadsheet brochure (no WebP conversion).
-     * Ensures directory exists and moves the file. Returns the stored filename.
+     * Stores to upcloud (S3 or local) so the PDF can load it. Returns the stored filename.
      *
-     * @throws RuntimeException when directory creation or file move fails
+     * @throws RuntimeException when storage fails
      */
     public function storeSpreadsheetImage(UploadedFile $file, string $folder): string
     {
         $filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)
             .'.'.$file->getClientOriginalExtension();
-        $destinationPath = Storage::disk(self::DISK)->path('item-brochures/'.strtoupper($folder));
+        $key = 'item-brochures/'.strtoupper($folder).'/'.$filename;
 
-        if (! is_dir($destinationPath)) {
-            if (! @mkdir($destinationPath, 0755, true)) {
-                throw new RuntimeException('Failed to create brochure directory: '.$destinationPath);
-            }
+        $stream = fopen($file->getRealPath(), 'r');
+        if ($stream === false) {
+            throw new RuntimeException('Failed to open uploaded file.');
         }
-
-        $moved = $file->move($destinationPath, $filename);
-        if (! $moved) {
-            throw new RuntimeException('Failed to move uploaded file to brochure folder.');
+        try {
+            $success = Storage::disk(self::DISK)->put($key, $stream);
+            if (! $success) {
+                throw new RuntimeException('Failed to store brochure image.');
+            }
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
         }
 
         return $filename;

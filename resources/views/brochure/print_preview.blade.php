@@ -1,204 +1,205 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
-        <title>Product Brochure Preview</title>
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <link rel="stylesheet" href="{{ asset('/updated/custom/font.css') }}">
-        <link rel="stylesheet" href="{{ asset('/updated/icons/font-awesome.min.css') }}">
-        {{--  <!-- Font Awesome Icons -->  --}}
-        <link rel="stylesheet" href="{{ asset('/updated/plugins/fontawesome-free/css/all.min.css') }}">
-        {{--  <!-- Theme style -->  --}}
-        <link rel="stylesheet" href="{{ asset('/updated/dist/css/adminlte.min.css') }}">
-        {{-- <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap"> --}}
-        <style>
-            html {
-                scroll-behavior: smooth;
-            }
-            body {
+    <title>Product Brochure Preview</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="stylesheet" href="{{ asset('/updated/custom/font.css') }}">
+    <link rel="stylesheet" href="{{ asset('/updated/icons/font-awesome.min.css') }}">
+    {{--  <!-- Font Awesome Icons -->  --}}
+    <link rel="stylesheet" href="{{ asset('/updated/plugins/fontawesome-free/css/all.min.css') }}">
+    {{--  <!-- Theme style -->  --}}
+    <link rel="stylesheet" href="{{ asset('/updated/dist/css/adminlte.min.css') }}">
+    {{-- <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap"> --}}
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        * {
+            /* font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif; */
+        }
+
+        @font-face {
+            font-family: 'Poppins';
+            src: url({{ asset('font/Poppins/Poppins-Regular.ttf') }});
+        }
+
+        *:not(i):not(.fa) {
+            font-family: 'Poppins' !important;
+        }
+
+        #table-of-contents-sidebar {
+            position: fixed;
+            width: 280px;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            background: #fff;
+            border-right: 1px solid #abb2b9;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        #toc-links {
+            margin: 10px;
+            font-size: 10pt;
+        }
+
+        #toc-links a {
+            text-decoration: none;
+            cursor: pointer;
+            display: block;
+            padding: 6px 10px;
+            color: #4b6ea6;
+            border-bottom: 1px solid#d5d8dc;
+        }
+
+        #toc-links a:hover {
+            background-color: #f4f6f6;
+        }
+
+        #top-btn-container {
+            position: fixed;
+            right: 25px;
+            top: 40px;
+        }
+
+        #bottom-btn-container {
+            position: fixed;
+            right: 25px;
+            bottom: 40px;
+        }
+
+        .btn-ctrl {
+            background-color: #f1f1f1;
+            width: 50px;
+            height: 50px;
+            margin: 10px;
+            padding: 5px 15px 5px 15px;
+            border-radius: 50%;
+            font-size: 20px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.25), 0 0 10px rgba(0, 0, 0, 0.22);
+            color: #446eac;
+        }
+
+        .btn-ctrl:hover {
+            background-color: #2980b9;
+            transition: .4s;
+            color: #f1f1f1;
+        }
+
+        .btn-ctrl:focus {
+            outline: none !important;
+            -webkit-box-shadow: none !important;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.25), 0 0 10px rgba(0, 0, 0, 0.22) !important;
+        }
+
+        .upload-image-placeholder {
+            border: 2px dashed #d5d8dc;
+            width: 230px;
+            height: 230px;
+            border-radius: 13px;
+            display: block;
+        }
+
+        .upload-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: block;
+            width: 230px;
+            height: 230px;
+            top: 0;
+            left: 0;
+        }
+
+        .custom-upload-btn {
+            border: 1px solid transparent;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            background-color: transparent;
+            cursor: pointer;
+        }
+
+        .upload-btn-wrapper i {
+            display: block;
+            font-size: 100px;
+            color: #d5d8dc;
+            opacity: 50%;
+            margin-top: 40px !important;
+        }
+
+        .upload-btn-wrapper span {
+            display: block;
+            font-size: 18px;
+            color: #abb2b9;
+        }
+
+        .upload-btn-wrapper input[type=file] {
+            font-size: 200px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            cursor: pointer;
+            opacity: 0;
+        }
+
+        .upload-image-placeholder.dragover {
+            border-color: #abb2b9;
+            color: #abb2b9;
+        }
+
+        .img-cont {
+            position: relative;
+            width: 230px;
+        }
+
+        .custom-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0);
+            transition: background 0.5s ease;
+        }
+
+        .img-cont:hover .custom-overlay {
+            display: block;
+            background: rgba(196, 196, 196, 0.385);
+        }
+
+        .custom-hover-button {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            opacity: 0;
+            transition: opacity .35s ease;
+        }
+
+        .custom-hover-button button {
+            padding: 5px 8px !important;
+            font-size: 12px;
+        }
+
+        .img-cont:hover .custom-hover-button {
+            opacity: 1;
+        }
+
+        @media screen {
+            .page-container * {
+                z-index: 0;
                 margin: 0 !important;
                 padding: 0 !important;
-            }
-
-            * {
-                /* font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif; */
-            }
-
-            @font-face {
-                font-family: 'Poppins';
-                src: url({{ asset('font/Poppins/Poppins-Regular.ttf') }});
-            }
-
-            *:not(i):not(.fa) {
-                font-family: 'Poppins' !important;
-            }
-
-            #table-of-contents-sidebar {
-                position: fixed;
-                width: 280px;
-                top: 0;
-                left: 0;
-                bottom: 0;
-                background: #fff;
-                border-right: 1px solid #abb2b9;
-                overflow-y: auto;
-                overflow-x: hidden;
-            }
-
-            #toc-links {
-                margin: 10px;
-                font-size: 10pt;
-            }
-
-            #toc-links a {
-                text-decoration: none;
-                cursor: pointer;
-                display: block;
-                padding: 6px 10px;
-                color: #4b6ea6;
-                border-bottom: 1px solid #d5d8dc;
-            }
-
-            #toc-links a:hover {
-                background-color: #f4f6f6;
-            }
-
-            #top-btn-container {
-                position: fixed;
-                right: 25px;
-                top: 40px;
-            }
-
-            #bottom-btn-container {
-                position: fixed;
-                right: 25px;
-                bottom: 40px;
-            }
-
-            .btn-ctrl {
-                background-color: #f1f1f1;
-                width: 50px;
-                height: 50px;
-                margin: 10px;
-                padding: 5px 15px 5px 15px;
-                border-radius: 50%;
-                font-size: 20px;
-                border: none;
-                cursor: pointer;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.25), 0 0 10px rgba(0, 0, 0, 0.22);
-                color: #446eac;
-            }
-
-            .btn-ctrl:hover {
-                background-color: #2980b9;
-                transition: .4s;
-                color: #f1f1f1;
-            }
-
-            .btn-ctrl:focus {
-                outline: none !important;
-                -webkit-box-shadow: none !important;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.25), 0 0 10px rgba(0, 0, 0, 0.22) !important;
-            }
-
-            .upload-image-placeholder {
-                border: 2px dashed #d5d8dc;
-                width: 230px;
-                height: 230px;
-                border-radius: 13px;
-                display: block;
-            }
-
-            .upload-btn-wrapper {
-                position: relative;
-                overflow: hidden;
-                display: block;
-                width: 230px;
-                height: 230px;
-                top: 0;
-                left: 0;
-            }
-
-            .custom-upload-btn {
-                border: 1px solid transparent;
-                width: 100%;
-                height: 100%;
-                text-align: center;
-                background-color: transparent;
-                cursor: pointer;
-            }
-
-            .upload-btn-wrapper i {
-                display: block;
-                font-size: 100px;
-                color: #d5d8dc;
-                opacity: 50%;
-                margin-top: 40px !important;
-            }
-
-            .upload-btn-wrapper span {
-                display: block;
-                font-size: 18px;
-                color: #abb2b9;
-            }
-
-            .upload-btn-wrapper input[type=file] {
-                font-size: 200px;
-                position: absolute;
-                left: 0;
-                top: 0;
-                cursor: pointer;
-                opacity: 0;
-            }
-
-            .upload-image-placeholder.dragover {
-                border-color: #abb2b9;
-                color: #abb2b9;
-            }
-
-            .img-cont {
-                position: relative;
-                width: 230px;
-            }
-
-            .custom-overlay {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0);
-                transition: background 0.5s ease;
-            }
-
-            .img-cont:hover .custom-overlay {
-                display: block;
-                background: rgba(196, 196, 196, 0.385);
-            }
-
-            .custom-hover-button {
-                position: absolute;
-                right: 10px;
-                top: 10px;
-                opacity: 0;
-                transition: opacity .35s ease;
-            }
-
-            .custom-hover-button button {
-                padding: 5px 8px !important;
-                font-size: 12px;
-            }
-
-            .img-cont:hover .custom-hover-button {
-                opacity: 1;
-            }
-
-            @media screen {
-                .page-container * {
-                    z-index: 0;
-                }
             }
 
             .page-container {
@@ -293,42 +294,8 @@
 
         @media print {
             * {
-                /* font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif; */
-            }
-            @font-face { font-family: 'Poppins'; src: url({{ asset('font/Poppins/Poppins-Regular.ttf') }}); }
-            *:not(i):not(.fa){
-                font-family: 'Poppins' !important;
-            }
-            #table-of-contents-sidebar {
-                position: fixed;
-                width: min(280px, 92vw);
-                max-width: 280px;
-                top:0;
-                left: 0;
-                bottom: 0;
-                background: #fff;
-                border-right: 1px solid  #abb2b9 ;
-                overflow-y: auto;
-                overflow-x: auto;
-            }
-            @media (max-width: 767.98px) {
-                #table-of-contents-sidebar { width: 100%; max-width: 100%; }
-                .page-container, #print-area { margin-left: 0 !important; }
-            }
-            #toc-links {
-                margin: 10px;
-                font-size: 10pt;
-            }
-            #toc-links a {
-                text-decoration: none;
-                cursor: pointer;
-                display: block;
-                padding: 6px 10px;
-                color:   #4b6ea6  ;
-                border-bottom: 1px solid#d5d8dc;
-            }
-            #toc-links a:hover {
-                background-color:#f4f6f6;
+                margin: 0 !important;
+                padding: 0 !important;
             }
 
             .d-print-none {
@@ -339,111 +306,6 @@
                 display: block;
             }
 
-            .btn-ctrl{
-                background-color: #f1f1f1;
-                width: 50px;
-                height: 50px;
-                margin: 10px;
-                padding: 5px 15px 5px 15px;
-                border-radius: 50%;
-                font-size: 20px;
-                border: none;
-                cursor: pointer;
-                box-shadow: 0 0 10px rgba(0,0,0,0.25), 0 0 10px rgba(0,0,0,0.22);
-                color: #446eac;
-            }
-            .btn-ctrl:hover{
-                background-color:   #2980b9  ;
-                transition: .4s;
-                color: #f1f1f1;
-            }
-            .btn-ctrl:focus{
-                outline: none !important;
-                -webkit-box-shadow: none !important;
-                box-shadow: 0 0 10px rgba(0,0,0,0.25), 0 0 10px rgba(0,0,0,0.22) !important;
-            }
-            .upload-image-placeholder {
-                border: 2px dashed #d5d8dc;
-                width: 100%;
-                max-width: 230px;
-                height: 230px;
-                border-radius: 13px;
-                display: block;
-            }
-            .upload-btn-wrapper {
-                position: relative;
-                overflow: hidden;
-                display: block;
-                width: 100%;
-                max-width: 230px;
-                height: 230px;
-                top: 0;
-                left: 0;
-            }
-            .custom-upload-btn {
-                border: 1px solid transparent;
-                width: 100%;
-                height: 100%;
-                text-align: center;
-                background-color: transparent;
-                cursor: pointer;
-            }
-            .upload-btn-wrapper i {
-                display: block;
-                font-size: 100px;
-                color: #d5d8dc;
-                opacity: 50%;
-                margin-top: 40px !important;
-            }
-            .upload-btn-wrapper span {
-                display: block;
-                font-size: 18px;
-                color:  #abb2b9 ;
-            }
-            .upload-btn-wrapper input[type=file] {
-                font-size: 200px;
-                position: absolute;
-                left: 0;
-                top: 0;
-                cursor: pointer;
-                opacity: 0;
-            }
-            .upload-image-placeholder.dragover{
-                border-color:  #abb2b9;
-                color:  #abb2b9;
-            }
-            .img-cont {
-                position: relative;
-                width: 100%;
-                max-width: 230px;
-            }
-            .custom-overlay {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0);
-                transition: background 0.5s ease;
-            }
-            .img-cont:hover .custom-overlay {
-                display: block;
-                background: rgba(196, 196, 196, 0.385);
-            }
-            .custom-hover-button {
-                position: absolute;
-                right: 10px;
-                top: 10px;
-                opacity: 0;
-                transition: opacity .35s ease;
-            }
-            .custom-hover-button button {
-                padding: 5px 8px !important;
-                font-size: 12px;
-            }
-            .img-cont:hover .custom-hover-button {
-                opacity: 1;
-            }
             .print-page {
                 display: block;
                 width: 12.3in !important;
@@ -491,7 +353,7 @@
             @php
                 $a = 1;
             @endphp
-            @foreach ($table_of_contents as $index => $toc)
+            @foreach ($tableOfContents as $index => $toc)
                 @if (!$toc['id'] && !$toc['text'])
                     @continue
                 @endif
@@ -499,146 +361,142 @@
             @endforeach
         </div>
     </div>
-    <h3 style="text-align: center; font-weight: bolder; text-transform: uppercase; margin: 15px 0 8px 0 !important; letter-spacing: 0.5px; font-size: 20px;">Product Brochure</h3>
-    <div id="toc-links">
-        @php
-            $a = 1;
-        @endphp
-        @foreach ($tableOfContents as $index => $toc)
-            @if (!$toc['id'] && !$toc['text'])
+
+    <div id="top-btn-container">
+        <a target="_blank" href="/preview/{{ trim(strtoupper($project)) }}/{{ $filename }}?pdf=1" class="btn-ctrl"
+            style="display: block; padding-top: 10px;"><i class="fas fa-print"></i></a>
+    </div>
+    <div id="bottom-btn-container">
+        <button class="btn-ctrl" id="download-btn" style="display: block;" data-file="{{ $filename }}"
+            data-proj="{{ trim(strtoupper($project)) }}"><i class="fa fa-download"></i></button>
+    </div>
+
+    <div id="print-area">
+        @foreach ($content as $r => $row)
+            @if (!collect($row['attrib'])->filter()->values()->all())
                 @continue
             @endif
-            <a href="#{{ $toc['id'] }}">{{ $a++ .'. ' . $toc['text'] }}</a>
-        @endforeach
-    </div>
-</div>
-
-<div id="top-btn-container">
-    <a target="_blank" href="/preview/{{ trim(strtoupper($project)) }}/{{ $filename }}?pdf=1" class="btn-ctrl" style="display: block; padding-top: 10px;"><i class="fas fa-print"></i></a>
-</div>
-<div id="bottom-btn-container">
-    <button class="btn-ctrl" id="download-btn" style="display: block;" data-file="{{ $filename }}" data-proj="{{ trim(strtoupper($project)) }}"><i class="fa fa-download"></i></button>
-</div>
-
-<div id="print-area">
-    @foreach ($content as $r => $row)
-        @if (!collect($row['attrib'])->filter()->values()->all())
-            @continue
-        @endif
-        <div class="page-container d-print-none" id="{{ $row['id'] }}" style="margin-left: 280px !important; padding: 15px 0 15px 0 !important; background: #E6E6E6;">
-            <div class="pdf-page size-a4" style="margin-left: auto !important; margin-right: auto !important;">
-                <div class="pdf-content">
-                    <div class="pdf-body">
-                        <div style="disply: block; clear: both; color: #000">
-                            <div style="width: 44%; float: left; padding: 2px !important;">
-                                <img src="{{ Storage::disk('upcloud')->url('fumaco_logo.png') }}" width="230">
+            <div class="page-container d-print-none" id="{{ $row['id'] }}"
+                style="margin-left: 280px !important; padding: 15px 0 15px 0 !important; background: #E6E6E6;">
+                <div class="pdf-page size-a4" style="margin-left: auto !important; margin-right: auto !important;">
+                    <div class="pdf-content">
+                        <div class="pdf-body">
+                            <div style="disply: block; clear: both; color: #000">
+                                <div style="width: 44%; float: left; padding: 2px !important;">
+                                    <img src="{{ asset('/storage/fumaco_logo.png') }}" width="230">
+                                </div>
+                                <div style="width: 54%; float:left; text-transform: uppercase; font-size: 11pt;">
+                                    <p>PROJECT: <b>{{ $row['project'] }}</b></p>
+                                    <p style="margin-top: 15px !important;">LUMINAIRE SPECIFICATION AND INFORMATION</p>
+                                </div>
                             </div>
-                            <div style="width: 54%; float:left; text-transform: uppercase; font-size: 11pt;">
-                                <p>PROJECT: <b>{{ $row['project'] }}</b></p>
-                                <p style="margin-top: 15px !important;">LUMINAIRE SPECIFICATION AND INFORMATION</p>
+                            <div style="display: block; padding-top: 5px !important; clear: both;">
+                                <div style="border: 2px solid;">
+                                    <p
+                                        style="font-size: 14pt; padding: 3px !important; font-weight: bolder; color:#E67E22;">
+                                        {{ $row['description'] }}</p>
+                                </div>
                             </div>
-                        </div>
-                        <div style="display: block; padding-top: 5px !important; clear: both;">
-                            <div style="border: 2px solid;">
-                                <p style="font-size: 14pt; padding: 3px !important; font-weight: bolder; color:#E67E22;">{{ $row['item_name'] }}</p>
-                            </div>
-                        </div>
-                        <div style="display: block; padding-top: 5px !important; clear: both; margin-left: -2px !important;">
-                            <div style="width: 44%; float: left; padding: 2px !important;">
-                                @php
+                            <div
+                                style="display: block; padding-top: 5px !important; clear: both; margin-left: -2px !important;">
+                                <div style="width: 44%; float: left; padding: 2px !important;">
+                                    @php
                                     $img1Actual = $img1Temp = null;
                                     $img1Src = $img2Src = $img3Src = '#';
-                                    if (isset($row['images']['image1']) && $row['images']['image1']) {
+                                        if (isset($row['images']['image1']) && $row['images']['image1']) {
                                         $img1Actual = null;
                                         $img1Temp = 'd-none';
                                         $img1Src = Storage::disk('upcloud')->url('item-brochures/' . strtoupper($row['project'] ?? '') . '/' . $row['images']['image1']);
-                                    } else {
+                                        } else {
                                         $img1Actual = 'd-none';
                                         $img1Temp = null;
-                                    }
+                                        }
 
                                     $img2Actual = $img2Temp = null;
-                                    if (isset($row['images']['image2']) && $row['images']['image2']) {
+                                        if (isset($row['images']['image2']) && $row['images']['image2']) {
                                         $img2Actual = null;
                                         $img2Temp = 'd-none';
                                         $img2Src = Storage::disk('upcloud')->url('item-brochures/' . strtoupper($row['project'] ?? '') . '/' . $row['images']['image2']);
-                                    } else {
+                                        } else {
                                         $img2Actual = 'd-none';
                                         $img2Temp = null;
-                                    }
+                                        }
 
                                     $img3Actual = $img3Temp = null;
-                                    if (isset($row['images']['image3']) && $row['images']['image3']) {
+                                        if (isset($row['images']['image3']) && $row['images']['image3']) {
                                         $img3Actual = null;
                                         $img3Temp = 'd-none';
                                         $img3Src = Storage::disk('upcloud')->url('item-brochures/' . strtoupper($row['project'] ?? '') . '/' . $row['images']['image3']);
-                                    } else {
+                                        } else {
                                         $img3Actual = 'd-none';
                                         $img3Temp = null;
-                                    }
-                                @endphp
-                                {{-- 1 --}}
+                                        }
+                                    @endphp
+                                    {{-- 1 --}}
                                 <div class="img-cont {{ $img1Actual }}" style="margin-bottom: 20px !important;" id="item-{{ $r }}-01-actual">
                                     <img src="{{ $img1Src }}" width="230" style="border: 2px solid;" id="item-{{ $r }}-01-image">
-                                    <div class="custom-overlay"></div>
-                                    <div class="custom-hover-button">
+                                        <div class="custom-overlay"></div>
+                                        <div class="custom-hover-button">
                                         <button type="button" class="btn btn-danger remove-image-btn" data-col="Image 1" data-row="{{ $row['row'] }}" data-item-image-id="item-{{ $r }}-01">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="upload-image-placeholder {{ $img1Temp }}" id="item-{{ $r }}-01" style="margin-bottom: 20px !important;">
-                                    <div class="upload-btn-wrapper">
-                                        <div class="custom-upload-btn">
-                                            <i class="far fa-image"></i>
-                                            <span>(230 x 230 px)<br>Add Image 1</span>
+                                                <i class="fas fa-trash"></i>
+                                            </button>
                                         </div>
                                     </div>
-                                </div>
-                                {{-- 2 --}}
+                                <div class="upload-image-placeholder {{ $img1Temp }}" id="item-{{ $r }}-01" style="margin-bottom: 20px !important;">
+                                        <div class="upload-btn-wrapper">
+                                            <input type="file" class="d-none" accept=".jpg,.jpeg,.png,.webp" data-col="Image 1" data-row="{{ $row['row'] }}" data-item-image-id="item-{{ $r }}-01" data-item-code="{{ $row['item_code'] ?? '' }}" data-image-idx="1">
+                                            <div class="custom-upload-btn">
+                                                <i class="far fa-image"></i>
+                                                <span>(230 x 230 px)<br>Add Image 1</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {{-- 2 --}}
                                 <div class="img-cont {{ $img2Actual }}" style="margin-bottom: 20px !important;" id="item-{{ $r }}-02-actual">
                                     <img src="{{ $img2Src }}" width="230" style="border: 2px solid;" id="item-{{ $r }}-02-image">
-                                    <div class="custom-overlay"></div>
-                                    <div class="custom-hover-button">
+                                        <div class="custom-overlay"></div>
+                                        <div class="custom-hover-button">
                                         <button type="button" class="btn btn-danger remove-image-btn" data-col="Image 2" data-row="{{ $row['row'] }}" data-item-image-id="item-{{ $r }}-02">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="upload-image-placeholder {{ $img2Temp }}" id="item-{{ $r }}-02" style="margin-bottom: 20px !important;">
-                                    <div class="upload-btn-wrapper">
-                                        <div class="custom-upload-btn">
-                                            <i class="far fa-image"></i>
-                                            <span>(230 x 230 px)<br>Add Image 2</span>
+                                                <i class="fas fa-trash"></i>
+                                            </button>
                                         </div>
                                     </div>
-                                </div>
-                                {{-- 3 --}}
+                                <div class="upload-image-placeholder {{ $img2Temp }}" id="item-{{ $r }}-02" style="margin-bottom: 20px !important;">
+                                        <div class="upload-btn-wrapper">
+                                            <input type="file" class="d-none" accept=".jpg,.jpeg,.png,.webp" data-col="Image 2" data-row="{{ $row['row'] }}" data-item-image-id="item-{{ $r }}-02" data-item-code="{{ $row['item_code'] ?? '' }}" data-image-idx="2">
+                                            <div class="custom-upload-btn">
+                                                <i class="far fa-image"></i>
+                                                <span>(230 x 230 px)<br>Add Image 2</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {{-- 3 --}}
                                 <div class="img-cont {{ $img3Actual }}" style="margin-bottom: 20px !important;" id="item-{{ $r }}-03-actual">
                                     <img src="{{ $img3Src }}" width="230" style="border: 2px solid;" id="item-{{ $r }}-03-image">
-                                    <div class="custom-overlay"></div>
-                                    <div class="custom-hover-button">
+                                        <div class="custom-overlay"></div>
+                                        <div class="custom-hover-button">
                                         <button type="button" class="btn btn-danger remove-image-btn" data-col="Image 3" data-row="{{ $row['row'] }}" data-item-image-id="item-{{ $r }}-03">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
                                 <div class="upload-image-placeholder {{ $img3Temp }}" id="item-{{ $r }}-03" style="margin-bottom: 20px !important;">
-                                    <div class="upload-btn-wrapper">
-                                        <div class="custom-upload-btn">
-                                            <i class="far fa-image"></i>
-                                            <span>(230 x 230 px)<br>Add Image 3</span>
+                                        <div class="upload-btn-wrapper">
+                                            <input type="file" class="d-none" accept=".jpg,.jpeg,.png,.webp" data-col="Image 3" data-row="{{ $row['row'] }}" data-item-image-id="item-{{ $r }}-03" data-item-code="{{ $row['item_code'] ?? '' }}" data-image-idx="3">
+                                            <div class="custom-upload-btn">
+                                                <i class="far fa-image"></i>
+                                                <span>(230 x 230 px)<br>Add Image 3</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
                                 <div style="width: 54%; float:left; color: #000">
                                     <p style="font-weight: bolder;">Fitting Type / Reference:</p>
                                     <p
                                         style="font-size: 22px; margin-top: 10px !important; font-weight: bolder; color:#E67E22;">
                                         {{ $row['reference'] }}</p>
                                     <p style="font-weight: bolder; margin-top: 10px !important;">Description:</p>
-                                    <p style="font-size: 16px; margin-top: 10px !important;">{{ $row['description'] }}
+                                    <p style="font-size: 16px; margin-top: 10px !important;">{{ $row['item_name'] }}
                                     </p>
                                     @if ($row['location'])
                                         <p style="font-weight: bolder; margin-top: 10px !important;">Location:</p>
@@ -668,28 +526,35 @@
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="pdf-footer">
-                    <div class="pdf-footer-company-logo">
-                        <img src="{{ Storage::disk('upcloud')->url('fumaco_logo.png') }}" width="155">
-                    </div>
-                    <div class="pdf-footer-company-website">www.fumaco.com</div>
-                    <div class="pdf-footer-contacts">
-                        <p>Plant: 35 Pleasant View Drive, Bagbaguin, Caloocan City</p>
-                        <p>Sales & Showroom: 420 Ortigas Ave. cor. Xavier St., Greenhills, San Juan City</p>
-                        <p>Tel. No.: (632) 721-0362 to 66</p>
-                        <p>Fax No.: (632) 721-0361</p>
-                        <p>Email Address: sales@fumaco.com</p>
+                    <div class="pdf-footer">
+                        <div class="pdf-footer-company-logo">
+                            <img src="{{ asset('/storage/fumaco_logo.png') }}" width="155">
+                        </div>
+                        <div class="pdf-footer-company-website">www.fumaco.com</div>
+                        <div class="pdf-footer-contacts">
+                            <p>Plant: 35 Pleasant View Drive, Bagbaguin, Caloocan City</p>
+                            <p>Sales & Showroom: 420 Ortigas Ave. cor. Xavier St., Greenhills, San Juan City</p>
+                            <p>Tel. No.: (632) 721-0362 to 66</p>
+                            <p>Fax No.: (632) 721-0361</p>
+                            <p>Email Address: sales@fumaco.com</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <!-- Print Page -->
-        <div class="print-container print-page">
-            <div style="display: block">
-                <div class="left-container">
-                    <div class="brochure-print-block brochure-print-logo" style="width: 430px !important; max-width: 100%;">
-                        <img src="{{ Storage::disk('upcloud')->url('fumaco_logo.png') }}" width="100%">
+            <!-- Print Page -->
+            <div class="print-container print-page">
+                <div style="display: block">
+                    <div class="left-container">
+                        <div style="width: 430px !important;">
+                            <img src="{{ asset('/storage/fumaco_logo.png') }}" width="100%">
+                        </div>
+                    </div>
+                    <div class="right-container">
+                        <p style="font-size: 26px !important; text-transform: uppercase !important">PROJECT:
+                            <b>{{ $row['project'] }}</b>
+                        </p>
+                        <p style="margin-top: 15px !important;font-size: 26px !important;">LUMINAIRE SPECIFICATION AND
+                            INFORMATION</p>
                     </div>
                 </div>
                 <div style="display: block; width: 100%; float: left; height: 10px;">&nbsp;</div>
@@ -698,22 +563,23 @@
                         style="font-size: 34px; padding: 3px !important; font-weight: bolder; color:#E67E22; border: 2px solid #1C2833">
                         {{ $row['item_name'] }}</p>
                 </div>
-            </div>
-            <div style="display: block; width: 100%; float: left; height: 10px;">&nbsp;</div>
-            <div style="display: block; width: 100%; float: left;">
-                <p style="font-size: 34px; padding: 3px !important; font-weight: bolder; color:#E67E22; border: 2px solid #1C2833">{{ $row['item_name'] }}</p>
-            </div> 
-            <div style="display: block; width: 100%; float: left; height: 10px;">&nbsp;</div>
-            <div style="display: block; width: 100%; float: left; margin-bottom: 5px;">
-                <div class="left-container">
-                    <div class="brochure-print-block brochure-print-images" style="width: 420px !important; max-width: 100%;">
-                        @for ($i = 1; $i <= 3; $i++)
-                            @php
-                                $img = isset($row['images']['image'.$i]) && $row['images']['image'.$i] ? Storage::disk('upcloud')->url('item-brochures/'.strtoupper($row['project'] ?? '').'/'.$row['images']['image'.$i]) : null;
-                            @endphp
-                            <img id="item-{{ $r }}-0{{ $i }}-print-image" src="{{ $img ?? '#' }}" class="{{ !$img ? 'd-none' : null }}" width="100%" style="padding: .5px !important; border: 2px solid #0C0C0C !important; margin-bottom: 20px !important;">
-                        @endfor
-                        &nbsp;
+                <div style="display: block; width: 100%; float: left; height: 10px;">&nbsp;</div>
+                <div style="display: block; width: 100%; float: left; margin-bottom: 5px;">
+                    <div class="left-container">
+                        <div style="width: 420px !important;">
+                            @for ($i = 1; $i <= 3; $i++)
+                                @php
+                                    $img =
+                                        isset($row['images']['image' . $i]) && $row['images']['image' . $i]
+                                            ? Storage::disk('upcloud')->url('item-brochures/' . strtoupper($row['project'] ?? '') . '/' . $row['images']['image' . $i])
+                                            : null;
+                                @endphp
+                                <img id="item-{{ $r }}-0{{ $i }}-print-image"
+                                    src="{{ asset($img) }}" class="{{ !$img ? 'd-none' : null }}" width="100%"
+                                    style="padding: .5px !important; border: 2px solid #0C0C0C !important; margin-bottom: 20px !important;">
+                            @endfor
+                            &nbsp;
+                        </div>
                     </div>
                     <div class="right-container">
                         <p style="font-weight: bolder; font-size: 28px;">Fitting Type / Reference:</p>
@@ -772,28 +638,6 @@
                 <div style="display: block; width: 100%; float: left; height: 10px;">&nbsp;</div>
             </div>
         </div>
-        <!-- Print Page -->
-    @endforeach
-    <div class="footer d-print" style="position: fixed; bottom: 0; padding-right: 10px !important; position: fixed !important; bottom: 0; width: 100%;">
-        <div style="border-top: 2px solid #1C2833; padding-left: 20px !important; padding-right: 20px !important; line-height: 23px;">
-            <div class="left-container">
-                <div style="width: 55%; display: inline-block; float: left;">
-                    <img src="{{ Storage::disk('upcloud')->url('fumaco_logo.png') }}" width="100%" style="margin-top: 30px !important;">
-                </div>
-                <div style="width: 38%; display: inline-block; float: right">
-                    <div class="pdf-footer-company-website" style="font-size: 12pt;">www.fumaco.com</div>
-                </div>
-            </div>
-            <div class="right-container" style="font-size: 12pt; width: 56% !important;">
-                <p>Plant: 35 Pleasant View Drive, Bagbaguin, Caloocan City</p>
-                <p>Sales & Showroom: 420 Ortigas Ave. cor. Xavier St., Greenhills, San Juan City</p>
-                <p>Tel. No.: (632) 721-0362 to 66</p>
-                <p>Fax No.: (632) 721-0361</p>
-                <p>Email Address: sales@fumaco.com</p>
-            </div>
-            <div style="display: block; width: 100%; float: left; height: 10px;">&nbsp;</div>
-        </div>
-    </div>
     </div>
 
 
@@ -810,11 +654,26 @@
                 e.preventDefault();
 
                 var el = $(this);
+                var project = ($('#project').val() || '').toString().trim();
+                var filename = ($('#filename').val() || '').toString().trim();
+                var column = (el.data('col') != null && el.data('col') !== '') ? el.data('col') : '';
+                var row = (el.data('row') != null && el.data('row') !== '') ? String(Number(el.data('row'))) : '';
+
+                if (!project || !filename) {
+                    showNotification("danger", "Missing project or filename. Open the brochure preview from the brochure page.", "fa fa-info");
+                    return;
+                }
+                if (!column || !row) {
+                    showNotification("danger", "Missing column or row for this image.", "fa fa-info");
+                    return;
+                }
 
                 var details = {
-                    item_code: el.data('item-code'),
-                    image_idx: el.data('image-idx'),
-                    image_filename: el.data('image-filename'),
+                    project: project,
+                    filename: filename,
+                    column: column,
+                    row: row,
+                    item_image_id: (el.data('item-image-id') != null && el.data('item-image-id') !== '') ? el.data('item-image-id') : '',
                     _token: '{{ csrf_token() }}'
                 };
 
@@ -822,6 +681,7 @@
                     url: '/remove_image',
                     type: 'POST',
                     data: details,
+                    dataType: 'json',
                     success: function(response) {
 
                         if (response.status == 0) {
@@ -841,12 +701,12 @@
                         showNotification("success", "Image removed successfully",
                             "fa fa-check");
                     },
-                    error: function() {
-                        showNotification(
-                            "danger",
-                            'Something went wrong. Please contact your system administrator.',
-                            "fa fa-info"
-                        );
+                    error: function(jqXHR) {
+                        var msg = 'Something went wrong. Please contact your system administrator.';
+                        if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
+                            msg = jqXHR.responseJSON.message;
+                        }
+                        showNotification("danger", msg, "fa fa-info");
                     }
                 });
             });
@@ -889,16 +749,22 @@
                 $(this).removeClass('dragover');
             });
 
+            $(document).on('click', '.upload-image-placeholder', function(e) {
+                var input = this.querySelector('input[type=file]');
+                if (input) input.click();
+            });
+
             $(document).on('change', 'input[type="file"]', function() {
+                var $input = $(this);
                 var details = {
-                    'column': $(this).data('col'),
-                    'row': $(this).data('row'),
-                    'project': $('#project').val(),
-                    'filename': $('#filename').val(),
-                    'item_image_id': $(this).data('item-image-id'),
-                    'item_code': $(this).data('item-code'),
-                    'image_idx': $(this).data('image-idx'),
-                }
+                    'column': $input.data('col'),
+                    'row': $input.data('row'),
+                    'project': ($('#project').val() || '').toString().trim(),
+                    'filename': ($('#filename').val() || '').toString().trim(),
+                    'item_image_id': $input.data('item-image-id'),
+                    'item_code': $input.data('item-code'),
+                    'image_idx': $input.data('image-idx'),
+                };
 
                 readFile(this, details);
             });
@@ -946,17 +812,21 @@
 
             function readFile(input, details) {
                 if (input.files && input.files[0]) {
+                    if (!details.project || !details.filename) {
+                        showNotification("danger", "Missing project or filename. Please open the brochure preview from the brochure page.", "fa fa-info");
+                        return;
+                    }
                     var formData = new FormData();
                     formData.append('selected-file', input.files[0]);
                     formData.append('_token', '{{ csrf_token() }}');
-                    formData.append('column', details.column);
-                    formData.append('row', details.row);
-                    formData.append('project', details.project);
-                    formData.append('filename', details.filename);
-                    formData.append('item_image_id', details.item_image_id);
+                    formData.append('column', (details.column != null && details.column !== '') ? details.column : '');
+                    formData.append('row', (details.row != null && details.row !== '') ? String(Number(details.row)) : '');
+                    formData.append('project', details.project || '');
+                    formData.append('filename', details.filename || '');
+                    formData.append('item_image_id', (details.item_image_id != null && details.item_image_id !== '') ? details.item_image_id : '');
 
-                    formData.append('item_code', details.item_code);
-                    formData.append('image_idx', details.image_idx);
+                    formData.append('item_code', details.item_code || '');
+                    formData.append('image_idx', details.image_idx || '');
                     if (typeof(FileReader) != "undefined") {
                         var reader = new FileReader();
                         reader.onload = function(e) {
@@ -997,7 +867,18 @@
                         }
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
-                        var msg = (jqXHR.responseJSON && jqXHR.responseJSON.message) ? jqXHR.responseJSON.message : 'Something went wrong. Please try again.';
+                        var msg = 'Something went wrong. Please try again.';
+                        if (jqXHR.responseJSON) {
+                            if (jqXHR.responseJSON.message) {
+                                msg = jqXHR.responseJSON.message;
+                            } else if (jqXHR.responseJSON.errors && typeof jqXHR.responseJSON.errors === 'object') {
+                                var first = Object.values(jqXHR.responseJSON.errors)[0];
+                                msg = Array.isArray(first) ? first[0] : first;
+                            }
+                        }
+                        if (jqXHR.status === 422 && jqXHR.responseJSON) {
+                            console.error('Upload image validation failed:', jqXHR.responseJSON.errors || jqXHR.responseJSON.message);
+                        }
                         showNotification("danger", msg, "fa fa-info");
                     }
                 });

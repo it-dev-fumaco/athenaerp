@@ -32,9 +32,10 @@ class BrochureExcelService
         $highestRow = $sheet->getHighestRow();
         $highestColumn = $sheet->getHighestColumn();
         $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn);
+        $maxCol = max($highestColumnIndex, 15);
 
         $headerRowArr = [];
-        for ($col = 1; $col <= $highestColumnIndex; $col++) {
+        for ($col = 1; $col <= $maxCol; $col++) {
             $value = $sheet->getCell([$col, 4])->getValue();
             $headerRowArr[$col] = $value;
         }
@@ -44,23 +45,27 @@ class BrochureExcelService
 
         for ($row = 5; $row <= $highestRow; $row++) {
             $result = $images = [];
-            for ($col = 5; $col <= $highestColumnIndex; $col++) {
+            for ($col = 5; $col <= $maxCol; $col++) {
                 $value = $sheet->getCell([$col, $row])->getValue();
                 if (Arr::has($headerRowArr, $col)) {
+                    $headerVal = $headerRowArr[$col];
                     $result[] = [
-                        'attribute_name' => $headerRowArr[$col],
+                        'attribute_name' => $headerVal,
                         'attribute_value' => $value,
                     ];
-                    $attrib[$headerRowArr[$col]] = $value != '-' ? $value : null;
+                    $attrib[$headerVal] = $value != '-' ? $value : null;
 
-                    if ($headerRowArr[$col] == 'Image 1') {
-                        $images['image1'] = $sheet->getCell([$col, $row])->getValue();
+                    $headerNorm = $headerVal !== null && $headerVal !== ''
+                        ? str_replace(' ', '', strtolower(trim((string) $headerVal)))
+                        : '';
+                    if ($headerNorm === 'image1') {
+                        $images['image1'] = $value !== null && $value !== '' ? trim((string) $value) : null;
                     }
-                    if ($headerRowArr[$col] == 'Image 2') {
-                        $images['image2'] = $sheet->getCell([$col, $row])->getValue();
+                    if ($headerNorm === 'image2') {
+                        $images['image2'] = $value !== null && $value !== '' ? trim((string) $value) : null;
                     }
-                    if ($headerRowArr[$col] == 'Image 3') {
-                        $images['image3'] = $sheet->getCell([$col, $row])->getValue();
+                    if ($headerNorm === 'image3') {
+                        $images['image3'] = $value !== null && $value !== '' ? trim((string) $value) : null;
                     }
                 }
             }
@@ -106,7 +111,9 @@ class BrochureExcelService
     }
 
     /**
-     * Find column index (1-based) for a given header value in row 4. Returns null if not found.
+     * Find column index (1-based) for a given header value. Looks in row 4 first, then rows 1–5.
+     * Comparison is trim and case-insensitive; also matches "Image1" to "Image 1".
+     * Searches at least columns 1–15 so "Image 1/2/3" are found even if those columns have no data yet.
      */
     public function findColumnIndexByHeader(string $excelPath, string $headerValue): ?int
     {
@@ -115,10 +122,105 @@ class BrochureExcelService
         $sheet = $spreadsheet->getActiveSheet();
         $highestColumn = $sheet->getHighestColumn();
         $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn);
+        $maxCol = max($highestColumnIndex, 15);
 
-        for ($col = 1; $col <= $highestColumnIndex; $col++) {
-            $value = $sheet->getCell([$col, 4])->getValue();
-            if ($value == $headerValue) {
+        $headerNormalized = strtolower(trim($headerValue));
+        $headerNoSpace = str_replace(' ', '', $headerNormalized);
+
+        $headerRows = [4, 3, 5, 2, 1];
+        foreach ($headerRows as $row) {
+            $found = $this->matchHeaderInRow($sheet, $row, $maxCol, $headerNormalized, $headerNoSpace);
+            if ($found !== null) {
+                return $found;
+            }
+        }
+
+        if (preg_match('/^image\s*(\d)$/i', $headerNoSpace, $m) || preg_match('/^image\s*(\d)$/i', $headerNormalized, $m)) {
+            $num = $m[1];
+            foreach ($headerRows as $row) {
+                for ($col = 1; $col <= $maxCol; $col++) {
+                    $value = $sheet->getCell([$col, $row])->getValue();
+                    if ($value === null || $value === '') {
+                        continue;
+                    }
+                    $cellNorm = str_replace(' ', '', strtolower(trim((string) $value)));
+                    if ($cellNorm === 'image'.$num) {
+                        return $col;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Ensure "Image 1", "Image 2", "Image 3" columns exist in row 4. Adds any missing columns at the end.
+     */
+    public function ensureImageColumnsExist(string $excelPath): void
+    {
+        if (! file_exists($excelPath)) {
+            return;
+        }
+
+        $reader = new ReaderXlsx;
+        $spreadsheet = $reader->load($excelPath);
+        $sheet = $spreadsheet->getActiveSheet();
+        $highestColumn = $sheet->getHighestColumn();
+        $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn);
+        $maxCol = max($highestColumnIndex, 4);
+        $headerRow = 4;
+
+        $existing = [];
+        for ($col = 1; $col <= $maxCol; $col++) {
+            $value = $sheet->getCell([$col, $headerRow])->getValue();
+            if ($value !== null && $value !== '') {
+                $existing[] = str_replace(' ', '', strtolower(trim((string) $value)));
+            }
+        }
+
+        $required = [
+            'Image 1' => 'image1',
+            'Image 2' => 'image2',
+            'Image 3' => 'image3',
+        ];
+        $toAdd = [];
+        foreach ($required as $headerLabel => $normalized) {
+            if (! in_array($normalized, $existing, true)) {
+                $toAdd[] = $headerLabel;
+            }
+        }
+
+        if (empty($toAdd)) {
+            return;
+        }
+
+        $nextCol = $maxCol + 1;
+        foreach ($toAdd as $headerLabel) {
+            $sheet->setCellValue([$nextCol, $headerRow], $headerLabel);
+            $nextCol++;
+        }
+
+        $writer = new WriterXlsx($spreadsheet);
+        $writer->save($excelPath);
+    }
+
+    /**
+     * Match header in a specific row; return column index or null.
+     */
+    private function matchHeaderInRow($sheet, int $row, int $maxCol, string $headerNormalized, string $headerNoSpace): ?int
+    {
+        for ($col = 1; $col <= $maxCol; $col++) {
+            $value = $sheet->getCell([$col, $row])->getValue();
+            if ($value === null || $value === '') {
+                continue;
+            }
+            $cellStr = is_object($value) && method_exists($value, '__toString')
+                ? (string) $value
+                : (string) $value;
+            $cellNormalized = strtolower(trim($cellStr));
+            $cellNoSpace = str_replace(' ', '', $cellNormalized);
+            if ($cellNormalized === $headerNormalized || $cellNoSpace === $headerNoSpace) {
                 return $col;
             }
         }
