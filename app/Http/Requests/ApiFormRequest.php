@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Http\Helpers\ApiResponse;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -14,15 +13,19 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 abstract class ApiFormRequest extends FormRequest
 {
     /**
-     * Handle a failed validation attempt: return ApiResponse::failure() with first error message
-     * so response format matches the original controller behavior.
+     * Handle a failed validation attempt: return 422 with message and errors
+     * so frontends can show the first error and debug which field failed.
      */
     protected function failedValidation(Validator $validator): void
     {
         $message = $validator->errors()->first();
 
         throw new HttpResponseException(
-            ApiResponse::failure($message)
+            response()->json([
+                'status' => 0,
+                'message' => $message,
+                'errors' => $validator->errors()->toArray(),
+            ], 422)
         );
     }
 }

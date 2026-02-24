@@ -146,13 +146,12 @@
             </div>
             <div class="left-container">
                 <div style="width: 240px !important;">
-                    @php $slot2_src = null; @endphp
+                    @php $slot1_src = null; $slot2_src = null; @endphp
                     @for ($i = 1; $i <= 3; $i++)
                         @php
                             $imgSrc = null;
                             if (isset($row['image_local_paths'][$i]) && $row['image_local_paths'][$i] && file_exists($row['image_local_paths'][$i])) {
-                                $path = $row['image_local_paths'][$i];
-                                $imgSrc = 'file:///' . str_replace('\\', '/', ltrim($path, '/'));
+                                $imgSrc = $imageToDataUri($row['image_local_paths'][$i]);
                             }
                             if (!$imgSrc && isset($row['image_data_uris'][$i]) && $row['image_data_uris'][$i]) {
                                 $imgSrc = $row['image_data_uris'][$i];
@@ -186,10 +185,13 @@
                                 }
                                 $imgSrc = ($imgPath ?? null) && file_exists($imgPath ?? '') ? $imageToDataUri($imgPath) : null;
                             }
+                            if ($i === 1) {
+                                $slot1_src = $imgSrc;
+                            }
                             if ($i === 2) {
                                 $slot2_src = $imgSrc;
                             }
-                            if ($i === 3 && isset($slot2_src) && $slot2_src !== null && $imgSrc === $slot2_src) {
+                            if ($i === 3 && $imgSrc !== null && ($imgSrc === $slot2_src || $imgSrc === $slot1_src)) {
                                 $imgSrc = null;
                             }
                         @endphp

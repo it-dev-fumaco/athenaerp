@@ -626,6 +626,13 @@
         $('#image-upload-form').submit(function (e) {
             e.preventDefault();
 
+            var projectVal = $('#brochure-project-name').length ? $('#brochure-project-name').val() : $(this).find('input[name="project"]').val();
+            $(this).find('input[name="project"]').val(projectVal || '');
+            if (!projectVal || !$.trim(projectVal)) {
+                showNotification("danger", "Please enter Project Name in the Input Details section first.", "fa fa-info");
+                return;
+            }
+
             $.ajax({
                 type: 'POST',
                 url: $(this).attr('action'),
@@ -645,11 +652,25 @@
                         $('#select-file-modal').modal('hide');
                     }
                 },
+                error: function(jqXHR) {
+                    var msg = 'Upload failed. Please try again.';
+                    if (jqXHR.status === 422 && jqXHR.responseJSON) {
+                        msg = jqXHR.responseJSON.message || (jqXHR.responseJSON.errors && Object.values(jqXHR.responseJSON.errors).flat().shift()) || msg;
+                    }
+                    showNotification("danger", msg, "fa fa-info");
+                }
             });
         });
 
         $('#image-upload-form-1').submit(function (e) {
             e.preventDefault();
+
+            var projectVal = $('#brochure-project-name').length ? $('#brochure-project-name').val() : $(this).find('input[name="project"]').val();
+            $(this).find('input[name="project"]').val(projectVal || '');
+            if (!projectVal || !$.trim(projectVal)) {
+                showNotification("danger", "Please enter Project Name in the Input Details section first.", "fa fa-info");
+                return;
+            }
 
             $.ajax({
                 type: 'POST',
@@ -667,6 +688,13 @@
                         $('#select-file-modal').modal('hide');
                     }
                 },
+                error: function(jqXHR) {
+                    var msg = 'Upload failed. Please try again.';
+                    if (jqXHR.status === 422 && jqXHR.responseJSON) {
+                        msg = jqXHR.responseJSON.message || (jqXHR.responseJSON.errors && Object.values(jqXHR.responseJSON.errors).flat().shift()) || msg;
+                    }
+                    showNotification("danger", msg, "fa fa-info");
+                }
             });
         });
 
