@@ -25,7 +25,7 @@ class GuideController extends Controller
             return [$id => Storage::disk('upcloud')->path($image)];
         })->all();
 
-        $noImg = asset('storage/icon/no_img.png');
+        $noImg = Storage::disk('upcloud')->url('icon/no-img.png');
         $images['no_img'] = $noImg;
 
         return $images;

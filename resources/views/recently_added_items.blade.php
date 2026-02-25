@@ -7,7 +7,7 @@
 
                     $hasImage = !empty($item['image']);
 
-                    $originalPath = $hasImage ? 'img/' . $item['image'] : 'icon/no_img.png';
+                    $originalPath = $hasImage ? 'img/' . $item['image'] : 'icon/no-img.png';
 
                     $webpPath = $hasImage ? 'img/' . explode('.', $item['image'])[0] . '.webp' : 'icon/no_img.webp';
                 @endphp

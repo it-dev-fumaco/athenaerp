@@ -549,7 +549,7 @@ class BrochureController extends Controller
                 ];
             }
 
-            $fumacoLogo = Storage::disk('upcloud')->url('fumaco_logo.png');
+            $fumacoLogo = Storage::disk('upcloud')->url('/logo/fumaco-transparent.png');
 
             if ($preview) {
                 return view('brochure.preview_loop', compact('content', 'project', 'customer', 'fumacoLogo'));
@@ -629,7 +629,7 @@ class BrochureController extends Controller
                 ];
             }
 
-            $fumacoLogo = Storage::disk('upcloud')->url('fumaco_logo.png');
+            $fumacoLogo = Storage::disk('upcloud')->url('logo/fumaco-transparent.png');
 
             if (isset($request->get_images) && $request->get_images) {
                 return view('brochure.brochure_images', compact('images', 'currentImages'));

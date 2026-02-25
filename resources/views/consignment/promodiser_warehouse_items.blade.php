@@ -41,7 +41,7 @@
                                 </thead>
                                 @forelse ($invSummary as $item)
                                 @php
-                                    $img = isset($item->defaultImage->image_path) ? '/img/'.$item->defaultImage->image_path : '/icon/no_img.png';
+                                    $img = isset($item->defaultImage->image_path) ? '/img/'.$item->defaultImage->image_path : '/icon/no-img.png';
                                     if(Storage::disk('public')->exists(explode('.', $item->image)[0].'.webp')){
                                         $img = explode('.', $item->image)[0].'.webp';
                                     }

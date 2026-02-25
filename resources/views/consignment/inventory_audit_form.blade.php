@@ -58,7 +58,7 @@
                                             @forelse ($items as $row)
                                             @php
                                                 $id = $row->item_code;
-                                                $img = array_key_exists($row->item_code, $itemImages) ? "/img/" . $itemImages[$row->item_code][0]->image_path : "/icon/no_img.png";
+                                                $img = array_key_exists($row->item_code, $itemImages) ? "/img/" . $itemImages[$row->item_code][0]->image_path : "/icon/no-img.png";
                                                 $imgWebp = array_key_exists($row->item_code, $itemImages) ? "/img/" . explode('.',$itemImages[$row->item_code][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
                                                 $consignedQty = array_key_exists($row->item_code, $consignedStocks) ? ($consignedStocks[$row->item_code] * 1) : 0;
 

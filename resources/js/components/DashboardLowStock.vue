@@ -51,3 +51,9 @@ onBeforeUnmount(() => {
   document.removeEventListener('low-level-stocks-refresh', onRefresh);
 });
 </script>
+
+<style scoped>
+.dashboard-html-content {
+  min-width: 0;
+}
+</style>

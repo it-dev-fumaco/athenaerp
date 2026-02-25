@@ -61,7 +61,7 @@
                                 <tbody>
                                     @forelse ($inventory as $inv)
                                     @php
-                                        $img = isset($itemImage[$inv->item_code]) ? "/img/" . $itemImage[$inv->item_code][0]->image_path : "/icon/no_img.png";
+                                        $img = isset($itemImage[$inv->item_code]) ? "/img/" . $itemImage[$inv->item_code][0]->image_path : "/icon/no-img.png";
                                         $imgWebp = isset($itemImage[$inv->item_code]) ? "/img/" . explode('.',$itemImage[$inv->item_code][0]->image_path)[0].'.webp' : "/icon/no_img.webp";
 
                                         $imgCount = array_key_exists($inv->item_code, $itemImage) ? count($itemImage[$inv->item_code]) : 0;

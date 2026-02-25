@@ -81,11 +81,24 @@
             $data = @file_get_contents($path);
             return $data !== false ? 'data:' . $mime . ';base64,' . base64_encode($data) : null;
         };
-        $fumacoLogoPath = public_path('storage/fumaco_logo.png');
-        if (!file_exists($fumacoLogoPath)) {
-            $fumacoLogoPath = storage_path('app/public/fumaco_logo.png');
+        $fumacoLogoSrc = null;
+        $upcloudLogoKey = 'logo/fumaco-transparent.png';
+        if (Storage::disk('upcloud')->exists($upcloudLogoKey)) {
+            $logoData = Storage::disk('upcloud')->get($upcloudLogoKey);
+            if ($logoData !== null && $logoData !== '') {
+                $fumacoLogoSrc = 'data:image/png;base64,' . base64_encode($logoData);
+            }
         }
-        $fumacoLogoSrc = $imageToDataUri($fumacoLogoPath);
+        if (!$fumacoLogoSrc) {
+            $fumacoLogoPath = public_path('athena-images-files/logo/fumaco-transparent.png');
+            if (!file_exists($fumacoLogoPath)) {
+                $fumacoLogoPath = public_path('storage/fumaco_logo.png');
+            }
+            if (!file_exists($fumacoLogoPath)) {
+                $fumacoLogoPath = storage_path('app/public/fumaco_logo.png');
+            }
+            $fumacoLogoSrc = $imageToDataUri($fumacoLogoPath);
+        }
         $margin = '1.2in';
         $rows = 1;
         if(strlen($project) > 29){

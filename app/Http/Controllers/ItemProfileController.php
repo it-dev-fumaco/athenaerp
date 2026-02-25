@@ -132,7 +132,7 @@ class ItemProfileController extends Controller
             return $this->base64Image("/item-images/$image");
         });
 
-        $noImg = $this->base64Image('/icon/no_img.png');
+        $noImg = $this->base64Image('/icon/no-img.png');
 
         $itemAlternatives = [];
         $productionItemAlternatives = DB::table('tabWork Order Item as p')
@@ -155,7 +155,7 @@ class ItemProfileController extends Controller
             ->toArray();
         foreach ($productionItemAlternatives as $productionAltRow) {
             $productionAltRow = (object) $productionAltRow;
-            $itemAlternativeImage = Arr::exists($itemAlternativeImages, $productionAltRow->item_code) ? '/item-images/'.$itemAlternativeImages[$productionAltRow->item_code] : '/icon/no_img.png';
+            $itemAlternativeImage = Arr::exists($itemAlternativeImages, $productionAltRow->item_code) ? '/item-images/'.$itemAlternativeImages[$productionAltRow->item_code] : '/icon/no-img.png';
             $itemAlternativeImage = $this->base64Image($itemAlternativeImage);
 
             $actualStocks = Arr::get($productionItemAltActualStock, $productionAltRow->item_code, 0);
@@ -206,7 +206,7 @@ class ItemProfileController extends Controller
             $itemAlternativeImages = ItemImages::query()->whereIn('parent', $variantItems->pluck('name'))->orderBy('idx', 'asc')->pluck('image_path', 'parent')->toArray();
 
             foreach ($variantItems as $variantItem) {
-                $itemAlternativeImage = Arr::exists($itemAlternativeImages, $variantItem->name) ? '/item-images/'.$itemAlternativeImages[$variantItem->name] : '/icon/no_img.png';
+                $itemAlternativeImage = Arr::exists($itemAlternativeImages, $variantItem->name) ? '/item-images/'.$itemAlternativeImages[$variantItem->name] : '/icon/no-img.png';
                 $itemAlternativeImage = $this->base64Image($itemAlternativeImage);
 
                 $totalReserved = $totalConsumed = 0;
@@ -249,7 +249,7 @@ class ItemProfileController extends Controller
                 $itemAlternativeImages = ItemImages::query()->whereIn('parent', $classificationItems->pluck('name'))->orderBy('idx', 'asc')->pluck('image_path', 'parent')->toArray();
 
                 foreach ($classificationItems as $altItem) {
-                    $itemAlternativeImage = Arr::exists($itemAlternativeImages, $altItem->name) ? '/item-images/'.$itemAlternativeImages[$altItem->name] : '/icon/no_img.png';
+                    $itemAlternativeImage = Arr::exists($itemAlternativeImages, $altItem->name) ? '/item-images/'.$itemAlternativeImages[$altItem->name] : '/icon/no-img.png';
                     $itemAlternativeImage = $this->base64Image($itemAlternativeImage);
 
                     $totalReserved = $totalConsumed = 0;
@@ -511,7 +511,7 @@ class ItemProfileController extends Controller
         $images = collect($images)->map(function ($image) {
             $originalPath = $image->image_path;
             $image->image = $originalPath;
-            $image->image_path = $originalPath ? Storage::disk('upcloud')->url($originalPath) : Storage::disk('upcloud')->url('icon/no_img.png');
+            $image->image_path = $originalPath ? Storage::disk('upcloud')->url($originalPath) : Storage::disk('upcloud')->url('icon/no-img.png');
 
             $image->original = 1;
             $webpKey = $originalPath ? explode('.', $originalPath)[0].'.webp' : null;

@@ -1,11 +1,14 @@
 <template>
   <div class="login-page">
     <section class="branding">
-      <h1 class="branding-title">Athena Inventory</h1>
-      <div class="branding-underline"></div>
-      <p class="branding-tagline">
-        Intelligent inventory control platform for operational excellence, production efficiency, and enterprise-level visibility.
-      </p>
+      <img v-if="logoUrl" :src="logoUrl" alt="Fumaco" class="branding-logo" />
+      <h1 class="branding-title">
+        <span class="branding-title-with-underline">
+          <span>Athena</span>
+          <span class="branding-underline" aria-hidden="true"></span>
+        </span>
+        Inventory
+      </h1>
     </section>
     <section class="form-section">
       <div class="form-card">
@@ -79,6 +82,7 @@ const props = defineProps({
   initialError: { type: String, default: '' },
   initialEmail: { type: String, default: '' },
   loginUrl: { type: String, default: '/login_user' },
+  logoUrl: { type: String, default: '' },
 });
 
 const formRef = ref(null);
@@ -132,24 +136,28 @@ function onSubmit() {
   position: relative;
   z-index: 1;
 }
+.branding-logo {
+  max-width: 350px;
+  height: auto;
+  margin-bottom: 2rem;
+  display: block;
+}
 .branding-title {
   font-size: clamp(2rem, 4vw, 3.5rem);
   font-weight: 700;
   margin: 0 0 0.5rem 0;
   letter-spacing: -0.02em;
 }
-.branding-underline {
-  width: 80px;
+.branding-title-with-underline {
+  display: inline-block;
+}
+.branding-title-with-underline .branding-underline {
+  display: block;
+  width: 100%;
   height: 4px;
   background: #f5c542;
   border-radius: 2px;
-  margin: 0 0 1.5rem 0;
-}
-.branding-tagline {
-  font-size: clamp(0.95rem, 1.5vw, 1.1rem);
-  line-height: 1.6;
-  opacity: 0.95;
-  max-width: 420px;
+  margin-top: 0.25rem;
 }
 
 .form-section {
@@ -165,12 +173,12 @@ function onSubmit() {
   width: 100%;
   max-width: 420px;
   padding: 2.5rem;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(55, 65, 81, 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 .form-card h2 {
   margin: 0 0 0.25rem 0;
@@ -279,9 +287,6 @@ function onSubmit() {
     padding: 2rem 2rem 1.5rem;
     text-align: center;
     align-items: center;
-  }
-  .branding-tagline {
-    text-align: center;
   }
   .form-section {
     padding: 1.5rem 1.5rem 3rem;

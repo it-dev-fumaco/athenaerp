@@ -189,7 +189,7 @@ class SearchController extends Controller
         $itemImages = collect($itemImages)->map(function ($image) {
             return $this->base64Image("/item-images/$image");
         });
-        $noImgPlaceholder = $this->base64Image('/icon/no_img.png');
+        $noImgPlaceholder = $this->base64Image('/icon/no-img.png');
 
         $partNosQuery = ItemSupplier::whereIn('parent', $itemCodes)
             ->select('parent', DB::raw('GROUP_CONCAT(supplier_part_no) as supplier_part_nos'))
@@ -552,7 +552,7 @@ class SearchController extends Controller
             return $this->base64Image("/item-images/$image");
         });
 
-        $noImg = $this->base64Image('/icon/no_img.png');
+        $noImg = $this->base64Image('/icon/no-img.png');
 
         return view('suggestion_box', compact('itemsPaginator', 'imageCollection', 'bundledItems', 'noImg'));
     }

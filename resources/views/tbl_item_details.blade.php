@@ -3,7 +3,7 @@
         <div class="box box-solid mt-2">
             <div class="row">
                 @php
-                    $img1 = data_get($itemImages, 0) ? '/img/' . $itemImages[0] : '/icon/no_img.png';
+                    $img1 = data_get($itemImages, 0) ? '/img/' . $itemImages[0] : '/icon/no-img.png';
                     $img1Name = data_get($itemImages, 0);
                     $img1Webp = data_get($itemImages, 0)
                         ? '/img/' . explode('.', $itemImages[0])[0] . '.webp'
@@ -12,7 +12,7 @@
                         ? Illuminate\Support\Str::slug(explode('.', $img1)[0], '-')
                         : null;
 
-                    $img2 = data_get($itemImages, 1) ? '/img/' . $itemImages[1] : '/icon/no_img.png';
+                    $img2 = data_get($itemImages, 1) ? '/img/' . $itemImages[1] : '/icon/no-img.png';
                     $img2Name = data_get($itemImages, 1);
                     $img2Webp = data_get($itemImages, 1)
                         ? '/img/' . explode('.', $itemImages[1])[0] . '.webp'
@@ -21,7 +21,7 @@
                         ? Illuminate\Support\Str::slug(explode('.', $img2)[0], '-')
                         : null;
 
-                    $img3 = data_get($itemImages, 2) ? '/img/' . $itemImages[2] : '/icon/no_img.png';
+                    $img3 = data_get($itemImages, 2) ? '/img/' . $itemImages[2] : '/icon/no-img.png';
                     $img3Name = data_get($itemImages, 2);
                     $img3Webp = data_get($itemImages, 2)
                         ? '/img/' . explode('.', $itemImages[2])[0] . '.webp'
@@ -30,7 +30,7 @@
                         ? Illuminate\Support\Str::slug(explode('.', $img3)[0], '-')
                         : null;
 
-                    $img4 = data_get($itemImages, 3) ? '/img/' . $itemImages[3] : '/icon/no_img.png';
+                    $img4 = data_get($itemImages, 3) ? '/img/' . $itemImages[3] : '/icon/no-img.png';
                     $img4Name = data_get($itemImages, 3);
                     $img4Webp = data_get($itemImages, 3)
                         ? '/img/' . explode('.', $itemImages[3])[0] . '.webp'

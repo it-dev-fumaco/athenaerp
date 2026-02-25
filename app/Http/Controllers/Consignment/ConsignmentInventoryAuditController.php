@@ -649,7 +649,7 @@ class ConsignmentInventoryAuditController extends Controller
             return "img/$image";
         });
 
-        $noImg = 'icon/no_img.png';
+        $noImg = 'icon/no-img.png';
 
         $result = [];
         foreach ($list as $row) {

@@ -15,7 +15,7 @@
             }else if(isset($itemImage[$item->item_code])){
                 $file = $itemImage[$item->item_code][0]->image_path;
             }else{
-                $file = 'icon/no_img.png';
+                $file = 'icon/no-img.png';
             }
 
             $img = "/img/".$file;

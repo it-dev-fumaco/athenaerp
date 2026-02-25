@@ -316,6 +316,89 @@
 			width: 30px;
 			height: 30px
 		}
+		.dashboard-box {
+			max-width: 1400px;
+			margin: 0 auto;
+			border-radius: 8px;
+			padding: 24px 30px;
+			min-height: 900px;
+			background: #fff;
+			box-sizing: border-box;
+			overflow-x: hidden;
+		}
+		.dashboard-box,
+		.dashboard-box *,
+		.dashboard-box *::before,
+		.dashboard-box *::after {
+			box-sizing: border-box;
+		}
+		.dashboard-box .row {
+			margin-left: 0;
+			margin-right: 0;
+		}
+		.content--dashboard .content-header {
+			padding-left: 0;
+			padding-right: 0;
+		}
+		.dashboard-box .row > [class*="col-"] {
+			padding-left: 10px;
+			padding-right: 10px;
+		}
+		/* Production Withdrawal modal: ~1400px to match red box, centered, full-width content */
+		#ste-modal .modal-dialog {
+			max-width: 1400px !important;
+			width: min(90vw, 1400px) !important;
+			margin: 0.5rem auto !important;
+		}
+		#ste-modal .modal-content {
+			width: 100% !important;
+			max-width: none !important;
+			min-width: 0 !important;
+			box-sizing: border-box !important;
+		}
+		#ste-modal .modal-body {
+			width: 100% !important;
+			max-width: none !important;
+			min-width: 0 !important;
+			box-sizing: border-box !important;
+			padding: 1rem 1.25rem !important;
+		}
+		#ste-modal .modal-body .form-control {
+			width: 100% !important;
+			max-width: 100% !important;
+			box-sizing: border-box !important;
+		}
+		#ste-modal .modal-body .row {
+			margin-left: 0 !important;
+			margin-right: 0 !important;
+			width: 100% !important;
+			max-width: none !important;
+		}
+		#ste-modal .modal-body .ste-modal__body,
+		#ste-modal .modal-body .ste-modal__breadcrumb {
+			width: 100% !important;
+			max-width: none !important;
+		}
+		#ste-modal .modal-header,
+		#ste-modal .modal-footer {
+			width: 100% !important;
+			max-width: none !important;
+			box-sizing: border-box !important;
+		}
+		#ste-modal .modal-body .container,
+		#ste-modal .modal-body .container-fluid {
+			max-width: none !important;
+			width: 100% !important;
+			padding-left: 0 !important;
+			padding-right: 0 !important;
+		}
+		@media (max-width: 767.98px) {
+			#ste-modal .modal-dialog {
+				max-width: calc(100vw - 1rem) !important;
+				width: 100% !important;
+				margin: 0.5rem auto !important;
+			}
+		}
 		@media (max-width: 575.98px) {
 			.avatar{
 				width: 25px;
@@ -368,6 +451,13 @@
 			}
 		}
 	  	@media (max-width: 767.98px) {
+			.dashboard-box {
+				padding: 20px 16px;
+			}
+			.dashboard-box .row > [class*="col-"] {
+				padding-left: 8px;
+				padding-right: 8px;
+			}
 			.copyright{
 				font-size: 10pt;
 			}
