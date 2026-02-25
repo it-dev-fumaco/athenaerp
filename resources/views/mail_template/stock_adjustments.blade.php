@@ -19,7 +19,7 @@
         <tbody>
             @foreach ($logs as $item)
                 @php
-                    $image = isset($images[$item['item_code']]) ? '/img/'.$images[$item['item_code']][0]->image_path : "/icon/no_img.png";
+                    $image = isset($images[$item['item_code']]) ? '/img/'.$images[$item['item_code']][0]->image_path : "/icon/no-img.png";
                 @endphp
                 <tr>
                     <td style="border: 1px solid black !important;text-align:justfy; width: 50% !important;">

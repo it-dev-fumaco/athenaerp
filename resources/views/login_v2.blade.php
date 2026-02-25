@@ -42,6 +42,7 @@
         data-error="{{ e($errors->first()) }}"
         data-initial-email="{{ e(old('email')) }}"
         data-login-url="{{ url('/login_user') }}"
+        data-logo-url="{{ \Illuminate\Support\Facades\Storage::disk('upcloud')->url('logo/fumaco-transparent.png') }}"
     ></div>
 </body>
 </html>

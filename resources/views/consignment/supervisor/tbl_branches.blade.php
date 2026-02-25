@@ -77,7 +77,7 @@
                                                     $itemDetail = $itemDetails[$itemCode][0];
 
                                                     $itemDescription = $itemDetail->description;
-                                                    $image = "/icon/no_img.png";
+                                                    $image = "/icon/no-img.png";
                                                     if($itemDetail->defaultImage && Storage::disk('public')->exists('/img/'.$itemDetail->defaultImage->image_path)){
                                                         $image = $itemDetail->defaultImage->image_path;
                                                         if(Storage::disk('public')->exists('/img/'.explode('.', $image)[0].'.webp')){

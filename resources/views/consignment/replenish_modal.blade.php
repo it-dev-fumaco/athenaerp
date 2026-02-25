@@ -59,7 +59,7 @@
                 @foreach ($stockEntry->items as $item)
                     @php
                         $itemCode = $item->item_code;
-                        $image = isset($itemImages[$itemCode]) ? "img/".$itemImages[$itemCode] : '/icon/no_img.png';
+                        $image = isset($itemImages[$itemCode]) ? "img/".$itemImages[$itemCode] : '/icon/no-img.png';
 
                         if(Storage::disk('public')->exists(explode('.', $image)[0].'.webp')){
                             $image = explode('.', $image)[0].'.webp';

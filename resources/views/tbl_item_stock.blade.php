@@ -20,7 +20,7 @@
                         @php
                             $itemImage = data_get($itemImagePaths, "{$row->item_code}.0.image_path");
                             $imgWebp = ($itemImage) ? "/img/" . explode('.',$itemImage)[0].'.webp' : "/icon/no_img.webp";
-                            $img = ($itemImage) ? "/img/" . $itemImage : "/icon/no_img.png";
+                            $img = ($itemImage) ? "/img/" . $itemImage : "/icon/no-img.png";
                             $stockQty = $row->actual_qty * 1;
 
                             $rate = data_get($priceListRates, "{$row->item_code}.0.price_list_rate");

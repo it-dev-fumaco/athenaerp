@@ -124,7 +124,7 @@ class ConsignmentBeginningInventoryController extends Controller
             $inventory->items = collect($inventory->items)->map(function ($item) use ($bin) {
                 $itemCode = $item->item_code;
 
-                $item->image = '/icon/no_img.png';
+                $item->image = '/icon/no-img.png';
                 $price = 0;
 
                 $item->opening_stock = (int) $item->opening_stock;
@@ -134,7 +134,7 @@ class ConsignmentBeginningInventoryController extends Controller
                     $consignmentDetails = $bin[$itemCode][0];
                     $price = $item->status == 'For Approval' ? $item->price : $consignmentDetails->consignment_price;
 
-                    $item->image = isset($consignmentDetails->defaultImage->image_path) ? '/img/'.$consignmentDetails->defaultImage->image_path : '/icon/no_img.png';
+                    $item->image = isset($consignmentDetails->defaultImage->image_path) ? '/img/'.$consignmentDetails->defaultImage->image_path : '/icon/no-img.png';
                     if (Storage::disk('upcloud')->exists(explode('.', $item->image)[0].'.webp')) {
                         $item->image = explode('.', $item->image)[0].'.webp';
                     }
@@ -466,7 +466,7 @@ class ConsignmentBeginningInventoryController extends Controller
             return $this->base64Image("img/$image");
         });
 
-        $noImg = $this->base64Image('icon/no_img.png');
+        $noImg = $this->base64Image('icon/no-img.png');
 
         $itemsArr = [];
         foreach ($items as $item) {
@@ -555,7 +555,7 @@ class ConsignmentBeginningInventoryController extends Controller
                 return $this->base64Image("img/$image");
             });
 
-            $noImg = $this->base64Image('icon/no_img.png');
+            $noImg = $this->base64Image('icon/no-img.png');
             $itemImages['no_img'] = $noImg;
 
             $detail = [];
@@ -769,7 +769,7 @@ class ConsignmentBeginningInventoryController extends Controller
             return "img/$image";
         });
 
-        $noImg = '/icon/no_img.png';
+        $noImg = '/icon/no-img.png';
 
         $defaultImages = Item::whereIn('name', $itemCodes)->whereNotNull('item_image_path')->select('name as item_code', 'item_image_path as image_path')->get();
         $defaultImage = collect($defaultImages)->groupBy('item_code');

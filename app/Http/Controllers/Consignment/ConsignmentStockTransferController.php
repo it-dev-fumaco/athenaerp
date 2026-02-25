@@ -207,12 +207,12 @@ class ConsignmentStockTransferController extends Controller
 
                     if (! $consignmentDetails) {
                         $item->consigned_qty = 0;
-                        $item->image = '/icon/no_img.png';
+                        $item->image = '/icon/no-img.png';
                     } else {
                         $item->consigned_qty = (int) $consignmentDetails->consigned_qty;
                         $item->image = isset($consignmentDetails->defaultImage->image_path)
                             ? '/img/'.$consignmentDetails->defaultImage->image_path
-                            : '/icon/no_img.png';
+                            : '/icon/no-img.png';
                         if (Storage::disk('upcloud')->exists(explode('.', $item->image)[0].'.webp')) {
                             $item->image = explode('.', $item->image)[0].'.webp';
                         }
@@ -527,7 +527,7 @@ class ConsignmentStockTransferController extends Controller
                 return $this->base64Image("img/$image");
             });
 
-            $noImg = $this->base64Image('/icon/no_img.png');
+            $noImg = $this->base64Image('/icon/no-img.png');
 
             $steArr = [];
             foreach ($stockTransfers as $ste) {

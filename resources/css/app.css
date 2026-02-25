@@ -28,6 +28,8 @@
 	min-width: 30%;
 }
 
+/* Production Withdrawal / STE modal: use full width (overrides in layout after AdminLTE) */
+
 @media (max-width: 767.98px) {
 	.modal-dialog.modal-item-inquiry,
 	.modal-dialog.modal-warehouse-location,

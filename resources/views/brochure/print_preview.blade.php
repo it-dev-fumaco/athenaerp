@@ -383,7 +383,7 @@
                         <div class="pdf-body">
                             <div style="disply: block; clear: both; color: #000">
                                 <div style="width: 44%; float: left; padding: 2px !important;">
-                                    <img src="{{ asset('/storage/fumaco_logo.png') }}" width="230">
+                                    <img src="{{ Storage::disk('upcloud')->url('/logo/fumaco-transparent.png') }}" width="230">
                                 </div>
                                 <div style="width: 54%; float:left; text-transform: uppercase; font-size: 11pt;">
                                     <p>PROJECT: <b>{{ $row['project'] }}</b></p>
@@ -528,7 +528,7 @@
                     </div>
                     <div class="pdf-footer">
                         <div class="pdf-footer-company-logo">
-                            <img src="{{ asset('/storage/fumaco_logo.png') }}" width="155">
+                            <img src="{{ Storage::disk('upcloud')->url('/logo/fumaco-transparent.png') }}" width="155">
                         </div>
                         <div class="pdf-footer-company-website">www.fumaco.com</div>
                         <div class="pdf-footer-contacts">
@@ -546,7 +546,7 @@
                 <div style="display: block">
                     <div class="left-container">
                         <div style="width: 430px !important;">
-                            <img src="{{ asset('/storage/fumaco_logo.png') }}" width="100%">
+                            <img src="{{ Storage::disk('upcloud')->url('/logo/fumaco-transparent.png') }}" width="100%">
                         </div>
                     </div>
                     <div class="right-container">
@@ -621,7 +621,7 @@
                 style="border-top: 2px solid #1C2833; padding-left: 20px !important; padding-right: 20px !important; line-height: 23px;">
                 <div class="left-container">
                     <div style="width: 55%; display: inline-block; float: left;">
-                        <img src="{{ asset('/storage/fumaco_logo.png') }}" width="100%"
+                        <img src="{{ Storage::disk('upcloud')->url('/logo/fumaco-transparent.png') }}" width="100%"
                             style="margin-top: 30px !important;">
                     </div>
                     <div style="width: 38%; display: inline-block; float: right">

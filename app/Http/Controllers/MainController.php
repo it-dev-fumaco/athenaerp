@@ -300,7 +300,7 @@ class MainController extends Controller
                 ->first();
 
             $img = ItemImages::where('parent', $data->item_code)->orderBy('idx', 'asc')->value('image_path');
-            $img = $img ? "/img/$img" : '/icon/no_img.png';
+            $img = $img ? "/img/$img" : '/icon/no-img.png';
             $img = $this->base64Image($img);
 
             $q = [
@@ -439,7 +439,7 @@ class MainController extends Controller
         $itemDetails = Item::query()->where('name', $q->item_code)->first();
 
         $img = ItemImages::query()->where('parent', $q->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
-        $img = $img ? "/img/$img" : '/icon/no_img.png';
+        $img = $img ? "/img/$img" : '/icon/no-img.png';
         $img = $this->base64Image($img);
 
         $isBundle = false;
@@ -1704,7 +1704,7 @@ class MainController extends Controller
             return ApiResponse::failureLegacy('Stock Entry not found.');
         }
 
-        $image = $stockEntryDetail->image ? $stockEntryDetail->image : '/icon/no_img.png';
+        $image = $stockEntryDetail->image ? $stockEntryDetail->image : '/icon/no-img.png';
 
         $salesOrder = SalesOrder::query()->where('name', $stockEntryDetail->sales_order_no)->first();
 

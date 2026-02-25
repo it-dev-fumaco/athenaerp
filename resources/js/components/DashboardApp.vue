@@ -84,7 +84,10 @@ const showItemCostLink = computed(() => ['Manager', 'Director'].includes(props.u
 <style scoped>
 .dashboard-app {
   padding: 0;
-  min-height: 900px;
+  min-height: 860px;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
 }
 .dashboard-nav-pills {
   display: flex;
@@ -108,11 +111,17 @@ const showItemCostLink = computed(() => ['Manager', 'Director'].includes(props.u
   background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%);
   color: #fff;
 }
+.dashboard-stats-wrap {
+  width: 100%;
+  min-width: 0;
+  padding: 0.75rem 1rem 1rem 1rem;
+}
 .dashboard-main {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: minmax(0, 1fr) 320px;
   gap: 1.25rem;
   align-items: start;
+  min-width: 0;
 }
 @media (max-width: 1200px) {
   .dashboard-main {
@@ -120,11 +129,19 @@ const showItemCostLink = computed(() => ['Manager', 'Director'].includes(props.u
   }
 }
 .dashboard-tabs-card {
+  min-width: 0;
   background: rgba(255, 255, 255, 0.95);
   border-radius: 16px;
   border: 1px solid rgba(13, 58, 110, 0.1);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.dashboard-tabs-card .dashboard-tabs-content {
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
 }
 .dashboard-tabs-header {
   display: flex;
@@ -178,16 +195,20 @@ const showItemCostLink = computed(() => ['Manager', 'Director'].includes(props.u
 .dashboard-tabs-content {
   padding: 0;
   min-height: 400px;
+  min-width: 0;
 }
 .dashboard-tabs-content .tab-pane {
   padding: 0.5rem;
+  min-width: 0;
 }
 .dashboard-sidebar {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  min-width: 0;
 }
 .card-glass {
+  min-width: 0;
   background: rgba(255, 255, 255, 0.95);
   border-radius: 14px;
   border: 1px solid rgba(13, 58, 110, 0.1);
@@ -208,6 +229,9 @@ const showItemCostLink = computed(() => ['Manager', 'Director'].includes(props.u
 .dashboard-widget-body {
   padding: 0.75rem;
   overflow-x: auto;
+  overflow-y: visible;
+  min-width: 0;
+  word-wrap: break-word;
 }
 
 </style>

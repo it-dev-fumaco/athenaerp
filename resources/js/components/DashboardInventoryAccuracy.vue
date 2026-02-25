@@ -1,10 +1,11 @@
 <template>
   <div class="box inv-accuracy-widget">
-    <form autocomplete="off">
-      <div class="d-flex flex-wrap align-items-center justify-content-center mb-2">Monthly Inventory Accuracy:
+    <form autocomplete="off" class="inv-accuracy-form">
+      <div class="inv-accuracy-filters">
+        <span class="inv-accuracy-filters__label">Monthly Inventory Accuracy:</span>
         <select
           v-model="selectedMonth"
-          class="filter-inv-accuracy form-control form-control-sm mx-1"
+          class="inv-accuracy-filters__select form-control form-control-sm"
           @change="loadData"
         >
           <option value="">-</option>
@@ -12,7 +13,7 @@
         </select>
         <select
           v-model="selectedYear"
-          class="filter-inv-accuracy form-control form-control-sm mx-1"
+          class="inv-accuracy-filters__select form-control form-control-sm"
           @change="loadData"
         >
           <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>
@@ -128,3 +129,34 @@ async function loadData() {
 
 onMounted(loadData);
 </script>
+
+<style scoped>
+.inv-accuracy-form {
+  margin-bottom: 0.5rem;
+}
+.inv-accuracy-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.inv-accuracy-filters__label {
+  font-size: 0.9rem;
+  color: #374151;
+  white-space: nowrap;
+}
+.inv-accuracy-filters__select {
+  min-width: 0;
+  width: auto;
+  max-width: 100%;
+}
+@media (max-width: 360px) {
+  .inv-accuracy-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .inv-accuracy-filters__select {
+    width: 100%;
+  }
+}
+</style>

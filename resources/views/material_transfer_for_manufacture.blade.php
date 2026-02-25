@@ -4,6 +4,52 @@
     'nameDesc' => 'Outgoing'
 ])
 
+@section('style')
+<style>
+	#ste-modal .modal-dialog {
+		max-width: 1400px !important;
+		width: min(90vw, 1400px) !important;
+		margin: 0.5rem auto !important;
+	}
+	#ste-modal .modal-content {
+		width: 100% !important;
+		max-width: none !important;
+	}
+	#ste-modal .modal-body {
+		width: 100% !important;
+		max-width: none !important;
+	}
+	#ste-modal .modal-body .row {
+		margin-left: 0 !important;
+		margin-right: 0 !important;
+		width: 100% !important;
+		max-width: none !important;
+	}
+	#ste-modal .modal-body .form-control {
+		width: 100% !important;
+		max-width: 100% !important;
+	}
+	#ste-modal .modal-body .ste-modal__body,
+	#ste-modal .modal-body .ste-modal__breadcrumb {
+		width: 100% !important;
+		max-width: none !important;
+	}
+	#ste-modal .modal-body .container,
+	#ste-modal .modal-body .container-fluid {
+		max-width: none !important;
+		width: 100% !important;
+		padding-left: 0 !important;
+		padding-right: 0 !important;
+	}
+	@media (max-width: 767.98px) {
+		#ste-modal .modal-dialog {
+			max-width: calc(100vw - 1rem) !important;
+			width: 100% !important;
+		}
+	}
+</style>
+@endsection
+
 @section('content')
 <div class="content" ng-app="myApp" ng-controller="stockCtrl" id="anglrCtrl">
 	<div class="content-header pt-0">
@@ -156,7 +202,7 @@
 <div class="modal fade" id="ste-modal">
 	<form method="POST" action="/submit_transaction">
 		@csrf
-		<div class="modal-dialog modal-generic-narrow" style="min-width: 35%; max-width: 95%;"></div>
+		<div class="modal-dialog modal-ste-full"></div>
 	</form>
 </div>
 
