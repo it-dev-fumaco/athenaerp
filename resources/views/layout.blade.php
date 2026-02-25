@@ -1263,31 +1263,53 @@
 
 			$(document).on('submit', '#add-to-brochure-form', function (e){
 				e.preventDefault();
+				var $form = $(this);
 				$.ajax({
 					type: 'post',
 					url: '/add_to_brochure_list',
-					data: $(this).serialize(),
+					data: $form.serialize(),
 					success: function(response){
 						if (response.status) {
-							if(response.show_notif){
-								showNotification("success", response.message, "fa fa-check");
-							}else{
+							if (response.warning) {
+								showNotification("warning", response.warning, "fa fa-exclamation-triangle");
+							}
+							if (response.show_notif) {
+								var isDuplicateOnly = response.warning && response.message === response.warning;
+								if (!isDuplicateOnly) {
+									showNotification("success", response.message, "fa fa-check");
+								}
+							} else {
 								$.ajax({
 									type: 'get',
 									url: '/generate_multiple_brochures?preview=1',
-									success: function(response){
-										$('#brochure-preview-container').html(response);
-										$('#brochure-preview-modal').modal('show');
+									success: function(previewHtml){
+										var $container = $('#brochure-preview-container');
+										var $modal = $('#brochure-preview-modal');
+										if ($container.length && $modal.length) {
+											$container.html(previewHtml);
+											$modal.modal('show');
+										} else {
+											window.location.href = '/generate_multiple_brochures?preview=1';
+										}
+									},
+									error: function() {
+										window.location.href = '/generate_multiple_brochures?preview=1';
 									}
 								});
 							}
-							count_brochures();
+							if (typeof count_brochures === 'function') {
+								count_brochures();
+							}
 						} else {
-							showNotification("danger", response.message, "fa fa-info");
+							showNotification("danger", response.message || 'An error occurred.', "fa fa-info");
 						}
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
-						showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
+						var message = 'Something went wrong. Please contact your system administrator.';
+						if (jqXHR.status === 422 && jqXHR.responseJSON && jqXHR.responseJSON.message) {
+							message = jqXHR.responseJSON.message;
+						}
+						showNotification("danger", message, "fa fa-info");
 					}
 				});
 			});
