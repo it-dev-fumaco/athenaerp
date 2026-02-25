@@ -387,13 +387,42 @@ class BrochureController extends Controller
             $project = $request->project ?? null;
             $customer = $request->customer ?? null;
 
-            $counter = session()->get('brochure_list.items');
-            $counter = isset($counter) ? count($counter) + 1 : 1;
+            $existingItems = session()->get('brochure_list.items') ?? [];
+            $existingItemCodes = collect($existingItems)->pluck('item_code')->unique()->filter()->values()->all();
+
+            if ($save) {
+                session()->forget('brochure_list.items');
+                $existingItemCodes = [];
+            }
+
+            $counter = $existingItemCodes ? count($existingItemCodes) + 1 : 1;
 
             session()->put('brochure_list.project', $project);
             session()->put('brochure_list.customer', $customer);
 
+            $seenInRequest = [];
+            $addedCount = 0;
+            $duplicateCodes = [];
+            $itemCodesAdded = [];
+
             foreach ($itemCodes as $idx => $itemCode) {
+                $alreadyInList = in_array($itemCode, $existingItemCodes, true);
+                $alreadySeenInForm = isset($seenInRequest[$itemCode]);
+
+                if ($save) {
+                    if ($alreadySeenInForm) {
+                        $duplicateCodes[] = $itemCode;
+                        continue;
+                    }
+                    $seenInRequest[$itemCode] = true;
+                } else {
+                    if ($alreadyInList) {
+                        $duplicateCodes[] = $itemCode;
+                        continue;
+                    }
+                    $existingItemCodes[] = $itemCode;
+                }
+
                 $id = $save
                     ? ($idArr[$idx] ?? $itemCode.'-0')
                     : $itemCode.'-'.$counter;
@@ -404,19 +433,47 @@ class BrochureController extends Controller
                     'idx' => $idx,
                 ];
                 session()->put('brochure_list.items.'.$id, $details);
+                $itemCodesAdded[] = $itemCode;
+                $addedCount++;
+                $counter++;
             }
 
-            $this->brochureAttributeService->syncItemBrochureFields(
-                $itemCodes,
-                $itemBrochureDescription,
-                $itemBrochureName
-            );
+            if ($itemCodesAdded !== []) {
+                $this->brochureAttributeService->syncItemBrochureFields(
+                    $itemCodesAdded,
+                    $itemBrochureDescription,
+                    $itemBrochureName
+                );
+            }
 
             DB::commit();
 
             $showNotif = isset($request->generate_page) ? 0 : 1;
+            $message = 'Item added to list.';
+            $warning = null;
 
-            return ApiResponse::successWith('Item added to list.', ['show_notif' => $showNotif]);
+            if ($duplicateCodes !== []) {
+                $uniqueDuplicates = array_unique($duplicateCodes);
+                $warning = count($uniqueDuplicates) === 1
+                    ? 'Item already in brochure list: '.$uniqueDuplicates[0]
+                    : count($uniqueDuplicates).' item(s) already in brochure list (not added).';
+                if ($addedCount === 0) {
+                    $message = $warning;
+                } else {
+                    $message = $addedCount === 1
+                        ? '1 item added. '.$warning
+                        : $addedCount.' items added. '.$warning;
+                }
+            } elseif ($addedCount > 1) {
+                $message = $addedCount.' items added to list.';
+            }
+
+            $extra = ['show_notif' => $showNotif, 'message' => $message];
+            if ($warning !== null) {
+                $extra['warning'] = $warning;
+            }
+
+            return ApiResponse::successWith($message, $extra);
         } catch (\Throwable $th) {
             DB::rollBack();
 
@@ -533,7 +590,7 @@ class BrochureController extends Controller
                 $content[] = [
                     'item_code' => $itemCode,
                     'id' => Str::slug($itemName, '-'),
-                    'row' => $i + 1,
+                    'row' => $no,
                     'project' => $project,
                     'item_name' => $itemName,
                     'reference' => $details['fitting_type'],
