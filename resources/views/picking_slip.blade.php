@@ -101,10 +101,15 @@
 									</tbody>
 								</table>
 
-								<!-- Load More Button -->
-								<div class="text-center p-3">
+								<!-- No records found (only when dataset is empty and not loading) -->
+								<div class="text-center py-4 text-muted" ng-show="!custom_loading_spinner_1 && ps_filtered.length === 0">
+									<p class="mb-0">No records found.</p>
+								</div>
+
+								<!-- Load More (only when there are records and more data to load) -->
+								<div class="text-center p-3" ng-show="!custom_loading_spinner_1 && ps_filtered.length > 0 && hasMore">
                                     <button id="load-more-btn" class="btn btn-primary" ng-click="loadMore()">Load More</button>
-                                    <div id="load-more-spinner" class="spinner-border text-primary d-none" role="status">
+                                    <div id="load-more-spinner" class="spinner-border text-primary d-none mt-2" role="status">
                                         <span class="sr-only">Loading...</span>
                                     </div>
                                 </div>
