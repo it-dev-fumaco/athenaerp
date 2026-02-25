@@ -2,11 +2,13 @@
 
 namespace App\Traits;
 
+use App\Constants\StockEntryConstants;
 use App\Models\StockEntry;
 use App\Models\StockReservation;
 use App\Models\Warehouse;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -530,6 +532,22 @@ trait GeneralTrait
         $this->updateReservationStatus();
     }
 
+    /**
+     * Compute parent STE item_status when all child items are issued/returned.
+     * Matches ERPNext semantics: Sales Return / For Return → Returned, otherwise Issued.
+     */
+    protected function computeSteParentItemStatus(StockEntry $stockEntry): string
+    {
+        if ($stockEntry->receive_as === 'Sales Return') {
+            return StockEntryConstants::STATUS_RETURNED;
+        }
+        if ($stockEntry->transfer_as === StockEntryConstants::TRANSFER_AS_FOR_RETURN) {
+            return StockEntryConstants::STATUS_RETURNED;
+        }
+
+        return StockEntryConstants::STATUS_ISSUED;
+    }
+
     public function submitStockEntry($id, $systemGenerated = 0)
     {
         try {
@@ -544,8 +562,13 @@ trait GeneralTrait
             }
 
             if ($draftSte->purpose) {
-                $countNotIssuedItems = collect($draftSte->items)
-                    ->whereNotIn('status', ['Issued', 'Returned'])
+                $itemsToCheck = $draftSte->items;
+                $erpResponse = $this->erpGet('Stock Entry', $id);
+                if (isset($erpResponse['data']['items']) && is_array($erpResponse['data']['items'])) {
+                    $itemsToCheck = collect($erpResponse['data']['items']);
+                }
+                $countNotIssuedItems = collect($itemsToCheck)
+                    ->whereNotIn('status', [StockEntryConstants::STATUS_ISSUED, StockEntryConstants::STATUS_RETURNED])
                     ->count();
 
                 if ($countNotIssuedItems) {
@@ -556,12 +579,21 @@ trait GeneralTrait
             if ($draftSte->transfer_as != 'Consignment') {
                 $stockEntryData = ['docstatus' => 1];
 
-                return $stockEntryResponse = $this->erpPut('Stock Entry', $id, $stockEntryData);
-            }
+                // When all child items are issued/returned, set parent STE item_status in ERPNext so submission is allowed and status stays in sync.
+                if ($draftSte->purpose) {
+                    $parentItemStatus = $this->computeSteParentItemStatus($draftSte);
+                    $stockEntryData['item_status'] = $parentItemStatus;
+                    $draftSte->item_status = $parentItemStatus;
+                    $draftSte->save();
+                }
 
-            if (! isset($stockEntryResponse['data'])) {
-                $err = $stockEntryResponse['exception'] ?? 'An error occurred while submitting Stock Entry';
-                throw new Exception($err);
+                $stockEntryResponse = $this->erpPut('Stock Entry', $id, $stockEntryData);
+                if (! Arr::has($stockEntryResponse, 'data')) {
+                    $err = data_get($stockEntryResponse, 'exception', 'An error occurred while submitting Stock Entry');
+                    throw new Exception($err);
+                }
+
+                return ['error' => 0, 'modal_title' => 'Success', 'modal_message' => 'Stock Entry Submitted.'];
             }
 
             return ['error' => 0, 'modal_title' => 'Success', 'modal_message' => 'Stock Entry Submitted.'];
