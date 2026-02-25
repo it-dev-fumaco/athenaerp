@@ -159,6 +159,52 @@ trait ERPTrait
     }
 
     /**
+     * Submit a document in ERPNext/Frappe (e.g. Stock Entry) so that it runs
+     * server-side submit logic (docstatus = 1) and creates ledger entries (e.g. Stock Ledger Entry).
+     * Uses Frappe method API: POST /api/method/frappe.client.submit
+     *
+     * @param  string  $doctype  Frappe DocType (e.g. "Stock Entry")
+     * @param  string  $name  Document name
+     * @param  bool  $systemGenerated  Use system API key
+     * @return array Response with 'message' on success; 'exception' or 'exc' on error
+     */
+    public function erpSubmitDocument(string $doctype, string $name, bool $systemGenerated = true): array
+    {
+        try {
+            $erpApiBaseUrl = rtrim(config('services.erp.api_base_url'), '/');
+            $url = $erpApiBaseUrl.'/api/method/frappe.client.submit';
+            $payload = ['doc' => ['doctype' => $doctype, 'name' => $name]];
+
+            $http = Http::withHeaders($this->getErpHeaders($systemGenerated));
+            $response = $http->post($url, $payload);
+
+            if ($response->failed()) {
+                Log::warning('ERP submit request failed', [
+                    'url' => $url,
+                    'doctype' => $doctype,
+                    'name' => $name,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+            }
+
+            $result = $response->json() ?? [];
+            $this->logErpErrorIfPresent($result, $url, 'POST');
+
+            return $result;
+        } catch (\Throwable $th) {
+            Log::error('ERP submit document error', [
+                'doctype' => $doctype,
+                'name' => $name,
+                'message' => $th->getMessage(),
+                'trace' => $th->getTraceAsString(),
+            ]);
+
+            return ['exception' => $th->getMessage(), 'error' => 1];
+        }
+    }
+
+    /**
      * Execute create or update based on method (post/put).
      * Use when method is determined at runtime.
      *

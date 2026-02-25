@@ -2,13 +2,16 @@
 
 namespace App\Traits;
 
+use App\Constants\StockEntryConstants;
 use App\Models\StockEntry;
 use App\Models\StockReservation;
 use App\Models\Warehouse;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
@@ -530,6 +533,56 @@ trait GeneralTrait
         $this->updateReservationStatus();
     }
 
+    /**
+     * Compute parent STE item_status when all child items are issued/returned.
+     * Matches ERPNext semantics: Sales Return / For Return → Returned, otherwise Issued.
+     *
+     * @param  StockEntry|array  $steDoc  Stock Entry model or ERPNext doc (with receive_as, transfer_as)
+     */
+    protected function computeSteParentItemStatus(StockEntry|array $steDoc): string
+    {
+        $receiveAs = is_array($steDoc) ? ($steDoc['receive_as'] ?? null) : $steDoc->receive_as;
+        $transferAs = is_array($steDoc) ? ($steDoc['transfer_as'] ?? null) : $steDoc->transfer_as;
+
+        if ($receiveAs === 'Sales Return') {
+            return StockEntryConstants::STATUS_RETURNED;
+        }
+        if ($transferAs === StockEntryConstants::TRANSFER_AS_FOR_RETURN) {
+            return StockEntryConstants::STATUS_RETURNED;
+        }
+
+        return StockEntryConstants::STATUS_ISSUED;
+    }
+
+    /**
+     * Check in ERPNext whether all child items of the STE are Issued or Returned.
+     * Use this after updating the STE in ERPNext so submission is only triggered when ERPNext state is fully issued.
+     *
+     * @param  string  $steName  Stock Entry name (e.g. STE-XXX)
+     * @return bool True if STE has at least one item and all items have status Issued or Returned
+     */
+    public function steAllItemsIssuedInErpNext(string $steName): bool
+    {
+        $response = $this->erpGet('Stock Entry', $steName);
+        $data = $response['data'] ?? null;
+        if (! is_array($data) || empty($data['items']) || ! is_array($data['items'])) {
+            return false;
+        }
+        $notIssuedCount = collect($data['items'])
+            ->whereNotIn('status', [StockEntryConstants::STATUS_ISSUED, StockEntryConstants::STATUS_RETURNED])
+            ->count();
+
+        return $notIssuedCount === 0;
+    }
+
+    /**
+     * Submit STE to ERPNext so that docstatus = 1 and Stock Ledger Entry is created.
+     * Uses ERPNext as source of truth for child item status; syncs parent Item Status to ERPNext when all children are issued so submission is allowed.
+     *
+     * @param  string  $id  Stock Entry name (e.g. STE-XXX)
+     * @param  int  $systemGenerated  1 when called from backend (return array on error); 0 for user-facing (return JSON response)
+     * @return array|\Illuminate\Http\JsonResponse Success/error structure; on systemGenerated, returns ['error' => 0|1, 'modal_message' => ...]
+     */
     public function submitStockEntry($id, $systemGenerated = 0)
     {
         try {
@@ -543,25 +596,53 @@ trait GeneralTrait
                 throw new Exception('Stock Entry already submitted');
             }
 
-            if ($draftSte->purpose) {
-                $countNotIssuedItems = collect($draftSte->items)
-                    ->whereNotIn('status', ['Issued', 'Returned'])
-                    ->count();
-
-                if ($countNotIssuedItems) {
-                    throw new Exception('All item(s) must be issued.');
-                }
+            $erpData = null;
+            $erpResponse = $this->erpGet('Stock Entry', $id);
+            if (isset($erpResponse['data']) && is_array($erpResponse['data'])) {
+                $erpData = $erpResponse['data'];
             }
 
-            if ($draftSte->transfer_as != 'Consignment') {
-                $stockEntryData = ['docstatus' => 1];
-
-                return $stockEntryResponse = $this->erpPut('Stock Entry', $id, $stockEntryData);
+            if (isset($erpData['docstatus']) && (int) $erpData['docstatus'] === 1) {
+                throw new Exception('Stock Entry already submitted');
             }
 
-            if (! isset($stockEntryResponse['data'])) {
-                $err = $stockEntryResponse['exception'] ?? 'An error occurred while submitting Stock Entry';
-                throw new Exception($err);
+            $itemsToCheck = $draftSte->items;
+            if (isset($erpData['items']) && is_array($erpData['items'])) {
+                $itemsToCheck = collect($erpData['items']);
+            }
+
+            $countNotIssuedItems = collect($itemsToCheck)
+                ->whereNotIn('status', [StockEntryConstants::STATUS_ISSUED, StockEntryConstants::STATUS_RETURNED])
+                ->count();
+
+            if ($countNotIssuedItems > 0) {
+                throw new Exception('All item(s) must be issued before submitting. '.$countNotIssuedItems.' item(s) still pending.');
+            }
+
+            $transferAs = $erpData['transfer_as'] ?? $draftSte->transfer_as;
+            if ($transferAs == StockEntryConstants::TRANSFER_AS_CONSIGNMENT) {
+                return ['error' => 0, 'modal_title' => 'Success', 'modal_message' => 'Stock Entry Submitted.'];
+            }
+
+            $steDocForStatus = $erpData ?? $draftSte;
+            $parentItemStatus = $this->computeSteParentItemStatus($steDocForStatus);
+
+            $draftSte->item_status = $parentItemStatus;
+            $draftSte->save();
+
+            $updateResponse = $this->erpPut('Stock Entry', $id, ['item_status' => $parentItemStatus]);
+            if (Arr::has($updateResponse, 'exception') || Arr::has($updateResponse, 'exc')) {
+                Log::warning('GeneralTrait submitStockEntry ERP item_status update failed', [
+                    'ste_id' => $id,
+                    'response' => $updateResponse,
+                ]);
+            }
+
+            $submitResponse = $this->erpSubmitDocument('Stock Entry', $id, true);
+
+            if (Arr::has($submitResponse, 'exception') || Arr::has($submitResponse, 'exc') || ($submitResponse['error'] ?? 0)) {
+                $err = $submitResponse['exception'] ?? $submitResponse['exc'] ?? 'An error occurred while submitting Stock Entry';
+                throw new Exception(is_string($err) ? $err : 'Submit failed');
             }
 
             return ['error' => 0, 'modal_title' => 'Success', 'modal_message' => 'Stock Entry Submitted.'];
