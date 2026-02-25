@@ -582,7 +582,6 @@ class MaterialTransferController extends Controller
             $checker = collect($stockEntry->items)->where('name', '!=', $childId)->where('status', 'For Checking')->count();
             if (! $checker) {
                 $stockEntry->item_status = 'Issued';
-                $stockEntry->docstatus = 1;
             }
 
             unset($stockEntry->creation, $stockEntry->owner);
@@ -609,10 +608,8 @@ class MaterialTransferController extends Controller
                         return $item;
                     });
 
-                    $checker = collect($stockEntry['items'])->where('name', '!=', $childId)->where('status', 'For Checking')->count();
-                    if (! $checker) {
+                    if (collect($stockEntry['items'])->where('name', '!=', $childId)->where('status', 'For Checking')->count() === 0) {
                         $stockEntry['item_status'] = 'Issued';
-                        $stockEntry['docstatus'] = 1;
                     }
 
                     $response = $this->erpPut('Stock Entry', $stockEntry['name'], collect($stockEntry)->toArray());
@@ -624,6 +621,26 @@ class MaterialTransferController extends Controller
                 } else {
                     $err = data_get($response, 'exception', 'An error occured while updating Stock Entry');
                     throw new Exception($err);
+                }
+            }
+
+            $steName = is_array($stockEntry) ? ($stockEntry['name'] ?? null) : $stockEntry->name;
+            if (! $steName) {
+                Log::warning('MaterialTransferController submitInternalTransfer: STE name missing after update', ['stock_entry' => $stockEntry]);
+            }
+            $allItemsIssuedInErp = $steName && $this->steAllItemsIssuedInErpNext($steName);
+            if ($allItemsIssuedInErp) {
+                $submitResponse = $this->erpSubmitDocument('Stock Entry', $steName, true);
+                if (Arr::has($submitResponse, 'exception') || Arr::has($submitResponse, 'exc') || ($submitResponse['error'] ?? 0)) {
+                    $submitErr = $submitResponse['exception'] ?? $submitResponse['exc'] ?? 'Submit failed';
+                    Log::error('MaterialTransferController STE submit to ERPNext failed after all items issued', [
+                        'ste_name' => $steName,
+                        'exception' => $submitErr,
+                        'response' => $submitResponse,
+                    ]);
+                    return ApiResponse::failure(
+                        'Item checked out, but the Stock Entry could not be submitted to ERP. Stock Ledger Entry was not created. Please contact your system administrator or try submitting the STE manually in ERPNext.'
+                    );
                 }
             }
 
