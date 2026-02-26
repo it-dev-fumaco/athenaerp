@@ -189,7 +189,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
         Route::get('/inv_accuracy/{year}', [MainController::class, 'invAccuracyChart']);
         // Route::get('/get_recently_added_items', 'MainController@get_recently_added_items');
         Route::get('/get_reserved_items', [MainController::class, 'getReservedItems']);
-        Route::get('/get_available_qty/{item_code}/{warehouse}', [MainController::class, 'getAvailableQty']);
+        Route::get('/get_available_qty/{item_code}/{warehouse}', [ItemProfileController::class, 'getItemWarehouseAvailableQty']);
         Route::get('/validate_if_reservation_exists', [MainController::class, 'validateIfReservationExists']);
         Route::post('/submit_sales_return', [MainController::class, 'submitSalesReturn']);
         Route::get('/view_deliveries', [DeliveryController::class, 'viewDeliveries']);

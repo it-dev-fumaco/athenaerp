@@ -535,6 +535,31 @@ class ItemProfileController extends Controller
         });
     }
 
+    /**
+     * Available qty for one item/warehouse. Uses getItemStockLevels as single source of truth
+     * so the Stock Reservation modal always matches the Item Profile → Stock Level table.
+     * Formula: Available = Actual - Reserved - Issued (same as Stock Level).
+     */
+    public function getItemWarehouseAvailableQty(string $itemCode, string $warehouse)
+    {
+        $request = new Request;
+        $result = $this->getItemStockLevels($itemCode, $request);
+
+        $siteWarehouses = $result['site_warehouses'] ?? [];
+        $consignmentWarehouses = $result['consignment_warehouses'] ?? [];
+        $allRows = array_merge($siteWarehouses, $consignmentWarehouses);
+
+        foreach ($allRows as $row) {
+            if (($row['warehouse'] ?? '') === $warehouse) {
+                $availableQty = (float) ($row['available_qty'] ?? 0);
+
+                return response()->json(round($availableQty, 2));
+            }
+        }
+
+        return response()->json(0);
+    }
+
     public function getItemStockLevels($itemCode, Request $request)
     {
         $itemDetails = Item::query()->where('name', $itemCode)->first();
@@ -632,7 +657,7 @@ class ItemProfileController extends Controller
             $reservedQty = $reservedQty - $consumedQty;
             $reservedQty = $reservedQty > 0 ? $reservedQty : 0;
 
-            $issuedReservedQty = ($reservedQty + $issuedQty) - $consumedQty;
+            $issuedReservedQty = $reservedQty + $issuedQty;
 
             $actualQty = $value->actual_qty;
             $availableQty = ($actualQty > $issuedReservedQty) ? $actualQty - $issuedReservedQty : 0;

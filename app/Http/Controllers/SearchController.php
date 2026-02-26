@@ -268,7 +268,7 @@ class SearchController extends Controller
 
                 $warehouseReorderLevel = data_get($lowLevelStock, "{$binKey}.0.total_warehouse_reorder_level", 0);
 
-                $issuedReservedQty = ($reservedQty + $issuedQty) - $consumedQty;
+                $issuedReservedQty = $reservedQty + $issuedQty;
 
                 $availableQty = ($actualQty > $issuedReservedQty) ? $actualQty - $issuedReservedQty : 0;
                 if (data_get($value, 'parent_warehouse') == 'P2 Consignment Warehouse - FI' && ! $isPromodiser) {

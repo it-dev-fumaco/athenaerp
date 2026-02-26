@@ -64,15 +64,18 @@ class Bin extends Model
 
     /**
      * Get available quantity (actual - reserved - website_reserved).
+     * Reserved = (reserve_qty - consumed_qty) for Active/Partially Issued, In-house/Consignment/Website Stocks.
+     * Aligned with GeneralTrait::getReservedQty for consistency.
      */
     public function getAvailableQty(): float
     {
-        $reservedQty = StockReservation::query()
+        $reservedQty = (float) \Illuminate\Support\Facades\DB::table('tabStock Reservation')
             ->where('item_code', $this->item_code)
             ->where('warehouse', $this->warehouse)
-            ->where('type', 'In-house')
-            ->where('status', 'Active')
-            ->sum('reserve_qty');
+            ->whereIn('type', ['In-house', 'Consignment', 'Website Stocks'])
+            ->whereIn('status', ['Active', 'Partially Issued'])
+            ->selectRaw('COALESCE(SUM(reserve_qty), 0) - COALESCE(SUM(consumed_qty), 0) as net_reserved')
+            ->value('net_reserved');
 
         return max(0, $this->actual_qty - $reservedQty - ($this->website_reserved_qty ?? 0));
     }

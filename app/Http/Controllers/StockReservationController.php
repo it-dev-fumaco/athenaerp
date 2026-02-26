@@ -410,7 +410,7 @@ class StockReservationController extends Controller
             })
             ->select('tabWarehouse.name as id', 'tabWarehouse.name as text')
             ->orderBy('tabWarehouse.modified', 'desc')
-            ->limit(10)
+            ->limit(50)
             ->get();
     }
 }

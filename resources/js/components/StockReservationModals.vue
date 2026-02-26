@@ -326,11 +326,12 @@ export default {
 
     async openAddModal() {
       const selectedCodeEl = document.getElementById('selected-item-code');
-      const itemCode = selectedCodeEl?.textContent?.trim();
+      const itemCodeFromDataAttr = document.querySelector('#item-profile-stock-reservation[data-item-code]')?.getAttribute('data-item-code')?.trim();
+      const itemCode = selectedCodeEl?.textContent?.trim() || itemCodeFromDataAttr;
       if (!itemCode) return;
 
       this.addForm = {
-        item_code: '',
+        item_code: itemCode,
         description: '',
         notes: '',
         warehouse: '',
@@ -357,12 +358,15 @@ export default {
           axios.get('/projects', { params: { q: '' } }),
           axios.get('/consignment_warehouses', { params: { q: '' } }),
         ]);
-        const data = itemRes.data;
-        this.addForm.item_code = data.name;
-        this.addForm.description = data.description || '';
-        this.addForm.stock_uom = data.stock_uom || '';
-        const whList = Array.isArray(whRes.data) ? whRes.data : [];
-        this.warehousesAdd = whList.map((o) => ({ id: o.id ?? o.name, text: o.text ?? o.name ?? o.id }));
+        const payload = itemRes.data?.data ?? itemRes.data;
+        this.addForm.item_code = payload?.name ?? itemCode;
+        this.addForm.description = payload?.description ?? '';
+        this.addForm.stock_uom = payload?.stock_uom ?? '';
+        const whList = Array.isArray(whRes.data) ? whRes.data : (Array.isArray(whRes.data?.data) ? whRes.data.data : []);
+        this.warehousesAdd = whList.map((o) => {
+          const id = o.id ?? o.name ?? '';
+          return { id: String(id), text: o.text ?? o.name ?? String(id) };
+        }).filter((o) => o.id);
         this.salesPersons = (Array.isArray(salesRes.data) ? salesRes.data : []).map((o) => ({ id: o.id ?? o.name, text: o.text ?? o.name ?? o.id }));
         this.projects = (Array.isArray(projRes.data) ? projRes.data : []).map((o) => ({ id: o.id ?? o.name, text: o.text ?? o.name ?? o.id }));
         this.branchWarehouses = (Array.isArray(branchRes.data) ? branchRes.data : []).map((o) => ({ id: o.id ?? o.name, text: o.text ?? o.name ?? o.id }));
@@ -370,6 +374,13 @@ export default {
         d.setDate(d.getDate() + 30);
         this.addForm.valid_until = d.toISOString().slice(0, 10);
         showModal('add-stock-reservation-modal');
+        if (this.warehousesAdd.length > 0) {
+          const firstWarehouseId = this.warehousesAdd[0].id;
+          this.$nextTick(() => {
+            this.addForm.warehouse = firstWarehouseId;
+            this.$nextTick(() => this.onAddWarehouseChange());
+          });
+        }
       } catch (_) {
         if (typeof window.showNotification === 'function') {
           window.showNotification('danger', 'Failed to load item details.', 'fa fa-info');
@@ -385,9 +396,18 @@ export default {
 
     onAddWarehouseChange() {
       if (!this.addForm.warehouse || !this.addForm.item_code) return;
-      axios.get(`/get_available_qty/${this.addForm.item_code}/${this.addForm.warehouse}`)
+      const itemCode = encodeURIComponent(this.addForm.item_code);
+      const warehouse = encodeURIComponent(this.addForm.warehouse);
+      axios.get(`/get_available_qty/${itemCode}/${warehouse}`)
         .then((res) => {
-          this.addForm.availableQty = parseInt(res.data, 10) || 0;
+          const raw = res.data;
+          if (typeof raw === 'number' && !Number.isNaN(raw)) {
+            this.addForm.availableQty = raw;
+          } else if (raw != null && typeof raw === 'object' && 'data' in raw) {
+            this.addForm.availableQty = Number(raw.data) || 0;
+          } else {
+            this.addForm.availableQty = parseInt(raw, 10) || 0;
+          }
         })
         .catch(() => {
           this.addForm.availableQty = 0;
@@ -418,8 +438,15 @@ export default {
         this.editBranchWarehouses = data.consignment_warehouse ? [{ id: data.consignment_warehouse, text: data.consignment_warehouse }] : [];
         this.editProjects = data.project ? [{ id: data.project, text: data.project }] : [];
 
-        const qtyRes = await axios.get(`/get_available_qty/${data.item_code}/${data.warehouse}`);
-        this.editForm.availableQty = parseInt(qtyRes.data, 10) || 0;
+        const qtyRes = await axios.get(`/get_available_qty/${encodeURIComponent(data.item_code)}/${encodeURIComponent(data.warehouse)}`);
+        const raw = qtyRes.data;
+        if (typeof raw === 'number' && !Number.isNaN(raw)) {
+          this.editForm.availableQty = raw;
+        } else if (raw != null && typeof raw === 'object' && 'data' in raw) {
+          this.editForm.availableQty = Number(raw.data) || 0;
+        } else {
+          this.editForm.availableQty = parseInt(raw, 10) || 0;
+        }
         showModal('edit-stock-reservation-modal');
       } catch (_) {
         if (typeof window.showNotification === 'function') {
