@@ -947,6 +947,7 @@ class MainController extends Controller
         $logs = StockLedgerEntry::query()
             ->from('tabStock Ledger Entry as sle')
             ->where('sle.item_code', $itemCode)
+            ->where('sle.is_cancelled', 0)
             ->select(DB::raw('(SELECT GROUP_CONCAT(name) FROM `tabPacking Slip` where delivery_note = sle.voucher_no) as dr_voucher_no'))
             ->addSelect(DB::raw('
                 (CASE
