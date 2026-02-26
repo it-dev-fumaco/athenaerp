@@ -52,6 +52,7 @@ class ProductionController extends Controller
                 ->where('fg_warehouse', 'P2 - Housing Temporary - FI')
                 ->where('produced_qty', '>', 0)
                 ->whereRaw('produced_qty > feedback_qty')
+                ->orderByDesc('created_at')
                 ->get();
 
             $fgWarehouses = $q->pluck('fg_warehouse')->unique()->filter()->values()->all();

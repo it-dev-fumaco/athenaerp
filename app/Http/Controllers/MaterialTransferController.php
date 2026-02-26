@@ -282,6 +282,7 @@ class MaterialTransferController extends Controller
             ->whereIn('s_warehouse', $allowedWarehouses)
             ->whereNotin('transfer_as', ['Consignment', 'Sample Item', 'For Return'])
             ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as', 'ste.work_order')
+            ->orderBy('ste.creation', 'desc')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC");
 
         return StockEntry::query()
@@ -292,8 +293,11 @@ class MaterialTransferController extends Controller
             ->whereIn('t_warehouse', $allowedWarehouses)
             ->whereIn('transfer_as', ['For Return', 'Internal Transfer', 'Pull Out Item'])
             ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.material_request', 'ste.creation', 'ste.transfer_as', 'ste.work_order')
+            ->orderBy('ste.creation', 'desc')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
             ->union($q1)
+            ->orderBy('creation', 'desc')
+            ->orderByRaw("FIELD(status, 'For Checking', 'Issued') ASC")
             ->get();
     }
 
