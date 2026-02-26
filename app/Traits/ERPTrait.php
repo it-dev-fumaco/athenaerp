@@ -276,13 +276,24 @@ trait ERPTrait
         return \Illuminate\Support\Str::random($length);
     }
 
-    public function generateApiCredentials()
+    /**
+     * Generate ERP API credentials for a user. Pass $user when called during login
+     * (Auth::user() is not yet set); otherwise the authenticated user is used.
+     *
+     * @param  \App\Models\User|null  $user  User to generate credentials for; defaults to Auth::user()
+     */
+    public function generateApiCredentials(?\App\Models\User $user = null)
     {
+        $targetUser = $user ?? Auth::user();
+        if (! $targetUser) {
+            return ['success' => 0, 'message' => 'No user available to generate API credentials.'];
+        }
+
         try {
-            $loggedInUser = str_replace('fumaco.local', 'fumaco.com', Auth::user()->wh_user);
+            $loggedInUser = str_replace('fumaco.local', 'fumaco.com', $targetUser->wh_user);
             $existingKey = $this->erpGet('User', $loggedInUser, [], true);
             if (! Arr::has($existingKey, 'data')) { // Promodisers
-                $loggedInUser = Auth::user()->wh_user;
+                $loggedInUser = $targetUser->wh_user;
                 $existingKey = $this->erpGet('User', $loggedInUser, [], true);
             }
             $existingKey = data_get($existingKey, 'data.api_key');
@@ -292,34 +303,67 @@ trait ERPTrait
                 'api_secret' => $this->generateRandomString(),
             ];
 
-            $user = $this->erpPut('User', $loggedInUser, $tokens, true);
+            $erpUser = $this->erpPut('User', $loggedInUser, $tokens, true);
 
-            if (! Arr::has($user, 'data')) {
-                $error = data_get($user, 'exception', 'An error occured while generating API tokens');
+            if (! Arr::has($erpUser, 'data')) {
+                $error = $this->erpErrorMessage($erpUser, 'An error occured while generating API tokens');
                 throw new \Exception($error);
             }
 
-            $warehouseUser = $this->erpPut('Warehouse Users', Auth::user()->name, $tokens, true);
+            $warehouseUser = $this->erpPut('Warehouse Users', $targetUser->name, $tokens, true);
 
             if (! Arr::has($warehouseUser, 'data')) {
-                $error = data_get($warehouseUser, 'exception', 'An error occured while generating API tokens');
+                $error = $this->erpErrorMessage($warehouseUser, 'An error occured while generating API tokens');
                 throw new \Exception($error);
             }
 
-            $user = Auth::user();
-            $user->api_key = $tokens['api_key'];
-            $user->api_secret = $tokens['api_secret'];
-            $user->save();
+            $targetUser->api_key = $tokens['api_key'];
+            $targetUser->api_secret = $tokens['api_secret'];
+            $targetUser->save();
 
             return ['success' => 1, 'message' => 'API Credentials Created!'];
         } catch (\Exception $th) {
             Log::error('ERP generateApiCredentials failed', [
-                'user' => Auth::user()?->wh_user,
+                'user' => $targetUser->wh_user ?? null,
                 'message' => $th->getMessage(),
                 'trace' => $th->getTraceAsString(),
             ]);
 
-            return ['success' => 0, 'message' => $th->getMessage()];
+            $userMessage = $this->userFriendlyErpMessage($th->getMessage());
+
+            return ['success' => 0, 'message' => $userMessage];
         }
+    }
+
+    /**
+     * Get error message from ERP response (exception, message from erpOperation catch, or default).
+     */
+    private function erpErrorMessage(array $response, string $default): string
+    {
+        if (Arr::has($response, 'exception')) {
+            return (string) data_get($response, 'exception');
+        }
+        if (Arr::get($response, 'error') && Arr::has($response, 'message')) {
+            return (string) data_get($response, 'message');
+        }
+
+        return $default;
+    }
+
+    /**
+     * Convert ERP/HTTP error messages to user-friendly text for login and API credential flows.
+     */
+    private function userFriendlyErpMessage(string $technicalMessage): string
+    {
+        $lower = strtolower($technicalMessage);
+        if (str_contains($lower, 'timed out') || str_contains($lower, 'cURL error 28')) {
+            return 'The ERP service did not respond in time. Please try again later or contact support.';
+        }
+        if (str_contains($lower, 'connection refused') || str_contains($lower, 'could not resolve host')
+            || str_contains($lower, 'cURL error 6') || str_contains($lower, 'cURL error 7')) {
+            return 'The ERP service is temporarily unreachable. Please try again later or contact support.';
+        }
+
+        return $technicalMessage;
     }
 }
