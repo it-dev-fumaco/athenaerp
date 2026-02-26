@@ -20,6 +20,7 @@ class LoadMaterialIssueEntriesPipe implements Pipe
             ->whereIn('s_warehouse', $allowedWarehouses)
             ->whereNotIn('ste.issue_as', ['Customer Replacement', 'Sample'])
             ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'sted.owner', 'ste.creation', 'ste.issue_as')
+            ->orderBy('ste.creation', 'desc')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
             ->get();
 

@@ -14,7 +14,7 @@ class BuildPickingListPipe implements Pipe
     public function handle(mixed $passable, Closure $next): mixed
     {
         $allowedWarehouses = $passable->allowedWarehouses;
-        $search = $passable->search ?? '';
+        $search = trim((string) ($passable->search ?? ''));
         $perPage = 20;
         $page = $passable->page ?? 1;
 
@@ -31,28 +31,51 @@ class BuildPickingListPipe implements Pipe
         $pickingSlipQuery = PackingSlip::query()
             ->from('tabPacking Slip as ps')
             ->join('tabPacking Slip Item as psi', 'ps.name', '=', 'psi.parent')
-            ->join('tabDelivery Note Item as dri', 'dri.parent', '=', 'ps.delivery_note')
-            ->join('tabDelivery Note as dr', 'dri.parent', '=', 'dr.name')
-            ->whereRaw('dri.item_code = psi.item_code')
-            ->where(['dr.docstatus' => 0, 'ps.docstatus' => 0])
-            ->where(function ($query) use ($search) {
-                $query->where('psi.item_code', 'like', "%{$search}%")
-                    ->orWhere('psi.description', 'like', "%{$search}%")
-                    ->orWhere('dr.customer', 'like', "%{$search}%")
-                    ->orWhere('ps.sales_order', 'like', "%{$search}%")
-                    ->orWhere('ps.name', 'like', "%{$search}%")
-                    ->orWhere('dr.name', 'like', "%{$search}%")
-                    ->orWhere('psi.name', 'like', "%{$search}%");
+            ->leftJoin('tabDelivery Note Item as dri', function ($join) {
+                $join->on('dri.parent', '=', 'ps.delivery_note')
+                    ->on('dri.item_code', '=', 'psi.item_code');
             })
-            ->whereIn('dri.warehouse', $warehouseIds)
+            ->leftJoin('tabDelivery Note as dr', 'dri.parent', '=', 'dr.name')
+            ->whereIn('ps.docstatus', [0, 1])
+            ->where(function ($query) {
+                $query->whereNull('dr.name')
+                    ->orWhereIn('dr.docstatus', [0, 1]);
+            })
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('psi.item_code', 'like', "%{$search}%")
+                        ->orWhere('psi.description', 'like', "%{$search}%")
+                        ->orWhere('dr.customer', 'like', "%{$search}%")
+                        ->orWhere('ps.sales_order', 'like', "%{$search}%")
+                        ->orWhere('ps.name', 'like', "%{$search}%")
+                        ->orWhere('dr.name', 'like', "%{$search}%")
+                        ->orWhere('psi.name', 'like', "%{$search}%");
+                });
+            })
             ->select([
-                'dr.delivery_date', 'ps.sales_order', DB::raw('NULL as sales_order_no'), 'psi.name AS id', 'psi.status',
-                'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', DB::raw('SUM(dri.qty) as qty'), 'dri.uom',
-                'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation',
-                DB::raw('NULL as parent_item'), DB::raw('NULL as piName'), DB::raw('NULL as piQty'), DB::raw('NULL as piWarehouse'), DB::raw('NULL as piUom'),
+                DB::raw('COALESCE(MAX(dr.delivery_date), NULL) as delivery_date'),
+                'ps.sales_order',
+                DB::raw('NULL as sales_order_no'),
+                'psi.name AS id',
+                'psi.status',
+                'ps.name',
+                'ps.delivery_note',
+                'psi.item_code',
+                'psi.description',
+                DB::raw('COALESCE(SUM(dri.qty), psi.qty) as qty'),
+                DB::raw('COALESCE(MAX(dri.uom), psi.stock_uom) as uom'),
+                DB::raw('MAX(dri.warehouse) as warehouse'),
+                'psi.owner',
+                DB::raw('COALESCE(MAX(dr.customer), NULL) as customer'),
+                'ps.creation',
+                DB::raw('NULL as parent_item'),
+                DB::raw('NULL as piName'),
+                DB::raw('NULL as piQty'),
+                DB::raw('NULL as piWarehouse'),
+                DB::raw('NULL as piUom'),
                 DB::raw('"picking_slip" as type'),
             ])
-            ->groupBy(['dr.delivery_date', 'ps.sales_order', 'psi.name', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'dri.uom', 'dri.warehouse', 'psi.owner', 'dr.customer', 'ps.creation'])
+            ->groupBy(['ps.sales_order', 'psi.name', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.stock_uom', 'psi.owner', 'ps.creation'])
             ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC");
 
         $stockEntryQuery = StockEntry::query()
@@ -62,14 +85,16 @@ class BuildPickingListPipe implements Pipe
             ->where('purpose', 'Material Transfer')
             ->whereIn('s_warehouse', $warehouseIds)
             ->whereIn('transfer_as', ['Consignment', 'Sample Item'])
-            ->where(function ($query) use ($search) {
-                $query->where('sted.item_code', 'like', "%{$search}%")
-                    ->orWhere('sted.description', 'like', "%{$search}%")
-                    ->orWhere('ste.customer_1', 'like', "%{$search}%")
-                    ->orWhere('ste.sales_order_no', 'like', "%{$search}%")
-                    ->orWhere('ste.name', 'like', "%{$search}%")
-                    ->orWhere('ste.so_customer_name', 'like', "%{$search}%")
-                    ->orWhere('sted.name', 'like', "%{$search}%");
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('sted.item_code', 'like', "%{$search}%")
+                        ->orWhere('sted.description', 'like', "%{$search}%")
+                        ->orWhere('ste.customer_1', 'like', "%{$search}%")
+                        ->orWhere('ste.sales_order_no', 'like', "%{$search}%")
+                        ->orWhere('ste.name', 'like', "%{$search}%")
+                        ->orWhere('ste.so_customer_name', 'like', "%{$search}%")
+                        ->orWhere('sted.name', 'like', "%{$search}%");
+                });
             })
             ->select([
                 'ste.delivery_date', DB::raw('NULL as sales_order'), 'ste.sales_order_no', 'sted.name AS id', 'sted.status', 'ste.name',
@@ -86,16 +111,19 @@ class BuildPickingListPipe implements Pipe
             ->join('tabDelivery Note Item as dri', 'dri.parent', '=', 'ps.delivery_note')
             ->join('tabDelivery Note as dr', 'dri.parent', '=', 'dr.name')
             ->join('tabPacked Item as pi', 'pi.name', '=', 'psi.pi_detail')
-            ->where(['dr.docstatus' => 0, 'ps.docstatus' => 0])
+            ->whereIn('dr.docstatus', [0, 1])
+            ->whereIn('ps.docstatus', [0, 1])
             ->whereIn('dri.warehouse', $warehouseIds)
-            ->where(function ($query) use ($search) {
-                $query->where('pi.item_code', 'like', "%{$search}%")
-                    ->orWhere('pi.description', 'like', "%{$search}%")
-                    ->orWhere('dr.customer', 'like', "%{$search}%")
-                    ->orWhere('ps.sales_order', 'like', "%{$search}%")
-                    ->orWhere('ps.name', 'like', "%{$search}%")
-                    ->orWhere('dr.name', 'like', "%{$search}%")
-                    ->orWhere('psi.name', 'like', "%{$search}%");
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('pi.item_code', 'like', "%{$search}%")
+                        ->orWhere('pi.description', 'like', "%{$search}%")
+                        ->orWhere('dr.customer', 'like', "%{$search}%")
+                        ->orWhere('ps.sales_order', 'like', "%{$search}%")
+                        ->orWhere('ps.name', 'like', "%{$search}%")
+                        ->orWhere('dr.name', 'like', "%{$search}%")
+                        ->orWhere('psi.name', 'like', "%{$search}%");
+                });
             })
             ->select([
                 'dr.delivery_date', 'ps.sales_order', DB::raw('NULL as sales_order_no'), 'psi.name AS id', 'psi.status', 'ps.name', 'ps.delivery_note',
@@ -108,6 +136,7 @@ class BuildPickingListPipe implements Pipe
         $unionQuery = $pickingSlipQuery->unionAll($stockEntryQuery)->unionAll($productBundleQuery);
 
         $passable->paginatedData = DB::table(DB::raw("({$unionQuery->toSql()}) as sub"))
+            ->orderBy('creation', 'desc')
             ->orderByRaw("FIELD(status, 'For Checking', 'Issued') ASC")
             ->mergeBindings($unionQuery->getQuery())
             ->paginate($perPage, ['*'], 'page', $page);

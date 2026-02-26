@@ -179,6 +179,7 @@ class MainController extends Controller
             ->where('is_return', 1)
             ->whereIn('dni.warehouse', $allowedWarehouses)
             ->select('dni.name as c_name', 'dn.name', 'dni.warehouse', 'dni.item_code', 'dni.description', 'dni.qty', 'dn.reference', 'dni.item_status', 'dn.customer', 'dn.owner', 'dn.creation')
+            ->orderBy('dn.creation', 'desc')
             ->orderByRaw("FIELD(dni.item_status, 'For Checking', 'For Return', 'Returned') ASC")
             ->get();
 
@@ -190,6 +191,7 @@ class MainController extends Controller
             ->where('ste.receive_as', StockEntryConstants::RECEIVE_AS_SALES_RETURN)
             ->whereIn('sted.t_warehouse', $allowedWarehouses)
             ->select('sted.name as stedname', 'ste.name', 'sted.t_warehouse', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'ste.sales_order_no', 'sted.status', 'ste.so_customer_name', 'sted.owner', 'ste.creation')
+            ->orderBy('ste.creation', 'desc')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'For Return', 'Returned') ASC")
             ->get();
 
@@ -202,6 +204,7 @@ class MainController extends Controller
             ->whereIn('sted.t_warehouse', $allowedWarehouses)
             ->where('ste.naming_series', StockEntryConstants::NAMING_SERIES_STEC)
             ->select('sted.name as stedname', 'ste.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.transfer_qty', 'ste.sales_order_no', 'sted.status', 'ste.so_customer_name', 'sted.owner', 'ste.creation', 'sted.consignment_received_by', 'sted.consignment_date_received')
+            ->orderBy('ste.creation', 'desc')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'For Return', 'Returned') ASC")
             ->get();
 
@@ -279,6 +282,8 @@ class MainController extends Controller
                 'transaction_date' => $d->creation,
             ];
         }
+
+        $list = collect($list)->sortByDesc('transaction_date')->values()->all();
 
         return response()->json(['mr_return' => $list]);
     }
@@ -1420,6 +1425,7 @@ class MainController extends Controller
             ->where('se.purpose', 'Material Issue')
             ->where('se.issue_as', 'Customer Replacement')
             ->select('sed.status', 'sed.validate_item_code', 'se.sales_order_no', 'sed.parent', 'sed.name', 'sed.t_warehouse', 'sed.s_warehouse', 'sed.item_code', 'sed.description', 'sed.uom', 'sed.qty', 'sed.owner', 'se.material_request', 'se.creation', 'se.delivery_date', 'se.issue_as')
+            ->orderBy('se.creation', 'desc')
             ->orderByRaw("FIELD(sed.status, 'For Checking', 'Issued') ASC")
             ->get();
 
@@ -1577,7 +1583,7 @@ class MainController extends Controller
                 })
                 ->select('so.name as so_name', 'so.customer', 'wo.material_request as wo_so', 'wo.name as name', 'wo.owner', 'wo.production_item as production_item', 'wo.modified', 'soi.name as soi_name', 'soi.item_code as soi_item_code', 'so.status as so_status', 'soi.qty as so_qty', 'wo.produced_qty as qty', 'soi.ordered_qty as delivered_qty', 'so.creation', 'soi.item_code', 'soi.description', 'soi.uom', 'sted.name as sted_name', 'sted.status as sted_status', 'sted.date_modified', 'sted.session_user', 'sted.qty as ste_qty', 'ste.name as ste_name')
                 ->unionAll($salesOrders)
-                ->orderBy('modified')
+                ->orderBy('creation', 'desc')
                 ->get();
 
             $productionOrders = collect($q)->pluck('name');
@@ -1625,6 +1631,7 @@ class MainController extends Controller
                 $receivedBy = ucwords(str_replace('.', ' ', explode('@', $receivedBy)[0]));
 
                 $list[] = [
+                    'creation' => $d->creation,
                     'item_code' => $d->item_code,
                     'description' => strip_tags($d->description),
                     'uom' => $d->uom,
@@ -1647,10 +1654,7 @@ class MainController extends Controller
             }
         }
 
-        $list = collect($list)->sortBy([
-            ['status', 'asc'],
-            ['duration_in_transit', 'desc'],
-        ])->values()->all();
+        $list = collect($list)->sortByDesc('creation')->values()->all();
 
         return response()->json(['records' => $list]);
     }
