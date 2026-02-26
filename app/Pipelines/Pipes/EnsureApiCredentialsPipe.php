@@ -17,7 +17,7 @@ class EnsureApiCredentialsPipe implements Pipe
         $user = $passable->pipelineUser;
 
         if (! $user->api_key || ! $user->api_secret) {
-            $apiCredentials = $this->generateApiCredentials();
+            $apiCredentials = $this->generateApiCredentials($user);
 
             if (! $apiCredentials['success']) {
                 Auth::logout();
