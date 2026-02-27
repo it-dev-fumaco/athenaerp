@@ -642,9 +642,11 @@ class MaterialTransferController extends Controller
                         'exception' => $submitErr,
                         'response' => $submitResponse,
                     ]);
-                    return ApiResponse::failure(
-                        'Item checked out, but the Stock Entry could not be submitted to ERP. Stock Ledger Entry was not created. Please contact your system administrator or try submitting the STE manually in ERPNext.'
-                    );
+                    $message = $this->isErpConnectionError($submitErr)
+                        ? \App\Traits\ERPTrait::erpConnectionUnavailableMessage()
+                        : 'Item checked out, but the Stock Entry could not be submitted to ERP. Stock Ledger Entry was not created. Please contact your system administrator or try submitting the STE manually in ERPNext.';
+
+                    return ApiResponse::failure($message);
                 }
             }
 
@@ -654,8 +656,11 @@ class MaterialTransferController extends Controller
                 'message' => $th->getMessage(),
                 'trace' => $th->getTraceAsString(),
             ]);
+            $message = $this->isErpConnectionError($th->getMessage())
+                ? \App\Traits\ERPTrait::erpConnectionUnavailableMessage()
+                : 'Error creating transaction. Please contact your system administrator.';
 
-            return ApiResponse::failure('Error creating transaction. Please contact your system administrator.');
+            return ApiResponse::failure($message);
         }
     }
 
@@ -677,7 +682,7 @@ class MaterialTransferController extends Controller
         $owner = ucwords(str_replace('.', ' ', explode('@', $q->owner)[0]));
 
         $img = ItemImages::query()->where('parent', $q->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
-        $img = $img ? "/img/$img" : '/icon/no-img.png';
+        $img = $img ? "/item-images/$img" : '/icon/no-img.png';
         $img = $this->base64Image($img);
 
         $sWarehouse = $q->purpose == 'Manufacture' ? 'Goods In Transit - FI' : $q->s_warehouse;

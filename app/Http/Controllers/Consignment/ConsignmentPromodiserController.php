@@ -121,7 +121,7 @@ class ConsignmentPromodiserController extends Controller
                 ->get();
 
             $itemImages = ItemImages::whereIn('parent', collect($deliveryReport)->pluck('item_code'))->pluck('image_path', 'parent');
-            $itemImages = collect($itemImages)->map(fn ($image) => $this->base64Image("img/$image"));
+            $itemImages = collect($itemImages)->map(fn ($image) => $this->base64Image("/item-images/$image"));
             $itemImages['no_img'] = $this->base64Image('icon/no-img.png');
 
             return view('consignment.promodiser_delivery_inquire_tbl', compact('deliveryReport', 'itemImages'));
@@ -620,7 +620,7 @@ class ConsignmentPromodiserController extends Controller
 
         $itemCodes = collect($damagedItems->items())->pluck('item_code');
         $itemImages = ItemImages::whereIn('parent', $itemCodes)->pluck('image_path', 'parent');
-        $itemImages = collect($itemImages)->map(fn ($image) => $this->base64Image("img/$image"));
+        $itemImages = collect($itemImages)->map(fn ($image) => $this->base64Image("/item-images/$image"));
         $noImg = $this->base64Image('/icon/no-img.png');
 
         $damagedArr = [];
@@ -655,7 +655,7 @@ class ConsignmentPromodiserController extends Controller
 
         $itemCodes = collect($list->items())->pluck('item_code');
         $itemImages = ItemImages::whereIn('parent', $itemCodes)->pluck('image_path', 'parent');
-        $itemImages = collect($itemImages)->map(fn ($image) => $this->base64Image("img/$image"));
+        $itemImages = collect($itemImages)->map(fn ($image) => $this->base64Image("/item-images/$image"));
         $noImg = $this->base64Image('icon/no-img.png');
 
         $result = [];

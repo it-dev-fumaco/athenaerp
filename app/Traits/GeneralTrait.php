@@ -291,9 +291,12 @@ trait GeneralTrait
                 ->when($id, function ($query) use ($id) {
                     return $query->where('name', $id);
                 })
-                ->whereIn('stock_entry_type', ['Material Transfer for Manufacture'])
+                ->where(function ($query) {
+                    $query->whereIn('stock_entry_type', ['Material Transfer for Manufacture'])
+                        ->orWhere('purpose', 'Material Issue');
+                })
                 ->where('item_status', 'For Checking')->where('docstatus', 0)
-                ->select('name', 'transfer_as', 'receive_as')->get();
+                ->select('name', 'transfer_as', 'receive_as', 'purpose')->get();
 
             foreach ($pendingSte as $row) {
                 $countPendingItem = collect($row->items)->where('status', 'For Checking')->count();
@@ -652,11 +655,14 @@ trait GeneralTrait
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+            $message = $this->isErpConnectionError($e->getMessage())
+                ? \App\Traits\ERPTrait::erpConnectionUnavailableMessage()
+                : $e->getMessage();
             if ($systemGenerated) {
-                return ['error' => 1, 'modal_title' => 'Warning', 'modal_message' => $e->getMessage()];
+                return ['error' => 1, 'modal_title' => 'Warning', 'modal_message' => $message];
             }
 
-            return response()->json(['error' => 1, 'modal_title' => 'Warning', 'modal_message' => $e->getMessage()]);
+            return response()->json(['error' => 1, 'modal_title' => 'Warning', 'modal_message' => $message]);
         }
     }
 }

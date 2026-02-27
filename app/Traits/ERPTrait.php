@@ -90,8 +90,36 @@ trait ERPTrait
                 'message' => $th->getMessage(),
             ]);
 
-            return ['error' => 1, 'message' => $th->getMessage()];
+            $message = $this->isErpConnectionError($th->getMessage())
+                ? self::erpConnectionUnavailableMessage()
+                : $th->getMessage();
+
+            return ['error' => 1, 'message' => $message];
         }
+    }
+
+    /**
+     * User-facing message when ERP/API is unreachable.
+     */
+    public static function erpConnectionUnavailableMessage(): string
+    {
+        return 'ERP Connection unavailable via API';
+    }
+
+    /**
+     * Whether the error indicates ERP/API connection failure (timeout, connection refused, etc.).
+     */
+    public function isErpConnectionError(string $message): bool
+    {
+        $lower = strtolower($message);
+        return str_contains($lower, 'timed out')
+            || str_contains($lower, 'cURL error 28')
+            || str_contains($lower, 'connection refused')
+            || str_contains($lower, 'could not resolve host')
+            || str_contains($lower, 'cURL error 6')
+            || str_contains($lower, 'cURL error 7')
+            || str_contains($lower, 'connection')
+            && (str_contains($lower, 'unavailable') || str_contains($lower, 'failed'));
     }
 
     /**
@@ -200,7 +228,11 @@ trait ERPTrait
                 'trace' => $th->getTraceAsString(),
             ]);
 
-            return ['exception' => $th->getMessage(), 'error' => 1];
+            $message = $this->isErpConnectionError($th->getMessage())
+                ? self::erpConnectionUnavailableMessage()
+                : $th->getMessage();
+
+            return ['exception' => $message, 'error' => 1];
         }
     }
 

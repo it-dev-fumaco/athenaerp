@@ -120,17 +120,29 @@ class StockReservationController extends Controller
 
     public function getStockReservation(Request $request, $itemCode = null)
     {
-        $webList = StockReservation::when($itemCode, function ($query) use ($itemCode) {
-            $query->where('item_code', $itemCode)->where('type', 'Website Stocks')->orderby('creation', 'desc');
-        })->paginate(10, ['*'], 'tbl_1');
+        $webList = StockReservation::query()
+            ->where('type', 'Website Stocks')
+            ->when($itemCode, function ($query) use ($itemCode) {
+                return $query->where('item_code', $itemCode);
+            })
+            ->orderBy('creation', 'desc')
+            ->paginate(10, ['*'], 'tbl_1');
 
-        $inhouseList = StockReservation::when($itemCode, function ($query) use ($itemCode) {
-            $query->where('item_code', $itemCode)->where('type', 'In-house')->orderby('valid_until', 'desc');
-        })->paginate(10, ['*'], 'tbl_3');
+        $inhouseList = StockReservation::query()
+            ->where('type', 'In-house')
+            ->when($itemCode, function ($query) use ($itemCode) {
+                return $query->where('item_code', $itemCode);
+            })
+            ->orderBy('valid_until', 'desc')
+            ->paginate(10, ['*'], 'tbl_3');
 
-        $consignmentList = StockReservation::when($itemCode, function ($query) use ($itemCode) {
-            $query->where('item_code', $itemCode)->where('type', 'Consignment')->orderby('valid_until', 'desc');
-        })->paginate(10, ['*'], 'tbl_2');
+        $consignmentList = StockReservation::query()
+            ->where('type', 'Consignment')
+            ->when($itemCode, function ($query) use ($itemCode) {
+                return $query->where('item_code', $itemCode);
+            })
+            ->orderBy('valid_until', 'desc')
+            ->paginate(10, ['*'], 'tbl_2');
 
         $stockEntryIssued = DB::table('tabStock Entry Detail as sted')
             ->join('tabStock Entry as ste', 'ste.name', 'sted.parent')
