@@ -602,15 +602,6 @@ trait GeneralTrait
                 $erpData = $erpResponse['data'];
             }
 
-            // return $erpData;
-
-            // if (isset($erpData['docstatus'])) {
-            //     return 0;
-            //     throw new Exception('Stock Entry already submitted');
-            // }
-
-            // return 1;
-
             $itemsToCheck = $draftSte->items;
             if (isset($erpData['items']) && is_array($erpData['items'])) {
                 $itemsToCheck = collect($erpData['items']);
