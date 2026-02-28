@@ -15,6 +15,7 @@ use App\Traits\ERPTrait;
 use App\Traits\GeneralTrait;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -162,7 +163,9 @@ class TransactionController extends Controller
 
             $submitResult = $this->submitStockEntry($steDetails->parent_se, $values, 1);
             if (is_array($submitResult) && ($submitResult['error'] ?? 0)) {
-                return ApiResponse::failure($submitResult['modal_message'] ?? 'An error occurred.', 500);
+                $submitMsg = $submitResult['modal_message'] ?? 'An error occurred.';
+
+                return ApiResponse::failure($this->isErpConnectionError($submitMsg) ? ERPTrait::erpConnectionUnavailableMessage() : $submitMsg, 500);
             }
 
             if ($request->deduct_reserve == 1) {
@@ -180,8 +183,9 @@ class TransactionController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
             DB::rollback();
+            $message = $this->isErpConnectionError($e->getMessage()) ? ERPTrait::erpConnectionUnavailableMessage() : $e->getMessage();
 
-            return ApiResponse::failure('Error creating transaction. Please contact your system administrator.', 500);
+            return ApiResponse::failure($message, 500);
         }
     }
 

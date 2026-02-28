@@ -524,7 +524,7 @@ class ConsignmentStockTransferController extends Controller
 
             $itemImages = ItemImages::whereIn('parent', $itemCodes)->pluck('image_path', 'parent');
             $itemImages = collect($itemImages)->map(function ($image) {
-                return $this->base64Image("img/$image");
+                return $this->base64Image("/item-images/$image");
             });
 
             $noImg = $this->base64Image('/icon/no-img.png');
