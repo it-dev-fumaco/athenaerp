@@ -8,6 +8,7 @@ use App\Models\PackingSlip;
 use App\Models\PackingSlipItem;
 use App\Models\SalesOrder;
 use App\Models\StockEntryDetail;
+use App\Models\StockEntry;
 use App\Models\StockReservation;
 use App\Models\WorkOrder;
 use App\Traits\ERPTrait;
@@ -110,6 +111,7 @@ class TransactionController extends Controller
 
             $status = 'Issued';
             $values = [
+                'name' => $request->child_tbl_id,
                 'session_user' => Auth::user()->wh_user,
                 'status' => $status,
                 'transfer_qty' => $request->qty,
@@ -118,12 +120,31 @@ class TransactionController extends Controller
                 'validate_item_code' => $request->barcode,
                 'date_modified' => now()->toDateTimeString(),
             ];
+            
+            $draftSte = StockEntry::with('items')->find($steDetails->parent_se);
 
-            StockEntryDetail::where('name', $request->child_tbl_id)->update($values);
+            $items = $draftSte->items->map(function ($item) use ($values) {
+                $child = collect($values)->firstWhere('name', $item->name);
+                if ($child) {
+                    $item->session_user = Auth::user()->wh_user;
+                    $item->status = $child['status'];
+                    $item->transfer_qty = $child['qty'];
+                    $item->qty = $child['qty'];
+                    $item->issued_qty = $child['qty'];
+                    $item->validate_item_code = $child['barcode'];
+                }
+                unset($item->modified, $item->creation, $item->name);
+                return $item;
+            })->toArray();
+
+            $updateResponse = $this->erpPut('Stock Entry', $steDetails->parent_se, [
+                'item_status' => 'For Checking',
+                'items' => $items
+            ], true);
+
+            $submitResult = $this->submitStockEntry($steDetails->parent_se, $values, 1);
 
             $this->insertTransactionLog('Stock Entry', $request->child_tbl_id);
-
-            $this->updateSteStatus($steDetails->parent_se);
 
             $stockReservationDetails = [];
             if ($request->has_reservation && $request->has_reservation == 1) {
@@ -160,7 +181,7 @@ class TransactionController extends Controller
 
             DB::commit();
 
-            $submitResult = $this->submitStockEntry($steDetails->parent_se, 1);
+            return $submitResult = $this->submitStockEntry($steDetails->parent_se, $values, 1);
             if (is_array($submitResult) && ($submitResult['error'] ?? 0)) {
                 return ApiResponse::failure($submitResult['modal_message'] ?? 'An error occurred.', 500);
             }
