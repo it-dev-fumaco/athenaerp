@@ -90,6 +90,7 @@ class MaterialTransferController extends Controller
             ->where('ste.transfer_as', '!=', 'For Return')
             ->whereIn('s_warehouse', $allowedWarehouses)
             ->select('sted.status', 'sted.validate_item_code', 'ste.sales_order_no', 'sted.parent', 'sted.name', 'sted.t_warehouse', 'sted.s_warehouse', 'sted.item_code', 'sted.description', 'sted.uom', 'sted.qty', 'ste.owner', 'ste.material_request', 'ste.work_order', 'ste.creation', 'ste.so_customer_name')
+            ->orderBy('ste.creation', 'desc')
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC")
             ->get();
     }
