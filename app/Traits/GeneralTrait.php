@@ -586,7 +586,7 @@ trait GeneralTrait
      * @param  int  $systemGenerated  1 when called from backend (return array on error); 0 for user-facing (return JSON response)
      * @return array|\Illuminate\Http\JsonResponse Success/error structure; on systemGenerated, returns ['error' => 0|1, 'modal_message' => ...]
      */
-    public function submitStockEntry($id, $systemGenerated = 0)
+    public function submitStockEntry($id, $child_tbl = [], $systemGenerated = 0)
     {
         try {
             $draftSte = StockEntry::with('items')->find($id);
@@ -603,10 +603,6 @@ trait GeneralTrait
             $erpResponse = $this->erpGet('Stock Entry', $id);
             if (isset($erpResponse['data']) && is_array($erpResponse['data'])) {
                 $erpData = $erpResponse['data'];
-            }
-
-            if (isset($erpData['docstatus']) && (int) $erpData['docstatus'] === 1) {
-                throw new Exception('Stock Entry already submitted');
             }
 
             $itemsToCheck = $draftSte->items;
@@ -630,24 +626,34 @@ trait GeneralTrait
             $steDocForStatus = $erpData ?? $draftSte;
             $parentItemStatus = $this->computeSteParentItemStatus($steDocForStatus);
 
-            $draftSte->item_status = $parentItemStatus;
-            $draftSte->save();
+            $items = $draftSte->items->map(function ($item) use ($child_tbl) {
+                $child = collect($child_tbl)->firstWhere('name', $item->name);
+                if ($child) {
+                    $item->session_user = Auth::user()->wh_user;
+                    $item->status = $child['status'];
+                    $item->transfer_qty = $child['qty'];
+                    $item->qty = $child['qty'];
+                    $item->issued_qty = $child['qty'];
+                    $item->validate_item_code = $child['barcode'];
+                }
+                unset($item->modified, $item->creation, $item->name);
+                return $item;
+            })->toArray();
 
-            $updateResponse = $this->erpPut('Stock Entry', $id, ['item_status' => $parentItemStatus]);
+            $docstatus = $erpData['docstatus'] || collect($items)->where('status', 'For Checking')->count() <= 0 ? 1 : 0;
+
+            $updateResponse = $this->erpPut('Stock Entry', $id, [
+                'item_status' => $parentItemStatus,
+                'docstatus' => $docstatus,
+                'items' => $items
+            ]);
+
             if (Arr::has($updateResponse, 'exception') || Arr::has($updateResponse, 'exc')) {
                 Log::warning('GeneralTrait submitStockEntry ERP item_status update failed', [
                     'ste_id' => $id,
                     'response' => $updateResponse,
                 ]);
             }
-
-            $submitResponse = $this->erpSubmitDocument('Stock Entry', $id, true);
-
-            if (Arr::has($submitResponse, 'exception') || Arr::has($submitResponse, 'exc') || ($submitResponse['error'] ?? 0)) {
-                $err = $submitResponse['exception'] ?? $submitResponse['exc'] ?? 'An error occurred while submitting Stock Entry';
-                throw new Exception(is_string($err) ? $err : 'Submit failed');
-            }
-
             return ['error' => 0, 'modal_title' => 'Success', 'modal_message' => 'Stock Entry Submitted.'];
         } catch (Exception $e) {
             Log::error('GeneralTrait submitStockEntry failed', [

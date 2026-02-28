@@ -8,6 +8,7 @@ use App\Models\PackingSlip;
 use App\Models\PackingSlipItem;
 use App\Models\SalesOrder;
 use App\Models\StockEntryDetail;
+use App\Models\StockEntry;
 use App\Models\StockReservation;
 use App\Models\WorkOrder;
 use App\Traits\ERPTrait;
@@ -111,6 +112,7 @@ class TransactionController extends Controller
 
             $status = 'Issued';
             $values = [
+                'name' => $request->child_tbl_id,
                 'session_user' => Auth::user()->wh_user,
                 'status' => $status,
                 'transfer_qty' => $request->qty,
@@ -120,49 +122,9 @@ class TransactionController extends Controller
                 'date_modified' => now()->toDateTimeString(),
             ];
 
-            StockEntryDetail::where('name', $request->child_tbl_id)->update($values);
+            $submitResult = $this->submitStockEntry($steDetails->parent_se, $values, 1);
 
             $this->insertTransactionLog('Stock Entry', $request->child_tbl_id);
-
-            // Sync this detail to ERP so submitStockEntry sees all items issued
-            $erpResponse = $this->erpGet('Stock Entry', $steDetails->parent_se);
-            if (! isset($erpResponse['data']) || ! is_array($erpResponse['data'])) {
-                DB::rollBack();
-                $msg = ($erpResponse['error'] ?? 0) ? Arr::get($erpResponse, 'message', ERPTrait::erpConnectionUnavailableMessage()) : ERPTrait::erpConnectionUnavailableMessage();
-
-                return ApiResponse::failure($this->isErpConnectionError($msg) ? ERPTrait::erpConnectionUnavailableMessage() : $msg, 500);
-            }
-            $steData = $erpResponse['data'];
-            $items = isset($steData['items']) && is_array($steData['items']) ? $steData['items'] : [];
-            $now = now()->toDateTimeString();
-            $allIssued = true;
-            foreach ($items as &$row) {
-                if (isset($row['name']) && $row['name'] === $request->child_tbl_id) {
-                    $row['session_user'] = Auth::user()->wh_user;
-                    $row['status'] = 'Issued';
-                    $row['transfer_qty'] = (float) $request->qty;
-                    $row['qty'] = (float) $request->qty;
-                    $row['issued_qty'] = (float) $request->qty;
-                    $row['validate_item_code'] = $request->barcode;
-                    $row['date_modified'] = $now;
-                }
-                if (isset($row['status']) && ! in_array($row['status'], ['Issued', 'Returned'])) {
-                    $allIssued = false;
-                }
-            }
-            if ($allIssued) {
-                $steData['item_status'] = ($steDetails->transfer_as === 'For Return' || $steDetails->purpose === 'Material Receipt') ? 'Returned' : 'Issued';
-            }
-            $steData['items'] = $items;
-            $putResponse = $this->erpPut('Stock Entry', $steDetails->parent_se, $steData);
-            if (Arr::has($putResponse, 'exception') || Arr::has($putResponse, 'exc') || ($putResponse['error'] ?? 0)) {
-                DB::rollBack();
-                $putMsg = $putResponse['exception'] ?? $putResponse['exc'] ?? $putResponse['message'] ?? 'An error occurred while updating Stock Entry.';
-
-                return ApiResponse::failure($this->isErpConnectionError($putMsg) ? ERPTrait::erpConnectionUnavailableMessage() : $putMsg, 500);
-            }
-
-            $this->updateSteStatus($steDetails->parent_se);
 
             $stockReservationDetails = [];
             if ($request->has_reservation && $request->has_reservation == 1) {
@@ -199,7 +161,7 @@ class TransactionController extends Controller
 
             DB::commit();
 
-            $submitResult = $this->submitStockEntry($steDetails->parent_se, 1);
+            $submitResult = $this->submitStockEntry($steDetails->parent_se, $values, 1);
             if (is_array($submitResult) && ($submitResult['error'] ?? 0)) {
                 $submitMsg = $submitResult['modal_message'] ?? 'An error occurred.';
 
