@@ -181,7 +181,7 @@ class TransactionController extends Controller
 
             DB::commit();
 
-            return $submitResult = $this->submitStockEntry($steDetails->parent_se, $values, 1);
+            $submitResult = $this->submitStockEntry($steDetails->parent_se, $values, 1);
             if (is_array($submitResult) && ($submitResult['error'] ?? 0)) {
                 return ApiResponse::failure($submitResult['modal_message'] ?? 'An error occurred.', 500);
             }
