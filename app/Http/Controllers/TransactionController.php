@@ -120,27 +120,6 @@ class TransactionController extends Controller
                 'validate_item_code' => $request->barcode,
                 'date_modified' => now()->toDateTimeString(),
             ];
-            
-            $draftSte = StockEntry::with('items')->find($steDetails->parent_se);
-
-            $items = $draftSte->items->map(function ($item) use ($values) {
-                $child = collect($values)->firstWhere('name', $item->name);
-                if ($child) {
-                    $item->session_user = Auth::user()->wh_user;
-                    $item->status = $child['status'];
-                    $item->transfer_qty = $child['qty'];
-                    $item->qty = $child['qty'];
-                    $item->issued_qty = $child['qty'];
-                    $item->validate_item_code = $child['barcode'];
-                }
-                unset($item->modified, $item->creation, $item->name);
-                return $item;
-            })->toArray();
-
-            $updateResponse = $this->erpPut('Stock Entry', $steDetails->parent_se, [
-                'item_status' => 'For Checking',
-                'items' => $items
-            ], true);
 
             $submitResult = $this->submitStockEntry($steDetails->parent_se, $values, 1);
 
