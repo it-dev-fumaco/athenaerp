@@ -137,17 +137,14 @@ class TransactionController extends Controller
                 return $item;
             })->toArray();
 
-            return $updateResponse = $this->erpPut('Stock Entry', $steDetails->parent_se, [
+            $updateResponse = $this->erpPut('Stock Entry', $steDetails->parent_se, [
                 'item_status' => 'For Checking',
                 'items' => $items
             ], true);
 
-            // StockEntryDetail::where('name', $request->child_tbl_id)->update($values);
             $submitResult = $this->submitStockEntry($steDetails->parent_se, $values, 1);
 
             $this->insertTransactionLog('Stock Entry', $request->child_tbl_id);
-
-            // $this->updateSteStatus($steDetails->parent_se);
 
             $stockReservationDetails = [];
             if ($request->has_reservation && $request->has_reservation == 1) {
@@ -182,7 +179,7 @@ class TransactionController extends Controller
                 $this->updateReservationStatus();
             }
 
-            // DB::commit();
+            DB::commit();
 
             return $submitResult = $this->submitStockEntry($steDetails->parent_se, $values, 1);
             if (is_array($submitResult) && ($submitResult['error'] ?? 0)) {

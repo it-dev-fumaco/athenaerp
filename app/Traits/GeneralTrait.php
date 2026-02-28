@@ -660,16 +660,6 @@ trait GeneralTrait
                     'response' => $updateResponse,
                 ]);
             }
-
-            // if(collect($items)->where('status', 'For Checking')->count() <= 0){
-            //     $submitResponse = $this->erpSubmitDocument('Stock Entry', $id, true);
-
-            //     if (Arr::has($submitResponse, 'exception') || Arr::has($submitResponse, 'exc') || ($submitResponse['error'] ?? 0)) {
-            //         $err = $submitResponse['exception'] ?? $submitResponse['exc'] ?? 'An error occurred while submitting Stock Entry';
-            //         throw new Exception(is_string($err) ? $err : 'Submit failed');
-            //     }
-            // }
-
             return ['error' => 0, 'modal_title' => 'Success', 'modal_message' => 'Stock Entry Submitted.'];
         } catch (Exception $e) {
             Log::error('GeneralTrait submitStockEntry failed', [
