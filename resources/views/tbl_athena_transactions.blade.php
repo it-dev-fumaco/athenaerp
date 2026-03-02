@@ -78,7 +78,7 @@
                 @endif
             </td>
             <td class="text-center d-none d-sm-table-cell">{{ $row['transaction_date'] }}</td>
-            <td class="text-center d-none d-sm-table-cell">{{ $row['warehouse_user'] }}</td>
+            <td class="text-center d-none d-sm-table-cell">{{ $row['warehouse_user'] ?? '-' }}</td>
             <td class="text-center d-none d-sm-table-cell">{{ $row['remarks'] }}</td>
             @if($userGroup == 'Inventory Manager')
                 <td class="text-center d-none d-sm-table-cell">
@@ -129,7 +129,7 @@
                     </tr>
                     <tr>
                         <td class="p-1"><b>User:</b></td>
-                        <td class="p-1">{{ $row['warehouse_user'] }}</td>
+                        <td class="p-1">{{ $row['warehouse_user'] ?? '-' }}</td>
                     </tr>
                 </table>
             </td>
