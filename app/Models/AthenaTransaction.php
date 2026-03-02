@@ -9,6 +9,9 @@ class AthenaTransaction extends Model
 {
     use HasFactory;
 
+    /** Display value when user (requested_by / issued_by) is unknown or empty. */
+    public const EMPTY_USER_PLACEHOLDER = '-';
+
     protected $connection = 'mysql';
 
     protected $primaryKey = 'name';

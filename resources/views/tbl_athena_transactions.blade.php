@@ -10,7 +10,8 @@
         <th scope="col" class="text-center d-none d-sm-table-cell">Issued Qty</th>
         <th scope="col" class="text-center d-none d-sm-table-cell">Ref. No.</th>
         <th scope="col" class="text-center d-none d-sm-table-cell">Date</th>
-        <th scope="col" class="text-center d-none d-sm-table-cell">Transact by</th>
+        <th scope="col" class="text-center d-none d-sm-table-cell">Requested By</th>
+        <th scope="col" class="text-center d-none d-sm-table-cell">Issued By</th>
         <th scope="col" class="text-center d-none d-sm-table-cell">Remarks</th>
     </tr>
     </thead>
@@ -78,7 +79,8 @@
                 @endif
             </td>
             <td class="text-center d-none d-sm-table-cell">{{ $row['transaction_date'] }}</td>
-            <td class="text-center d-none d-sm-table-cell">{{ $row['warehouse_user'] ?? '-' }}</td>
+            <td class="text-center d-none d-sm-table-cell">{{ $row['requested_by'] ?? $emptyUserPlaceholder }}</td>
+            <td class="text-center d-none d-sm-table-cell">{{ $row['issued_by'] ?? $emptyUserPlaceholder }}</td>
             <td class="text-center d-none d-sm-table-cell">{{ $row['remarks'] }}</td>
             @if($userGroup == 'Inventory Manager')
                 <td class="text-center d-none d-sm-table-cell">
@@ -128,15 +130,19 @@
                         <td class="p-1">{{ $row['target_warehouse'] }}</td>
                     </tr>
                     <tr>
-                        <td class="p-1"><b>User:</b></td>
-                        <td class="p-1">{{ $row['warehouse_user'] ?? '-' }}</td>
+                        <td class="p-1"><b>Requested By:</b></td>
+                        <td class="p-1">{{ $row['requested_by'] ?? $emptyUserPlaceholder }}</td>
+                    </tr>
+                    <tr>
+                        <td class="p-1"><b>Issued By:</b></td>
+                        <td class="p-1">{{ $row['issued_by'] ?? $emptyUserPlaceholder }}</td>
                     </tr>
                 </table>
             </td>
         </tr>
         @empty
         <tr>
-            <td colspan="9" style="text-align:center;">No Records Found.</td>
+            <td colspan="12" style="text-align:center;">No Records Found.</td>
         </tr>
         @endforelse
     </tbody>

@@ -754,14 +754,14 @@ class MainController extends Controller
                 $remarks = null;
             }
 
-            $transactBy = trim((string) ($row->warehouse_user ?? ''));
-            if ($transactBy === '' && $existingReferenceNo) {
-                $transactBy = trim((string) (data_get($existingReferenceNo, 'owner') ?? ''));
+            $requestedBy = trim((string) (data_get($existingReferenceNo, 'owner') ?? ''));
+            $requestedBy = $requestedBy !== '' ? $requestedBy : AthenaTransaction::EMPTY_USER_PLACEHOLDER;
+
+            $issuedBy = trim((string) ($row->warehouse_user ?? ''));
+            if ($issuedBy === '' && $existingReferenceNo) {
+                $issuedBy = trim((string) (data_get($existingReferenceNo, 'modified_by') ?? ''));
             }
-            if ($transactBy === '' && $existingReferenceNo) {
-                $transactBy = trim((string) (data_get($existingReferenceNo, 'modified_by') ?? ''));
-            }
-            $transactBy = $transactBy !== '' ? $transactBy : '-';
+            $issuedBy = $issuedBy !== '' ? $issuedBy : AthenaTransaction::EMPTY_USER_PLACEHOLDER;
 
             $list[] = [
                 'reference_name' => $row->reference_name,
@@ -774,13 +774,16 @@ class MainController extends Controller
                 'reference_no' => $row->reference_no,
                 'transaction_date' => $row->transaction_date,
                 'production_order' => Arr::get($productionOrders, $row->reference_parent),
-                'warehouse_user' => $transactBy,
+                'requested_by' => $requestedBy,
+                'issued_by' => $issuedBy,
                 'status' => $status,
                 'remarks' => $remarks,
             ];
         }
 
-        return view('tbl_athena_transactions', compact('list', 'logs', 'itemCode', 'userGroup'));
+        $emptyUserPlaceholder = AthenaTransaction::EMPTY_USER_PLACEHOLDER;
+
+        return view('tbl_athena_transactions', compact('list', 'logs', 'itemCode', 'userGroup', 'emptyUserPlaceholder'));
     }
 
     public function cancelIssuedItem(Request $request)
