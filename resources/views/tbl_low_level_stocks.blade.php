@@ -21,9 +21,10 @@
         <tr>
             <td class="text-justify p-2 align-middle font-responsive">
                 <div class="row">
-                    <div class="col-2">
-                        <a href="{{ $row['image'] }}" data-toggle="lightbox" data-gallery="{{ $row['item_code'] }}" data-title="{{ $row['item_code'] }}">
-                            <img src="{{ $row['image'] }}" class="img w-100">
+                    <div class="col-2 position-relative">
+                        <a href="{{ $row['image'] }}" data-toggle="lightbox" data-gallery="{{ $row['item_code'] }}" data-title="{{ $row['item_code'] }}" class="low-stock-item-image-link">
+                            <img src="{{ $row['image'] }}" class="img w-100" alt="Item image" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none');">
+                            <span class="d-none low-stock-no-image text-muted small d-flex align-items-center justify-content-center bg-light border rounded p-1 text-center" style="min-height: 60px; font-size: 0.7rem;">No image</span>
                         </a>
                     </div>
                     <div class="col-10">

@@ -64,7 +64,7 @@
 										</tr>
 									</thead>
 									<tbody>
-										<tr ng-repeat="r in mr_ret_filtered = (mr_ret | filter:searchText | filter: fltr | orderBy: ['status', 'transaction_date'])">
+										<tr ng-repeat="r in mr_ret_filtered = (mr_ret | filter:searchText | filter: fltr | orderBy: ['-transaction_date', 'status'])">
 										  	<td class="text-center">
 											  	<span class="d-block font-weight-bold">@{{ r.creation }}</span>
 											  	<small class="d-block mt-1">@{{ r.name }}</small>

@@ -37,5 +37,14 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             //
         });
+
+        $this->renderable(function (ErpAuthenticationException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => 0,
+                    'message' => ErpAuthenticationException::USER_MESSAGE,
+                ], 401);
+            }
+        });
     }
 }

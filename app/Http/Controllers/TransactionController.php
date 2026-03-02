@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\ErpAuthenticationException;
 use App\Http\Helpers\ApiResponse;
 use App\Models\Item;
 use App\Models\PackingSlip;
@@ -177,6 +178,11 @@ class TransactionController extends Controller
             } else {
                 return ApiResponse::success("Item <b> $steDetails->item_code </b> has been checked out.");
             }
+        } catch (ErpAuthenticationException $e) {
+            Log::warning('TransactionController submitTransaction ERP authentication failed');
+            DB::rollback();
+
+            return ApiResponse::failure(ErpAuthenticationException::USER_MESSAGE, 401);
         } catch (Exception $e) {
             Log::error('TransactionController submitTransaction failed', [
                 'message' => $e->getMessage(),

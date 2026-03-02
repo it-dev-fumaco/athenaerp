@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\ErpAuthenticationException;
 use App\Http\Helpers\ApiResponse;
 use App\Http\Requests\SubmitInternalTransferRequest;
 use App\Http\Requests\UpdateStockEntryRequest;
@@ -564,7 +565,7 @@ class MaterialTransferController extends Controller
                     ]],
                 ];
 
-                $unissuedResponse = $this->erpPost('Stock Entry', $unissuedStockEntry);
+                $unissuedResponse = $this->erpPost('Stock Entry', $unissuedStockEntry, true);
                 if (! isset($unissuedResponse['data'])) {
                     $err = data_get($unissuedResponse, 'exception', 'An error occured while submitting Stock entry for unissued items');
                     throw new Exception($err);
@@ -591,11 +592,11 @@ class MaterialTransferController extends Controller
 
             unset($stockEntry->creation, $stockEntry->owner);
 
-            $response = $this->erpPut('Stock Entry', $stockEntry->name, collect($stockEntry)->toArray());
+            $response = $this->erpPut('Stock Entry', $stockEntry->name, collect($stockEntry)->toArray(), true);
 
             if (! Arr::has($response, 'data')) {
                 if (Arr::has($response, 'exc_type') && $response['exc_type'] == 'TimestampMismatchError') {
-                    $stockEntry = $this->erpGet('Stock Entry', $stockEntry->name);
+                    $stockEntry = $this->erpGet('Stock Entry', $stockEntry->name, [], true);
                     $stockEntry = $stockEntry['data'];
 
                     $stockEntry['items'] = collect($stockEntry['items'])->map(function ($item) use ($request, $now, $childId) {
@@ -617,7 +618,7 @@ class MaterialTransferController extends Controller
                         $stockEntry['item_status'] = 'Issued';
                     }
 
-                    $response = $this->erpPut('Stock Entry', $stockEntry['name'], collect($stockEntry)->toArray());
+                    $response = $this->erpPut('Stock Entry', $stockEntry['name'], collect($stockEntry)->toArray(), true);
 
                     if (! Arr::has($response, 'data')) {
                         $err = data_get($response, 'exception', 'An error occured while updating Stock Entry');
@@ -633,9 +634,14 @@ class MaterialTransferController extends Controller
             if (! $steName) {
                 Log::warning('MaterialTransferController submitInternalTransfer: STE name missing after update', ['stock_entry' => $stockEntry]);
             }
-            $allItemsIssuedInErp = $steName && $this->steAllItemsIssuedInErpNext($steName);
+            $allItemsIssuedInErp = $steName && $this->steAllItemsIssuedInErpNext($steName, true);
             if ($allItemsIssuedInErp) {
                 $submitResponse = $this->erpSubmitDocument('Stock Entry', $steName, true);
+                $isTimestampMismatch = ($submitResponse['exc_type'] ?? null) === 'TimestampMismatchError';
+                if ($isTimestampMismatch) {
+                    sleep(1);
+                    $submitResponse = $this->erpSubmitDocument('Stock Entry', $steName, true);
+                }
                 if (Arr::has($submitResponse, 'exception') || Arr::has($submitResponse, 'exc') || ($submitResponse['error'] ?? 0)) {
                     $submitErr = $submitResponse['exception'] ?? $submitResponse['exc'] ?? 'Submit failed';
                     Log::error('MaterialTransferController STE submit to ERPNext failed after all items issued', [
@@ -652,6 +658,9 @@ class MaterialTransferController extends Controller
             }
 
             return ApiResponse::success("Item <b>$itemCode</b> has been checked out.");
+        } catch (ErpAuthenticationException $e) {
+            Log::warning('MaterialTransferController checkoutSteItem ERP authentication failed');
+            return ApiResponse::failure(ErpAuthenticationException::USER_MESSAGE, 401);
         } catch (\Throwable $th) {
             Log::error('MaterialTransferController checkoutSteItem failed', [
                 'message' => $th->getMessage(),

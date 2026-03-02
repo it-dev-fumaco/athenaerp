@@ -62,7 +62,7 @@
 										</tr>
 									</thead>
 									<tbody>
-										<tr ng-repeat="x in mt_filtered = (mt | filter:searchText | filter: fltr | orderBy: ['status', 'transaction_date'])">
+										<tr ng-repeat="x in mt_filtered = (mt | filter:searchText | filter: fltr | orderBy: ['-transaction_date', 'status'])">
 											<td class="text-center">
 												<span class="d-block font-weight-bold">@{{ x.creation }}</span>
 												<small class="d-block mt-1">@{{ x.work_order }} - @{{ x.parent }}</small>
