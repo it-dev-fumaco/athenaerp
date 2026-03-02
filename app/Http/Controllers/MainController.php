@@ -754,6 +754,15 @@ class MainController extends Controller
                 $remarks = null;
             }
 
+            $transactBy = trim((string) ($row->warehouse_user ?? ''));
+            if ($transactBy === '' && $existingReferenceNo) {
+                $transactBy = trim((string) (data_get($existingReferenceNo, 'owner') ?? ''));
+            }
+            if ($transactBy === '' && $existingReferenceNo) {
+                $transactBy = trim((string) (data_get($existingReferenceNo, 'modified_by') ?? ''));
+            }
+            $transactBy = $transactBy !== '' ? $transactBy : '-';
+
             $list[] = [
                 'reference_name' => $row->reference_name,
                 'item_code' => $row->item_code,
@@ -765,7 +774,7 @@ class MainController extends Controller
                 'reference_no' => $row->reference_no,
                 'transaction_date' => $row->transaction_date,
                 'production_order' => Arr::get($productionOrders, $row->reference_parent),
-                'warehouse_user' => $row->warehouse_user,
+                'warehouse_user' => $transactBy,
                 'status' => $status,
                 'remarks' => $remarks,
             ];
