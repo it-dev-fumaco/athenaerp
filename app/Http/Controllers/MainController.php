@@ -1250,7 +1250,7 @@ class MainController extends Controller
             if ($actualQty <= $a->warehouse_reorder_level) {
                 $existingMr = $existingMrMap[$key] ?? null;
 
-                $itemImage = Arr::get($itemImages, $a->item_code) ? '/img/'.$itemImages[$a->item_code] : '/icon/no_img.webp';
+                $itemImage = Arr::get($itemImages, $a->item_code) ? '/img/'.$itemImages[$a->item_code] : '/icon/no-img.png';
                 $itemImage = $this->base64Image($itemImage);
 
                 $lowLevelStocks[] = [
@@ -1306,7 +1306,7 @@ class MainController extends Controller
         $list = [];
         foreach ($q as $row) {
             // $itemImagePath = ItemImages::query()->where('parent', $row->item_code)->orderBy('idx', 'asc')->first();
-            $image = Arr::get($itemImages, $row->item_code) ? '/img/'.$itemImages[$row->item_code] : '/icon/no_icon.png';
+            $image = Arr::get($itemImages, $row->item_code) ? '/img/'.$itemImages[$row->item_code] : '/icon/no-img.png';
             $image = $this->base64Image($image);
 
             $list[] = [

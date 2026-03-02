@@ -2,10 +2,11 @@
 
 namespace App\Traits;
 
+use App\Exceptions\ErpAuthenticationException;
+use App\Services\ERP\ErpClient;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -19,14 +20,23 @@ use Illuminate\Support\Facades\Log;
 trait ERPTrait
 {
     /**
+     * ERP API base URL (no trailing slash).
+     */
+    private function getErpBaseUrl(): string
+    {
+        return rtrim(config('erp.api_base_url') ?? config('services.erp.api_base_url'), '/');
+    }
+
+    /**
      * Get headers for Frappe REST API requests.
      * Uses token-based auth: "token api_key:api_secret" per Frappe docs.
+     * Credentials from config/erp.php when system-generated, else current user.
      */
     public function getErpHeaders(bool $systemGenerated = true): array
     {
         if ($systemGenerated) {
-            $apiKey = config('services.erp.api_key');
-            $apiSecret = config('services.erp.api_secret_key');
+            $apiKey = config('erp.api_key') ?? config('services.erp.api_key');
+            $apiSecret = config('erp.api_secret_key') ?? config('services.erp.api_secret_key');
         } else {
             $apiKey = Auth::user()->api_key;
             $apiSecret = Auth::user()->api_secret;
@@ -41,47 +51,41 @@ trait ERPTrait
     }
 
     /**
-     * Execute Frappe REST API operation.
+     * Execute Frappe REST API operation via ErpClient.
+     * On 401, ErpClient throws ErpAuthenticationException and execution stops.
      *
      * @param  string  $method  GET, POST, PUT, DELETE
      * @param  string  $doctype  Frappe DocType (e.g. "Stock Entry", "Bin")
      * @param  string|null  $name  Document name for read/update/delete
-     * @param  array  $payload  For GET: query params (fields, filters, etc). For POST/PUT: request body
+     * @param  array  $payload  For GET: query params. For POST/PUT: request body
      * @param  bool  $systemGenerated  Use system API key vs logged-in user's key
      * @return array Frappe response with 'data' key; 'exception' or 'exc' on error
      */
     private function erpOperation($method, $doctype, $name = null, $payload = [], $systemGenerated = false)
     {
+        $url = $this->getErpBaseUrl().'/api/resource/'.$doctype;
+        if ($name !== null && $name !== '') {
+            $url .= '/'.ltrim($name, '/');
+        }
+
+        $options = [
+            'headers' => $this->getErpHeaders($systemGenerated),
+        ];
+
+        if (strtoupper($method) === 'GET') {
+            $options['query'] = $payload;
+        } else {
+            $options['body'] = $payload;
+        }
+
         try {
-            $erpApiBaseUrl = config('services.erp.api_base_url');
-            $url = rtrim("$erpApiBaseUrl/api/resource/$doctype", '/');
-            if ($name) {
-                $url .= '/'.$name;
-            }
-
-            $http = Http::withHeaders($this->getErpHeaders($systemGenerated));
-
-            $response = match (strtoupper($method)) {
-                'GET' => $http->get($url, $payload),
-                'POST' => $http->post($url, $payload),
-                'PUT' => $http->put($url, $payload),
-                'DELETE' => $http->delete($url),
-                default => throw new \InvalidArgumentException("Invalid HTTP method: $method"),
-            };
-
-            if ($response->failed()) {
-                Log::warning('ERP request failed', [
-                    'url' => $url,
-                    'method' => $method,
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
-            }
-
-            $result = $response->json() ?? [];
+            $client = app(ErpClient::class);
+            $result = $client->request($method, $url, $options);
             $this->logErpErrorIfPresent($result, $url, $method);
 
             return $result;
+        } catch (ErpAuthenticationException $e) {
+            throw $e;
         } catch (\Throwable $th) {
             Log::error('ERP request error', [
                 'method' => $method,
@@ -190,6 +194,7 @@ trait ERPTrait
      * Submit a document in ERPNext/Frappe (e.g. Stock Entry) so that it runs
      * server-side submit logic (docstatus = 1) and creates ledger entries (e.g. Stock Ledger Entry).
      * Uses Frappe method API: POST /api/method/frappe.client.submit
+     * On 401, ErpClient throws ErpAuthenticationException and execution stops.
      *
      * @param  string  $doctype  Frappe DocType (e.g. "Stock Entry")
      * @param  string  $name  Document name
@@ -198,39 +203,31 @@ trait ERPTrait
      */
     public function erpSubmitDocument(string $doctype, string $name, bool $systemGenerated = true): array
     {
+        $url = $this->getErpBaseUrl().'/api/method/frappe.client.submit';
+        $payload = ['doc' => ['doctype' => $doctype, 'name' => $name]];
+
         try {
-            $erpApiBaseUrl = rtrim(config('services.erp.api_base_url'), '/');
-            $url = $erpApiBaseUrl.'/api/method/frappe.client.submit';
-            $payload = ['doc' => ['doctype' => $doctype, 'name' => $name]];
-
-            $http = Http::withHeaders($this->getErpHeaders($systemGenerated));
-            $response = $http->post($url, $payload);
-
-            if ($response->failed()) {
-                Log::warning('ERP submit request failed', [
-                    'url' => $url,
-                    'doctype' => $doctype,
-                    'name' => $name,
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
-            }
-
-            $result = $response->json() ?? [];
+            $client = app(ErpClient::class);
+            $result = $client->request('POST', $url, [
+                'headers' => $this->getErpHeaders($systemGenerated),
+                'body' => $payload,
+            ]);
             $this->logErpErrorIfPresent($result, $url, 'POST');
 
             return $result;
-        } catch (\Throwable $th) {
+        } catch (ErpAuthenticationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
             Log::error('ERP submit document error', [
                 'doctype' => $doctype,
                 'name' => $name,
-                'message' => $th->getMessage(),
-                'trace' => $th->getTraceAsString(),
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
-            $message = $this->isErpConnectionError($th->getMessage())
+            $message = $this->isErpConnectionError($e->getMessage())
                 ? self::erpConnectionUnavailableMessage()
-                : $th->getMessage();
+                : $e->getMessage();
 
             return ['exception' => $message, 'error' => 1];
         }

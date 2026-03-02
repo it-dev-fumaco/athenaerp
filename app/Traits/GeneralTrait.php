@@ -562,11 +562,12 @@ trait GeneralTrait
      * Use this after updating the STE in ERPNext so submission is only triggered when ERPNext state is fully issued.
      *
      * @param  string  $steName  Stock Entry name (e.g. STE-XXX)
+     * @param  bool  $systemGenerated  Use system API credentials (default true for backend flows)
      * @return bool True if STE has at least one item and all items have status Issued or Returned
      */
-    public function steAllItemsIssuedInErpNext(string $steName): bool
+    public function steAllItemsIssuedInErpNext(string $steName, bool $systemGenerated = true): bool
     {
-        $response = $this->erpGet('Stock Entry', $steName);
+        $response = $this->erpGet('Stock Entry', $steName, [], $systemGenerated);
         $data = $response['data'] ?? null;
         if (! is_array($data) || empty($data['items']) || ! is_array($data['items'])) {
             return false;
@@ -576,6 +577,22 @@ trait GeneralTrait
             ->count();
 
         return $notIssuedCount === 0;
+    }
+
+    /**
+     * Normalize $child_tbl to a collection of rows keyed by 'name'.
+     * Accepts a single row (associative array with 'name') or a list of rows.
+     *
+     * @param  array  $childTbl  Single row or list of rows with 'name' key
+     * @return \Illuminate\Support\Collection
+     */
+    private function normalizeChildTblToKeyedRows($childTbl): \Illuminate\Support\Collection
+    {
+        $rows = (is_array($childTbl) && isset($childTbl['name']) && ! array_is_list($childTbl))
+            ? [$childTbl]
+            : $childTbl;
+
+        return collect($rows)->keyBy('name');
     }
 
     /**
@@ -600,19 +617,27 @@ trait GeneralTrait
             }
 
             $erpData = null;
-            $erpResponse = $this->erpGet('Stock Entry', $id);
+            $useSystemCredentials = (bool) $systemGenerated;
+            $erpResponse = $this->erpGet('Stock Entry', $id, [], $useSystemCredentials);
             if (isset($erpResponse['data']) && is_array($erpResponse['data'])) {
                 $erpData = $erpResponse['data'];
             }
 
-            $itemsToCheck = $draftSte->items;
-            if (isset($erpData['items']) && is_array($erpData['items'])) {
-                $itemsToCheck = collect($erpData['items']);
-            }
+            $itemsToCheck = isset($erpData['items']) && is_array($erpData['items'])
+                ? collect($erpData['items'])
+                : $draftSte->items;
 
-            $countNotIssuedItems = collect($itemsToCheck)
-                ->whereNotIn('status', [StockEntryConstants::STATUS_ISSUED, StockEntryConstants::STATUS_RETURNED])
-                ->count();
+            $childTblByName = $this->normalizeChildTblToKeyedRows($child_tbl);
+            $issuedOrReturned = [StockEntryConstants::STATUS_ISSUED, StockEntryConstants::STATUS_RETURNED];
+            $countNotIssuedItems = collect($itemsToCheck)->reduce(function ($count, $item) use ($childTblByName, $issuedOrReturned) {
+                $name = data_get($item, 'name');
+                $child = $name ? $childTblByName->get($name) : null;
+                $status = $child && isset($child['status'])
+                    ? $child['status']
+                    : data_get($item, 'status');
+
+                return $count + (in_array($status, $issuedOrReturned, true) ? 0 : 1);
+            }, 0);
 
             if ($countNotIssuedItems > 0) {
                 throw new Exception('All item(s) must be issued before submitting. '.$countNotIssuedItems.' item(s) still pending.');
@@ -626,27 +651,28 @@ trait GeneralTrait
             $steDocForStatus = $erpData ?? $draftSte;
             $parentItemStatus = $this->computeSteParentItemStatus($steDocForStatus);
 
-            $items = $draftSte->items->map(function ($item) use ($child_tbl) {
-                $child = collect($child_tbl)->firstWhere('name', $item->name);
+            $items = $draftSte->items->map(function ($item) use ($childTblByName) {
+                $child = $childTblByName->get($item->name);
                 if ($child) {
                     $item->session_user = Auth::user()->wh_user;
-                    $item->status = $child['status'];
-                    $item->transfer_qty = $child['qty'];
-                    $item->qty = $child['qty'];
-                    $item->issued_qty = $child['qty'];
-                    $item->validate_item_code = $child['barcode'];
+                    $item->status = data_get($child, 'status');
+                    $item->transfer_qty = data_get($child, 'qty');
+                    $item->qty = data_get($child, 'qty');
+                    $item->issued_qty = data_get($child, 'qty');
+                    $item->validate_item_code = data_get($child, 'barcode') ?? data_get($child, 'validate_item_code');
                 }
                 unset($item->modified, $item->creation, $item->name);
                 return $item;
             })->toArray();
 
-            $docstatus = $erpData['docstatus'] || collect($items)->where('status', 'For Checking')->count() <= 0 ? 1 : 0;
+            $pendingForChecking = collect($items)->where('status', StockEntryConstants::STATUS_FOR_CHECKING)->count();
+            $docstatus = ($erpData['docstatus'] ?? 0) || $pendingForChecking <= 0 ? 1 : 0;
 
             $updateResponse = $this->erpPut('Stock Entry', $id, [
                 'item_status' => $parentItemStatus,
                 'docstatus' => $docstatus,
                 'items' => $items
-            ]);
+            ], $useSystemCredentials);
 
             if (Arr::has($updateResponse, 'exception') || Arr::has($updateResponse, 'exc')) {
                 Log::warning('GeneralTrait submitStockEntry ERP item_status update failed', [

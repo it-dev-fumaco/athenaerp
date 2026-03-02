@@ -1,9 +1,10 @@
 <ul class="products-list product-list-in-card pl-2 pr-2">
     @forelse ($list as $item)
     <li class="item">
-        <div class="product-img">
+        <div class="product-img position-relative">
             <a href="{{ $item['image'] }}" data-toggle="lightbox" data-gallery="{{ $item['item_code'] }}" data-title="{{ $item['item_code'] }}">
-                <img src="{{ $item['image'] }}" class="img-size-50">
+                <img src="{{ $item['image'] }}" class="img-size-50" alt="Item image" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none');">
+                <span class="d-none reserved-no-image text-muted small d-flex align-items-center justify-content-center bg-light border rounded p-1 text-center" style="min-width: 50px; min-height: 50px; font-size: 0.65rem;">No image</span>
             </a>
         </div>
         <div class="product-info">
