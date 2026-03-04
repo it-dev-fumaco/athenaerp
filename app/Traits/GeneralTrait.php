@@ -492,6 +492,7 @@ trait GeneralTrait
             'uom' => $q->stock_uom,
             'purpose' => $purpose,
             'transaction_type' => $type,
+            'status' => 'Issued',
         ];
 
         $existingLog = DB::table('tabAthena Transactions')

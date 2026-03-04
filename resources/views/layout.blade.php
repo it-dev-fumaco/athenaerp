@@ -344,58 +344,120 @@
 			padding-left: 10px;
 			padding-right: 10px;
 		}
-		/* Production Withdrawal modal: ~1400px to match red box, centered, full-width content */
-		#ste-modal .modal-dialog {
+		/* Shared checkout/transaction modal: ~70–80% width, content-based height, generous padding (reference). Override Bootstrap .modal-dialog max-width: 500px. */
+		#ste-modal .modal-dialog,
+		#dr-modal .modal-dialog,
+		#receive-item-modal .modal-dialog,
+		#ps-modal .modal-dialog {
+			width: min(78vw, 1400px) !important;
 			max-width: 1400px !important;
-			width: min(90vw, 1400px) !important;
-			margin: 0.5rem auto !important;
+			min-width: min(70vw, 1100px) !important;
+			max-height: calc(100vh - 2rem) !important;
+			margin: 1rem auto !important;
 		}
-		#ste-modal .modal-content {
+		#ste-modal .modal-dialog .modal-content,
+		#dr-modal .modal-dialog .modal-content,
+		#receive-item-modal .modal-dialog .modal-content,
+		#ps-modal .modal-dialog .modal-content {
+			max-height: calc(100vh - 2rem) !important;
+		}
+		#ste-modal .modal-dialog .modal-content .modal-body,
+		#dr-modal .modal-dialog .modal-content .modal-body,
+		#receive-item-modal .modal-dialog .modal-content .modal-body,
+		#ps-modal .modal-dialog .modal-content .modal-body {
+			overflow-y: auto !important;
+		}
+		@media (min-width: 576px) {
+			#ste-modal .modal-dialog,
+			#dr-modal .modal-dialog,
+			#receive-item-modal .modal-dialog,
+			#ps-modal .modal-dialog {
+				width: min(78vw, 1400px) !important;
+				max-width: 1400px !important;
+				min-width: min(70vw, 1100px) !important;
+				margin: 1.75rem auto !important;
+			}
+		}
+		#ste-modal .modal-content,
+		#dr-modal .modal-content,
+		#receive-item-modal .modal-content,
+		#ps-modal .modal-content {
 			width: 100% !important;
 			max-width: none !important;
 			min-width: 0 !important;
 			box-sizing: border-box !important;
 		}
-		#ste-modal .modal-body {
+		#ste-modal .modal-body,
+		#dr-modal .modal-body,
+		#receive-item-modal .modal-body,
+		#ps-modal .modal-body {
 			width: 100% !important;
 			max-width: none !important;
 			min-width: 0 !important;
 			box-sizing: border-box !important;
-			padding: 1rem 1.25rem !important;
+			padding: 1.25rem 1.5rem !important;
 		}
-		#ste-modal .modal-body .form-control {
+		#ste-modal .modal-body .form-control,
+		#dr-modal .modal-body .form-control,
+		#receive-item-modal .modal-body .form-control,
+		#ps-modal .modal-body .form-control {
 			width: 100% !important;
 			max-width: 100% !important;
 			box-sizing: border-box !important;
 		}
-		#ste-modal .modal-body .row {
+		#ste-modal .modal-body .row,
+		#dr-modal .modal-body .row,
+		#receive-item-modal .modal-body .row,
+		#ps-modal .modal-body .row {
 			margin-left: 0 !important;
 			margin-right: 0 !important;
 			width: 100% !important;
 			max-width: none !important;
 		}
 		#ste-modal .modal-body .ste-modal__body,
-		#ste-modal .modal-body .ste-modal__breadcrumb {
+		#ste-modal .modal-body .ste-modal__breadcrumb,
+		#dr-modal .modal-body .ste-modal__body,
+		#dr-modal .modal-body .ste-modal__breadcrumb,
+		#receive-item-modal .modal-body .ste-modal__body,
+		#receive-item-modal .modal-body .ste-modal__breadcrumb,
+		#ps-modal .modal-body .ste-modal__body,
+		#ps-modal .modal-body .ste-modal__breadcrumb {
 			width: 100% !important;
 			max-width: none !important;
 		}
 		#ste-modal .modal-header,
-		#ste-modal .modal-footer {
+		#ste-modal .modal-footer,
+		#dr-modal .modal-header,
+		#dr-modal .modal-footer,
+		#receive-item-modal .modal-header,
+		#receive-item-modal .modal-footer,
+		#ps-modal .modal-header,
+		#ps-modal .modal-footer {
 			width: 100% !important;
 			max-width: none !important;
 			box-sizing: border-box !important;
 		}
 		#ste-modal .modal-body .container,
-		#ste-modal .modal-body .container-fluid {
+		#ste-modal .modal-body .container-fluid,
+		#dr-modal .modal-body .container,
+		#dr-modal .modal-body .container-fluid,
+		#receive-item-modal .modal-body .container,
+		#receive-item-modal .modal-body .container-fluid,
+		#ps-modal .modal-body .container,
+		#ps-modal .modal-body .container-fluid {
 			max-width: none !important;
 			width: 100% !important;
 			padding-left: 0 !important;
 			padding-right: 0 !important;
 		}
 		@media (max-width: 767.98px) {
-			#ste-modal .modal-dialog {
+			#ste-modal .modal-dialog,
+			#dr-modal .modal-dialog,
+			#receive-item-modal .modal-dialog,
+			#ps-modal .modal-dialog {
 				max-width: calc(100vw - 1rem) !important;
 				width: 100% !important;
+				min-width: unset !important;
 				margin: 0.5rem auto !important;
 			}
 		}

@@ -474,12 +474,19 @@ class MaterialTransferController extends Controller
             $itemCode = $stockEntryItem->item_code;
             $itemDetails = Item::find($itemCode);
 
-            if (in_array($stockEntry->item_status, ['Issued', 'Returned'])) {
-                throw new Exception("Item already $stockEntry->item_status");
-            }
-
-            if ($stockEntry->docstatus == 1) {
-                throw new Exception('Item already issued.');
+            if (in_array($stockEntry->item_status, ['Issued', 'Returned']) || $stockEntry->docstatus == 1) {
+                $erpGet = $this->erpGet('Stock Entry', $stockEntry->name, [], true);
+                $erpSte = data_get($erpGet, 'data');
+                $erpDocstatus = (int) data_get($erpSte, 'docstatus', -1);
+                $erpChildRow = $erpSte ? collect(data_get($erpSte, 'items', []))->firstWhere('name', $childId) : null;
+                $erpChildStatus = $erpChildRow ? data_get($erpChildRow, 'status') : null;
+                if ($erpDocstatus === 0 && $erpChildStatus === 'For Checking') {
+                    $stockEntry = json_decode(json_encode($erpSte), false);
+                    $stockEntryItem = collect($stockEntry->items)->where('name', $childId)->first();
+                } else {
+                    $msg = $stockEntry->docstatus == 1 ? 'Item already issued.' : "Item already $stockEntry->item_status";
+                    throw new Exception($msg);
+                }
             }
 
             if (! $itemDetails) {
@@ -630,17 +637,23 @@ class MaterialTransferController extends Controller
                 }
             }
 
-            $steName = is_array($stockEntry) ? ($stockEntry['name'] ?? null) : $stockEntry->name;
+            $updatedStockEntry = $response['data'] ?? null;
+            $steName = $updatedStockEntry['name'] ?? (is_array($stockEntry) ? ($stockEntry['name'] ?? null) : $stockEntry->name);
             if (! $steName) {
                 Log::warning('MaterialTransferController submitInternalTransfer: STE name missing after update', ['stock_entry' => $stockEntry]);
             }
+
+            $this->insertTransactionLog('Stock Entry', $childId);
+
             $allItemsIssuedInErp = $steName && $this->steAllItemsIssuedInErpNext($steName, true);
             if ($allItemsIssuedInErp) {
-                $submitResponse = $this->erpSubmitDocument('Stock Entry', $steName, true);
+                $submitResponse = $this->erpSubmitDocument('Stock Entry', $steName, true, $updatedStockEntry);
                 $isTimestampMismatch = ($submitResponse['exc_type'] ?? null) === 'TimestampMismatchError';
                 if ($isTimestampMismatch) {
                     sleep(1);
-                    $submitResponse = $this->erpSubmitDocument('Stock Entry', $steName, true);
+                    $freshGet = $this->erpGet('Stock Entry', $steName, [], true);
+                    $freshDoc = Arr::get($freshGet, 'data');
+                    $submitResponse = $this->erpSubmitDocument('Stock Entry', $steName, true, $freshDoc);
                 }
                 if (Arr::has($submitResponse, 'exception') || Arr::has($submitResponse, 'exc') || ($submitResponse['error'] ?? 0)) {
                     $submitErr = $submitResponse['exception'] ?? $submitResponse['exc'] ?? 'Submit failed';
@@ -662,12 +675,16 @@ class MaterialTransferController extends Controller
             Log::warning('MaterialTransferController checkoutSteItem ERP authentication failed');
             return ApiResponse::failure(ErpAuthenticationException::USER_MESSAGE, 401);
         } catch (\Throwable $th) {
+            $exceptionMessage = $th->getMessage();
+            if (str_starts_with($exceptionMessage, 'Item already ')) {
+                return ApiResponse::failure('This item has already been checked out. Refresh the page to see the current status.');
+            }
             Log::error('MaterialTransferController checkoutSteItem failed', [
-                'message' => $th->getMessage(),
+                'message' => $exceptionMessage,
                 'trace' => $th->getTraceAsString(),
             ]);
-            $message = $this->isErpConnectionError($th->getMessage())
-                ? \App\Traits\ERPTrait::erpConnectionUnavailableMessage()
+            $message = $this->isErpConnectionError($exceptionMessage)
+                ? ERPTrait::erpConnectionUnavailableMessage()
                 : 'Error creating transaction. Please contact your system administrator.';
 
             return ApiResponse::failure($message);

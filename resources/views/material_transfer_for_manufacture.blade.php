@@ -6,10 +6,26 @@
 
 @section('style')
 <style>
+	/* Match reference: ~70–80% width, content-based height, generous padding. Override Bootstrap .modal-dialog max-width: 500px. */
 	#ste-modal .modal-dialog {
+		width: min(78vw, 1400px) !important;
 		max-width: 1400px !important;
-		width: min(90vw, 1400px) !important;
-		margin: 0.5rem auto !important;
+		min-width: min(70vw, 1100px) !important;
+		max-height: calc(100vh - 2rem) !important;
+		margin: 1rem auto !important;
+	}
+	#ste-modal .modal-dialog .modal-content {
+		max-height: calc(100vh - 2rem) !important;
+	}
+	#ste-modal .modal-dialog .modal-content .modal-body {
+		overflow-y: auto !important;
+	}
+	@media (min-width: 576px) {
+		#ste-modal .modal-dialog {
+			width: min(78vw, 1400px) !important;
+			min-width: min(70vw, 1100px) !important;
+			margin: 1.75rem auto !important;
+		}
 	}
 	#ste-modal .modal-content {
 		width: 100% !important;
@@ -18,6 +34,7 @@
 	#ste-modal .modal-body {
 		width: 100% !important;
 		max-width: none !important;
+		padding: 1.25rem 1.5rem !important;
 	}
 	#ste-modal .modal-body .row {
 		margin-left: 0 !important;
@@ -45,6 +62,7 @@
 		#ste-modal .modal-dialog {
 			max-width: calc(100vw - 1rem) !important;
 			width: 100% !important;
+			min-width: unset !important;
 		}
 	}
 </style>

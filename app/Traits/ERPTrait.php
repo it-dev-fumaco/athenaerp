@@ -196,15 +196,20 @@ trait ERPTrait
      * Uses Frappe method API: POST /api/method/frappe.client.submit
      * On 401, ErpClient throws ErpAuthenticationException and execution stops.
      *
+     * Pass full document (e.g. from PUT response or a fresh GET) as $doc when available to avoid
+     * TimestampMismatchError: Frappe compares doc.modified with the DB; a full doc with current
+     * modified must be sent for submit to succeed after a recent update.
+     *
      * @param  string  $doctype  Frappe DocType (e.g. "Stock Entry")
      * @param  string  $name  Document name
      * @param  bool  $systemGenerated  Use system API key
+     * @param  array|null  $doc  Optional full document (e.g. response from erpGet/erpPut) to send to submit; avoids stale modified timestamp
      * @return array Response with 'message' on success; 'exception' or 'exc' on error
      */
-    public function erpSubmitDocument(string $doctype, string $name, bool $systemGenerated = true): array
+    public function erpSubmitDocument(string $doctype, string $name, bool $systemGenerated = true, ?array $doc = null): array
     {
         $url = $this->getErpBaseUrl().'/api/method/frappe.client.submit';
-        $payload = ['doc' => ['doctype' => $doctype, 'name' => $name]];
+        $payload = ['doc' => $doc ?? ['doctype' => $doctype, 'name' => $name]];
 
         try {
             $client = app(ErpClient::class);

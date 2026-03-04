@@ -653,36 +653,74 @@ class MainController extends Controller
     {
         $userGroup = Auth::user()->user_group;
 
-        $reqWhUser = str_replace('null', '', (string) $request->wh_user);
-        $reqWhUser = $reqWhUser !== '' ? $reqWhUser : null;
-        $reqSrcWh = str_replace('null', '', (string) $request->src_wh);
-        $reqSrcWh = $reqSrcWh !== '' ? $reqSrcWh : null;
-        $reqTrgWh = str_replace('null', '', (string) $request->trg_wh);
-        $reqTrgWh = $reqTrgWh !== '' ? $reqTrgWh : null;
-        $reqAthDates = str_replace('null', '', (string) $request->ath_dates);
-        $reqAthDates = $reqAthDates !== '' ? $reqAthDates : null;
+        $normalizeFilter = function ($value, $maxLength = 255) {
+            if ($value === null || ! is_scalar($value)) {
+                return null;
+            }
+            $value = trim(str_replace('null', '', (string) $value));
+            if ($value === '' || strlen($value) > $maxLength) {
+                return null;
+            }
+            return $value;
+        };
 
-        $logs = AthenaTransaction::query()
+        $reqWhUser = $normalizeFilter($request->input('wh_user'));
+        $reqSrcWh = $normalizeFilter($request->input('src_wh'));
+        $reqTrgWh = $normalizeFilter($request->input('trg_wh'));
+        $reqWarehouse = $normalizeFilter($request->input('warehouse')) ?? $normalizeFilter($request->input('warehouse_id'));
+        $reqAthDates = $normalizeFilter($request->input('ath_dates'), 100);
+
+        $dateFrom = null;
+        $dateTo = null;
+        if ($reqAthDates !== null && str_contains($reqAthDates, ' to ')) {
+            $dates = explode(' to ', $reqAthDates, 2);
+            $dateFrom = Carbon::parse(trim($dates[0]));
+            $dateTo = isset($dates[1]) ? Carbon::parse(trim($dates[1]))->endOfDay() : $dateFrom->copy()->endOfDay();
+        }
+
+        $query = AthenaTransaction::query()
             ->where('item_code', $itemCode)
-            ->where('status', 'Issued')
-            ->when($reqWhUser, function ($query) use ($request) {
-                return $query->where('warehouse_user', $request->wh_user);
+            ->where(function ($q) {
+                $q->where('status', 'Issued')->orWhereNull('status');
             })
-            ->when($reqSrcWh, function ($query) use ($request) {
-                return $query->where('source_warehouse', $request->src_wh);
+            ->when($reqWhUser !== null, function ($query) use ($reqWhUser) {
+                return $query->where('warehouse_user', $reqWhUser);
             })
-            ->when($reqTrgWh, function ($query) use ($request) {
-                return $query->where('target_warehouse', $request->trg_wh);
+            ->when($reqSrcWh !== null, function ($query) use ($reqSrcWh) {
+                return $query->where('source_warehouse', $reqSrcWh);
             })
-            ->when($reqAthDates, function ($query) use ($request) {
-                $dates = explode(' to ', $request->ath_dates);
-                $from = Carbon::parse($dates[0]);
-                $to = Carbon::parse($dates[1])->endOfDay();
+            ->when($reqTrgWh !== null, function ($query) use ($reqTrgWh) {
+                return $query->where('target_warehouse', $reqTrgWh);
+            })
+            ->when($reqWarehouse !== null, function ($query) use ($reqWarehouse) {
+                return $query->where(function ($q) use ($reqWarehouse) {
+                    $q->where('source_warehouse', $reqWarehouse)
+                        ->orWhere('target_warehouse', $reqWarehouse);
+                });
+            })
+            ->when($dateFrom !== null && $dateTo !== null, function ($query) use ($dateFrom, $dateTo) {
+                return $query->whereBetween('transaction_date', [$dateFrom, $dateTo]);
+            })
+            ->orderByRaw('creation IS NULL, creation desc')   // latest-created row first; NULLs last
+            ->orderByRaw('transaction_date IS NULL, transaction_date desc')
+            ->orderBy('name', 'desc');
 
-                return $query->whereBetween('transaction_date', [$from, $to]);
-            })
-            ->orderBy('transaction_date', 'desc')
-            ->paginate(15);
+        if (config('app.debug')) {
+            Log::debug('Athena transactions query', [
+                'sql' => $query->toSql(),
+                'bindings' => $query->getBindings(),
+                'filters' => [
+                    'src_wh' => $reqSrcWh,
+                    'trg_wh' => $reqTrgWh,
+                    'warehouse' => $reqWarehouse,
+                    'wh_user' => $reqWhUser,
+                    'date_from' => $dateFrom?->toIso8601String(),
+                    'date_to' => $dateTo?->toIso8601String(),
+                ],
+            ]);
+        }
+
+        $logs = $query->paginate(15);
 
         $productionLogs = collect($logs->items())->groupBy('purpose');
         $productionLogs = Arr::get($productionLogs, 'Material Transfer for Manufacture', []);
@@ -763,6 +801,9 @@ class MainController extends Controller
             }
             $issuedBy = $issuedBy !== '' ? $issuedBy : AthenaTransaction::EMPTY_USER_PLACEHOLDER;
 
+            $requestedAt = data_get($existingReferenceNo, 'creation');
+            $issuedAt = $row->transaction_date;
+
             $list[] = [
                 'reference_name' => $row->reference_name,
                 'item_code' => $row->item_code,
@@ -772,13 +813,61 @@ class MainController extends Controller
                 'reference_type' => $row->purpose,
                 'issued_qty' => $row->issued_qty * 1,
                 'reference_no' => $row->reference_no,
-                'transaction_date' => $row->transaction_date,
                 'production_order' => Arr::get($productionOrders, $row->reference_parent),
                 'requested_by' => $requestedBy,
+                'requested_at' => $requestedAt,
                 'issued_by' => $issuedBy,
+                'issued_at' => $issuedAt,
                 'status' => $status,
                 'remarks' => $remarks,
             ];
+        }
+
+        $issuedSteNames = DB::table('tabAthena Transactions')
+            ->where('item_code', $itemCode)
+            ->where(function ($q) {
+                $q->where('status', 'Issued')->orWhereNull('status');
+            })
+            ->pluck('reference_parent')
+            ->unique()
+            ->values()
+            ->all();
+        if ($logs->currentPage() === 1) {
+            $draftSteRows = DB::table('tabStock Entry as ste')
+                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                ->where('ste.docstatus', 0)
+                ->where('sted.item_code', $itemCode)
+                ->whereNotIn('ste.name', $issuedSteNames ?: [''])
+                ->select('ste.name as ste_name', 'ste.creation', 'ste.owner', 'ste.modified_by', 'ste.purpose', 'ste.transfer_as', 'sted.s_warehouse', 'sted.t_warehouse', 'sted.qty', 'sted.name as reference_name', 'sted.transfer_qty')
+                ->orderByRaw('ste.creation desc')
+                ->limit(30)
+                ->get();
+            $draftBySte = $draftSteRows->groupBy('ste_name');
+            $draftList = [];
+            foreach ($draftBySte as $steName => $rows) {
+                $first = $rows->first();
+                $totalQty = $rows->sum(fn ($r) => (float) ($r->transfer_qty ?? $r->qty ?? 0));
+                $transferAs = $first->transfer_as ?? null;
+                $remarks = $first->purpose === 'Material Transfer' ? $transferAs : null;
+                $draftList[] = [
+                    'reference_name' => $first->reference_name,
+                    'item_code' => $itemCode,
+                    'reference_parent' => $steName,
+                    'source_warehouse' => $first->s_warehouse,
+                    'target_warehouse' => $first->t_warehouse,
+                    'reference_type' => $first->purpose ?? 'Stock Entry',
+                    'issued_qty' => $totalQty,
+                    'reference_no' => null,
+                    'production_order' => null,
+                    'requested_by' => trim((string) ($first->owner ?? '')) ?: AthenaTransaction::EMPTY_USER_PLACEHOLDER,
+                    'requested_at' => $first->creation,
+                    'issued_by' => AthenaTransaction::EMPTY_USER_PLACEHOLDER,
+                    'issued_at' => null,
+                    'status' => 'DRAFT',
+                    'remarks' => $remarks,
+                ];
+            }
+            $list = array_merge($draftList, $list);
         }
 
         $emptyUserPlaceholder = AthenaTransaction::EMPTY_USER_PLACEHOLDER;
