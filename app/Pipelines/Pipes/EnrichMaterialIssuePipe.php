@@ -17,7 +17,7 @@ class EnrichMaterialIssuePipe implements Pipe
 
         $salesOrderNos = $entries->pluck('sales_order_no')->unique()->filter()->values()->toArray();
         $itemCodes = $entries->pluck('item_code')->unique()->values()->toArray();
-        $ownerNames = $entries->pluck('owner')->unique()->filter()->values()->toArray();
+        $ownerWhUsers = $entries->pluck('owner')->unique()->filter()->values()->toArray();
         $warehouses = $entries->pluck('s_warehouse')->unique()->filter()->values()->toArray();
 
         $passable->soCustomers = SalesOrder::query()
@@ -32,9 +32,10 @@ class EnrichMaterialIssuePipe implements Pipe
             ->pluck('supplier_part_nos', 'parent')
             ->toArray();
 
+        // Stock Entry owner column stores wh_user (frappe user id); lookup by wh_user, not name.
         $passable->ownerFullNames = User::query()
-            ->whereIn('name', $ownerNames)
-            ->pluck('full_name', 'name')
+            ->whereIn('wh_user', $ownerWhUsers)
+            ->pluck('full_name', 'wh_user')
             ->toArray();
 
         $itemWarehousePairs = $entries->map(fn ($d) => [$d->item_code, $d->s_warehouse])->unique()->values()->toArray();

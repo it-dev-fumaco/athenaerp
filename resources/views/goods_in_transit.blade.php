@@ -28,8 +28,9 @@
 								</div>
 								<div class="order-2 order-lg-4 order-xl-4 col-6 col-lg-3">
 									<div class="text-center m-1">
-									   <span class="font-weight-bold">TOTAL RESULT:</span>
-									   <span class="badge bg-info" style="font-size: 12pt;">@{{ mi_filtered.length }}</span>
+										<span class="font-weight-bold">TOTAL RESULT:</span>
+										<span class="badge bg-info" style="font-size: 12pt;">@{{ (searchText || fltr) ? mi_filtered.length : totalResults }}</span>
+										<span class="small text-muted" ng-if="(searchText || fltr) && totalResults > 0">(of @{{ totalResults }})</span>
 									</div>
 								</div>
 							</div>
@@ -224,10 +225,12 @@
 
 	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location, $sce) {
 		$scope.trustAsHtml = function(html) { return html ? $sce.trustAsHtml(html) : ''; };
+		$scope.totalResults = 0;
 		$scope.loadData = () => {
 			$scope.custom_loading_spinner = true;
 			$http.get("/in_transit?arr=1").then((response) => {
-				$scope.mi = response.data.records;
+				$scope.mi = response.data.records || [];
+				$scope.totalResults = $scope.mi.length;
 				$scope.custom_loading_spinner = false;
 			}).catch((error) => {
 				showNotification("danger", 'An error occured. Please try again.', "fa fa-info");

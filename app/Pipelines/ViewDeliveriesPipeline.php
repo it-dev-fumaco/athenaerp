@@ -33,4 +33,20 @@ class ViewDeliveriesPipeline
                 'pagination' => $p->pagination,
             ]));
     }
+
+    /**
+     * Return total count of delivery/picking list rows (same dataset as run()).
+     * Passable must have: allowedWarehouses, search (optional), perPage, page.
+     *
+     * @return int
+     */
+    public function getTotalCount(object $passable): int
+    {
+        $this->pipeline
+            ->send($passable)
+            ->through([BuildPickingListPipe::class])
+            ->then(fn ($p) => $p);
+
+        return $passable->paginatedData->total();
+    }
 }

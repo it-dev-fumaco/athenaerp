@@ -478,7 +478,7 @@ trait GeneralTrait
             'qty' => $q->qty,
             'barcode' => $barcode,
             'transaction_date' => $now->toDateTimeString(),
-            'warehouse_user' => $q->session_user,
+            'warehouse_user' => Auth::user()->wh_user,
             'issued_qty' => $q->qty,
             'remarks' => $remarks,
             'source_warehouse' => $sWarehouse,

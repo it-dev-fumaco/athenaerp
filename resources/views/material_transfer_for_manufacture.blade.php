@@ -96,12 +96,13 @@
 										</select>
 									</div>
 								</div>
-								<div class="col-xl-2 col-lg-3 col-md-3">
-									<div class="text-center m-1">
-									   <span class="font-weight-bold">TOTAL RESULT:</span>
-									   <span class="badge bg-info" style="font-size: 12pt;">@{{ mtfm_filtered.length }}</span>
+									<div class="col-xl-2 col-lg-3 col-md-3">
+										<div class="text-center m-1">
+											<span class="font-weight-bold">TOTAL RESULT:</span>
+											<span class="badge bg-info" style="font-size: 12pt;">@{{ (searchText || fltr) ? mtfm_filtered.length : totalResults }}</span>
+											<span class="small text-muted" ng-if="(searchText || fltr) && totalResults > 0">(of @{{ totalResults }})</span>
+										</div>
 									</div>
-								</div>
 							</div>
 						</div>
 						<div class="alert m-3 text-center" ng-show="custom_loading_spinner_1">
@@ -394,10 +395,12 @@
 			$scope.wh = response.data.wh;
 		});
 		
+		$scope.totalResults = 0;
 		$scope.loadData = function(){
 			$scope.custom_loading_spinner_1 = true;
 			$http.get("/material_transfer_for_manufacture?arr=1").then(function (response) {
-				$scope.mtfm = response.data.records;
+				$scope.mtfm = response.data.records || [];
+				$scope.totalResults = $scope.mtfm.length;
 				$scope.custom_loading_spinner_1 = false;
 			});
 		}

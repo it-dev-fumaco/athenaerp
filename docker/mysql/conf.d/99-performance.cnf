@@ -1,0 +1,17 @@
+# MySQL performance tuning for Docker (AthenaERP)
+# Mounted as /etc/mysql/conf.d/99-performance.cnf
+# Adjust innodb_buffer_pool_size based on Docker memory (e.g. 256M–512M if Docker has 4GB+)
+
+[mysqld]
+# InnoDB buffer pool: main cache for data/indexes. Default is ~128M; increase for better throughput.
+innodb_buffer_pool_size=256M
+# Do not set innodb_log_file_size here if the volume already exists; it can prevent MySQL from starting.
+# Reduce disk I/O for typical web workload
+innodb_flush_log_at_trx_commit=2
+
+# Optional: enable slow query log for debugging (set slow_query_log=1 and restart to enable)
+slow_query_log=0
+slow_query_log_file=/var/lib/mysql/slow.log
+long_query_time=2
+# Connection and table cache
+table_open_cache=2000

@@ -24,7 +24,7 @@
                     <div class="col-2 position-relative">
                         <a href="{{ $row['image'] }}" data-toggle="lightbox" data-gallery="{{ $row['item_code'] }}" data-title="{{ $row['item_code'] }}" class="low-stock-item-image-link">
                             <img src="{{ $row['image'] }}" class="img w-100" alt="Item image" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none');">
-                            <span class="d-none low-stock-no-image text-muted small d-flex align-items-center justify-content-center bg-light border rounded p-1 text-center" style="min-height: 60px; font-size: 0.7rem;">No image</span>
+                            <img src="{{ Storage::disk('upcloud')->url('icon/no-img.png') }}" class="d-none low-stock-no-image img w-100 rounded" alt="" style="min-height: 60px; object-fit: contain; background: #f8f9fa;">
                         </a>
                     </div>
                     <div class="col-10">

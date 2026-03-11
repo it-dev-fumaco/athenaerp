@@ -417,27 +417,100 @@ class MainController extends Controller
                 ->join('tabDelivery Note as dr', 'dri.parent', 'dr.name')
                 ->whereRaw(('dri.item_code = pi.parent_item'))
                 ->where('ps.docstatus', '<', 2)
-                ->where('ps.item_status', 'For Checking')
+                ->whereIn('ps.item_status', ['For Checking', 'Issued'])
                 ->where('psi.name', $id)
-                ->where('dri.docstatus', 0)
+                ->whereIn('dri.docstatus', [0, 1])
                 ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'dri.item_code', 'psi.description', 'psi.qty', 'psi.name as id', 'dri.warehouse', 'psi.status', 'dri.stock_uom', 'psi.qty', 'dri.name as dri_name', 'dr.reference as sales_order', 'dri.uom', 'ps.docstatus')
                 ->first();
         } else {
+            // Use leftJoin for dri/dr so we find the row even when no Delivery Note Item exists (matches list query).
             $q = PackingSlip::query()
                 ->from('tabPacking Slip as ps')
                 ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-                ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
-                ->join('tabDelivery Note as dr', 'dri.parent', 'dr.name')
-                ->whereRaw(('dri.item_code = psi.item_code'))
+                ->leftJoin('tabDelivery Note Item as dri', function ($join) {
+                    $join->on('dri.parent', '=', 'ps.delivery_note')
+                        ->on('dri.item_code', '=', 'psi.item_code');
+                })
+                ->leftJoin('tabDelivery Note as dr', 'dri.parent', '=', 'dr.name')
                 ->where('ps.docstatus', '<', 2)
-                ->where('ps.item_status', 'For Checking')
                 ->where('psi.name', $id)
-                ->where('dri.docstatus', 0)
-                ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.name as id', 'dri.warehouse', 'psi.status', 'dri.stock_uom', 'psi.qty', 'dri.name as dri_name', 'dr.reference as sales_order', 'dri.uom', 'ps.docstatus')
+                ->select(
+                    'psi.barcode',
+                    'psi.status',
+                    'ps.name',
+                    'ps.delivery_note',
+                    'psi.item_code',
+                    'psi.description',
+                    'psi.qty',
+                    'psi.name as id',
+                    DB::raw('COALESCE(dri.warehouse, "") as warehouse'),
+                    'psi.status',
+                    DB::raw('COALESCE(dri.stock_uom, psi.stock_uom) as stock_uom'),
+                    DB::raw('COALESCE(dri.uom, psi.stock_uom) as uom'),
+                    'dri.name as dri_name',
+                    DB::raw('COALESCE(dr.reference, ps.sales_order) as sales_order'),
+                    'ps.docstatus'
+                )
                 ->first();
+
+            // Fallback 1: find by packing slip item only (no Delivery Note)
+            if (! $q) {
+                $q = PackingSlip::query()
+                    ->from('tabPacking Slip as ps')
+                    ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                    ->where('ps.docstatus', '<', 2)
+                    ->where('psi.name', $id)
+                    ->select(
+                        'psi.barcode',
+                        'psi.status',
+                        'ps.name',
+                        'ps.delivery_note',
+                        'psi.item_code',
+                        'psi.description',
+                        'psi.qty',
+                        'psi.name as id',
+                        DB::raw('"" as warehouse'),
+                        'psi.status as status',
+                        'psi.stock_uom',
+                        'psi.stock_uom as uom',
+                        DB::raw('NULL as dri_name'),
+                        'ps.sales_order as sales_order',
+                        'ps.docstatus'
+                    )
+                    ->first();
+            }
+
+            // Fallback 2: treat id as packing slip name (ps.name) and use first item (list may show ps.name in UI)
+            if (! $q) {
+                $q = PackingSlip::query()
+                    ->from('tabPacking Slip as ps')
+                    ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                    ->where('ps.docstatus', '<', 2)
+                    ->where('ps.name', $id)
+                    ->select(
+                        'psi.barcode',
+                        'psi.status',
+                        'ps.name',
+                        'ps.delivery_note',
+                        'psi.item_code',
+                        'psi.description',
+                        'psi.qty',
+                        'psi.name as id',
+                        DB::raw('"" as warehouse'),
+                        'psi.status as status',
+                        'psi.stock_uom',
+                        'psi.stock_uom as uom',
+                        DB::raw('NULL as dri_name'),
+                        'ps.sales_order as sales_order',
+                        'ps.docstatus'
+                    )
+                    ->orderBy('psi.idx')
+                    ->first();
+            }
         }
 
         if (! $q) {
+            Log::warning('getPsDetails: item not found', ['id' => $id, 'type' => $request->type]);
             return ApiResponse::modal(false, 'Not Found', 'Item not found. Please reload the page.', 422);
         }
 
@@ -2728,30 +2801,58 @@ class MainController extends Controller
         }
     }
 
-    public function downloadImage($webp)
+    public function downloadImage($file)
     {
-        if (SafePath::pathContainsTraversal($webp) || ! SafePath::pathUnderPrefix($webp, 'img')) {
-            return ApiResponse::failure('File not found', 404);
+        $path = is_string($file) ? rawurldecode(trim($file)) : '';
+        if ($path === '' || str_contains($path, '://')) {
+            abort(404, 'File not found');
+        }
+        $allowedPrefixes = ['img', 'item-images', 'items'];
+        if (SafePath::pathContainsTraversal($path) || ! collect($allowedPrefixes)->contains(fn ($prefix) => SafePath::pathUnderPrefix($path, $prefix))) {
+            abort(404, 'File not found');
         }
 
-        if (! Storage::disk('upcloud')->exists($webp)) {
-            return ApiResponse::failure('File not found', 404);
+        $disk = Storage::disk('upcloud');
+
+        // Prefer original JPEG/PNG when requesting a WebP so the user gets a standard image file
+        if (str_ends_with(strtolower($path), '.webp')) {
+            $basePath = substr($path, 0, -5);
+            foreach (['.jpg', '.jpeg', '.png'] as $ext) {
+                $candidatePath = $basePath.$ext;
+                if (SafePath::pathContainsTraversal($candidatePath)) {
+                    continue;
+                }
+                if (collect($allowedPrefixes)->contains(fn ($prefix) => SafePath::pathUnderPrefix($candidatePath, $prefix)) && $disk->exists($candidatePath)) {
+                    $contents = $disk->get($candidatePath);
+                    $safeName = SafePath::sanitizeSegment(basename($basePath));
+                    $downloadExt = in_array(strtolower($ext), ['.jpg', '.jpeg'], true) ? 'jpg' : 'png';
+                    $mime = $downloadExt === 'jpg' ? 'image/jpeg' : 'image/png';
+
+                    return Response::make($contents, 200, [
+                        'Content-Type' => $mime,
+                        'Content-Disposition' => 'attachment; filename="'.str_replace('"', '\\"', $safeName).'.'.$downloadExt.'"',
+                    ]);
+                }
+            }
         }
 
-        $contents = Storage::disk('upcloud')->get($webp);
+        if (! $disk->exists($path)) {
+            abort(404, 'File not found');
+        }
+
+        // Serve WebP as converted JPEG for download
+        $contents = $disk->get($path);
         $image = @imagecreatefromstring($contents);
-
         if (! $image) {
-            return ApiResponse::failure('Failed to convert the image', 500);
+            abort(500, 'WebP could not be converted to JPEG. The server may not support WebP, or the file may be invalid.');
         }
-
         ob_start();
         imagejpeg($image);
         $jpgData = ob_get_contents();
         ob_end_clean();
+        imagedestroy($image);
 
-        $name = explode('.', $webp)[0];
-        $safeName = SafePath::sanitizeSegment(basename($name));
+        $safeName = SafePath::sanitizeSegment(basename(pathinfo($path, PATHINFO_FILENAME)));
 
         return Response::make($jpgData, 200, [
             'Content-Type' => 'image/jpeg',

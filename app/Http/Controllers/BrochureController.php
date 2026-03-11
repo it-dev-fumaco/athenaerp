@@ -297,8 +297,20 @@ class BrochureController extends Controller
     {
         DB::beginTransaction();
         try {
-            if ($request->id) {
-                ItemBrochureImage::where('name', $request->id)->delete();
+            $id = $request->id ? trim((string) $request->id) : null;
+            $itemCode = $request->item_code ? trim((string) $request->item_code) : null;
+            $imageIdx = $request->image_idx !== null && $request->image_idx !== '' ? (string) $request->image_idx : null;
+
+            if ($id) {
+                ItemBrochureImage::where('name', $id)->delete();
+                DB::commit();
+
+                return ApiResponse::success('Image removed.');
+            }
+
+            // Standard brochure image removal: allow deleting by item_code + image_idx when the UI doesn't have the record id.
+            if ($itemCode && $imageIdx) {
+                ItemBrochureImage::where('parent', $itemCode)->where('idx', $imageIdx)->delete();
                 DB::commit();
 
                 return ApiResponse::success('Image removed.');
@@ -527,7 +539,9 @@ class BrochureController extends Controller
                 ->orderByRaw('LENGTH(idx) ASC')
                 ->orderBy('idx', 'ASC')
                 ->get();
-            $brochureImagesGroup = $brochureImagesQry->groupBy('parent')->toArray();
+            // Keep models as objects (do NOT toArray), since we read ->image_path/->image_filename below.
+            $brochureImagesGroup = $brochureImagesQry->groupBy('parent');
+            $upcloudDisk = Storage::disk('upcloud');
 
             $content = [];
             $no = 1;
@@ -547,7 +561,7 @@ class BrochureController extends Controller
 
                 $attributes = $attributeGroup[$itemCode] ?? [];
                 $currentItemImages = $currentItemImagesGroup[$itemCode] ?? [];
-                $brochureImages = $brochureImagesGroup[$itemCode] ?? [];
+                $brochureImages = $brochureImagesGroup->get($itemCode, collect());
 
                 $itemName = $itemDetails->item_brochure_name ?: $itemDetails->item_name;
                 $itemDescription = $itemDetails->item_brochure_description ?: $itemDetails->description;
@@ -571,9 +585,12 @@ class BrochureController extends Controller
                         continue;
                     }
                     $filename = $e->image_path;
+                    if ($filename && ! $upcloudDisk->exists('item-images/'.$filename)) {
+                        $filename = explode('.', $filename)[0].'.webp';
+                    }
                     $currentImages[] = [
                         'filename' => $filename,
-                        'filepath' => 'storage/img/'.$filename,
+                        'filepath' => $filename ? 'item-images/'.$filename : null,
                     ];
                 }
 
@@ -583,7 +600,7 @@ class BrochureController extends Controller
                     $img = $brochureImages[$i] ?? null;
                     $images['image'.$row] = [
                         'id' => $img?->name ?? null,
-                        'filepath' => ($img && isset($img->image_path, $img->image_filename)) ? $img->image_path.$img->image_filename : null,
+                        'filepath' => ($img && $img->image_path && $img->image_filename) ? $img->image_path.$img->image_filename : null,
                     ];
                 }
 
@@ -613,6 +630,96 @@ class BrochureController extends Controller
             }
 
             if ($pdf) {
+                // Embed remote images (upcloud) as data URIs for PDF rendering.
+                // DOMPDF can't reliably fetch remote S3 URLs in all environments.
+                $upcloudDisk = Storage::disk('upcloud');
+                $dataUriCache = [];
+
+                $toDataUriFromKey = function (?string $key) use ($upcloudDisk, &$dataUriCache): ?string {
+                    if (! $key) {
+                        return null;
+                    }
+                    $key = ltrim($key, '/');
+                    $originalKey = $key;
+                    if (isset($dataUriCache[$originalKey])) {
+                        return $dataUriCache[$originalKey];
+                    }
+
+                    $ext = strtolower(pathinfo($key, PATHINFO_EXTENSION));
+                    $data = null;
+
+                    // Prefer non-webp for DOMPDF; try alternative extensions only when key is webp.
+                    if ($ext === 'webp') {
+                        $base = preg_replace('/\.webp$/i', '', $key) ?? $key;
+                        foreach ([$base.'.png', $base.'.jpg', $base.'.jpeg'] as $altKey) {
+                            if (! $altKey) {
+                                continue;
+                            }
+                            $data = $upcloudDisk->get($altKey);
+                            if ($data !== null && $data !== '') {
+                                $key = $altKey;
+                                $ext = strtolower(pathinfo($key, PATHINFO_EXTENSION));
+                                break;
+                            }
+                        }
+                    }
+
+                    if ($data === null || $data === '') {
+                        $data = $upcloudDisk->get($key);
+                    }
+                    if ($data === null || $data === '') {
+                        $dataUriCache[$originalKey] = null;
+
+                        return null;
+                    }
+
+                    // If still webp, convert to PNG using GD when available (DOMPDF webp support is unreliable).
+                    if ($ext === 'webp' && function_exists('imagecreatefromwebp') && function_exists('imagepng')) {
+                        $tmpWebp = tempnam(sys_get_temp_dir(), 'brochure_webp_');
+                        if ($tmpWebp) {
+                            try {
+                                file_put_contents($tmpWebp, $data);
+                                $img = @imagecreatefromwebp($tmpWebp);
+                                if ($img !== false) {
+                                    ob_start();
+                                    imagepng($img);
+                                    imagedestroy($img);
+                                    $pngData = ob_get_clean();
+                                    if ($pngData !== false && $pngData !== '') {
+                                        $dataUri = 'data:image/png;base64,'.base64_encode($pngData);
+                                        $dataUriCache[$originalKey] = $dataUri;
+
+                                        return $dataUri;
+                                    }
+                                }
+                            } finally {
+                                @unlink($tmpWebp);
+                            }
+                        }
+                    }
+
+                    $mime = match ($ext) {
+                        'jpg', 'jpeg' => 'image/jpeg',
+                        'png' => 'image/png',
+                        'webp' => 'image/webp',
+                        default => 'application/octet-stream',
+                    };
+
+                    $dataUri = 'data:'.$mime.';base64,'.base64_encode($data);
+                    $dataUriCache[$originalKey] = $dataUri;
+
+                    return $dataUri;
+                };
+
+                foreach ($content as $idx => $row) {
+                    $imageDataUris = [];
+                    for ($i = 1; $i <= 3; $i++) {
+                        $key = data_get($row, 'images.image'.$i.'.filepath');
+                        $imageDataUris[$i] = $toDataUriFromKey(is_string($key) ? $key : null);
+                    }
+                    $content[$idx]['image_data_uris'] = $imageDataUris;
+                }
+
                 $isStandard = true;
                 $filename = Str::slug($project, '-');
                 $newFilename = Str::slug($project, '-').'-'.now()->format('Y-m-d');
@@ -811,19 +918,21 @@ class BrochureController extends Controller
             }
 
             $existingImage = ItemBrochureImage::where('parent', $itemCode)->where('idx', $request->image_idx)->first();
+            $imageRecordId = $existingImage?->name;
             $updateData = [
                 'modified' => $transactionDate,
                 'modified_by' => Auth::user()->wh_user,
                 'idx' => $request->image_idx,
                 'image_filename' => $storedFilename,
-                'image_path' => 'item-brochures/',
+                'image_path' => $imagePath,
             ];
 
             if ($existingImage) {
                 $existingImage->update($updateData);
             } else {
+                $imageRecordId = uniqid();
                 ItemBrochureImage::insert([
-                    'name' => uniqid(),
+                    'name' => $imageRecordId,
                     'creation' => $transactionDate,
                     'modified' => $transactionDate,
                     'modified_by' => Auth::user()->wh_user,
@@ -831,7 +940,7 @@ class BrochureController extends Controller
                     'parent' => $itemCode,
                     'idx' => $request->image_idx,
                     'image_filename' => $storedFilename,
-                    'image_path' => 'item-brochures/',
+                    'image_path' => $imagePath,
                 ]);
             }
 
@@ -859,7 +968,12 @@ class BrochureController extends Controller
                 'image_path' => $dataSrc,
             ]);
 
-            return ApiResponse::successWith('Image uploaded.', ['src' => $dataSrc]);
+            return ApiResponse::successWith('Image uploaded.', [
+                'src' => $dataSrc,
+                'id' => $imageRecordId,
+                'item_code' => $itemCode,
+                'image_idx' => (string) $request->image_idx,
+            ]);
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('uploadImageForStandard failed', [

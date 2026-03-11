@@ -119,6 +119,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
         // JQUERY
         Route::get('/count_ste_for_issue/{purpose}', [MainController::class, 'countSteForIssue']);
         Route::get('/count_ps_for_issue', [MainController::class, 'countPsForIssue']);
+        Route::get('/count_deliveries', [DeliveryController::class, 'countDeliveries']);
         Route::get('/count_production_to_receive', [ProductionController::class, 'countProductionToReceive']);
 
         Route::get('/load_suggestion_box', [SearchController::class, 'loadSuggestionBox']);
@@ -334,7 +335,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
     Route::get('/download/{project}/{filename}', [BrochureController::class, 'downloadBrochure']);
     Route::post('/remove_image', [BrochureController::class, 'removeImage']);
 
-    Route::get('/download_image/{file}', [MainController::class, 'downloadImage']);
+    Route::get('/download_image/{file}', [MainController::class, 'downloadImage'])->where('file', '.*');
 
     Route::get('/debug-upcloud', function () {
         return [

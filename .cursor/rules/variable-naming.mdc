@@ -1,0 +1,29 @@
+---
+description: Variable naming conventions - camelCase and descriptive names
+globs: **/*.php
+alwaysApply: true
+---
+
+# Variable Naming Conventions
+
+## Rules
+
+1. **camelCase** for all variables (e.g., `$itemDetails`, `$searchTerms`, `$requestDescription`)
+2. **Descriptive names** - avoid single letters or abbreviations (e.g., `$query` not `$q`, `$item` not `$i`)
+3. **Closure parameters** - use `$query` or `$subQuery` for query builder, `$item` or `$row` for collection items
+
+## Examples
+
+```php
+// ❌ BAD
+$q = DB::table('tabItem')->where(...);
+$item_details = Item::find($id);
+$search_str = explode(' ', $request->search);
+->when($request->q, function ($q) use ($request) { return $q->where(...); });
+
+// ✅ GOOD
+$itemsQuery = DB::table('tabItem')->where(...);
+$itemDetails = Item::find($id);
+$searchTerms = explode(' ', $request->search);
+->when($request->q, function ($query) use ($request) { return $query->where(...); });
+```

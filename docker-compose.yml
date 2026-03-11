@@ -1,8 +1,9 @@
 # AthenaERP - Docker Compose
 # Copy .env.example to .env and set DB_* / APP_URL before running.
 #
-# If the stack feels slow: give Docker more RAM in Docker Desktop
-# (Settings → Resources → Memory, e.g. 4–8 GB). See readme.md "Performance".
+# Performance: give Docker more RAM (Docker Desktop → Settings → Resources, e.g. 4–8 GB).
+# For production-like speed set in .env: APP_ENV=production, APP_DEBUG=false, XDEBUG_ENABLED=0.
+# Optional: use Nginx + PHP-FPM for concurrent requests: see readme "Performance" and docker-compose.fpm.yml.
 
 services:
   app:
@@ -10,7 +11,9 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        COMPOSER_INSTALL_FLAGS: ""   # use "--no-dev" for production build
+        COMPOSER_INSTALL_FLAGS: "--no-dev"
+        # Set to 0 in .env for production-like performance (disables Xdebug)
+        XDEBUG_ENABLED: ${XDEBUG_ENABLED:-1}
     image: athenaerp-app
     container_name: athenaerp-app
     restart: unless-stopped
@@ -21,20 +24,27 @@ services:
       - .:/var/www/html:delegated
     ports:
       - "80:8000"
+    # Optional: limit CPU/memory (uncomment and adjust). Prefer giving Docker more resources in Desktop.
+    # deploy:
+    #   resources:
+    #     limits: { memory: 1G }
+    #     reservations: { memory: 512M }
     environment:
       APP_ENV: ${APP_ENV:-local}
       APP_DEBUG: ${APP_DEBUG:-true}
+      DEBUGBAR_ENABLED: ${DEBUGBAR_ENABLED:-false}
       APP_URL: ${APP_URL:-http://AthenaERP.local}
       DB_CONNECTION: mysql
       DB_HOST: mysql
       DB_PORT: 3306
       DB_DATABASE: ${DB_DATABASE:-laravel}
-      DB_USERNAME: ${DB_USERNAME:-laravel}
+      # In Docker we use laravel user (MySQL creates it; root is not allowed as MYSQL_USER)
+      DB_USERNAME: laravel
       DB_PASSWORD: ${DB_PASSWORD:-secret}
       DB_HOST_1: mysql_mes
       DB_PORT_1: 3306
       DB_DATABASE_1: ${DB_DATABASE_1:-}
-      DB_USERNAME_1: ${DB_USERNAME_1:-laravel}
+      DB_USERNAME_1: laravel
       DB_PASSWORD_1: ${DB_PASSWORD_1:-secret}
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -64,15 +74,18 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
       MYSQL_DATABASE: ${DB_DATABASE:-laravel}
-      MYSQL_USER: ${DB_USERNAME:-laravel}
+      # MySQL image forbids MYSQL_USER=root; always create a non-root app user
+      MYSQL_USER: laravel
       MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
     volumes:
       - athenaerp-mysql:/var/lib/mysql
+      - ./docker/mysql/conf.d/99-performance.cnf:/etc/mysql/conf.d/99-performance.cnf:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD:-secret}"]
-      retries: 5
+      test: ["CMD", "sh", "-c", "mysqladmin ping -h localhost -u root -p\"$$MYSQL_ROOT_PASSWORD\""]
+      retries: 10
       interval: 5s
       timeout: 5s
+      start_period: 30s
     networks:
       - athenaerp
 
@@ -86,15 +99,17 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD_1:-secret}
       MYSQL_DATABASE: ${DB_DATABASE_1:-mes}
-      MYSQL_USER: ${DB_USERNAME_1:-laravel}
+      MYSQL_USER: laravel
       MYSQL_PASSWORD: ${DB_PASSWORD_1:-secret}
     volumes:
       - athenaerp-mysql-mes:/var/lib/mysql
+      - ./docker/mysql/conf.d/99-performance.cnf:/etc/mysql/conf.d/99-performance.cnf:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD_1:-secret}"]
-      retries: 5
+      test: ["CMD", "sh", "-c", "mysqladmin ping -h localhost -u root -p\"$$MYSQL_ROOT_PASSWORD\""]
+      retries: 10
       interval: 5s
       timeout: 5s
+      start_period: 30s
     networks:
       - athenaerp
 

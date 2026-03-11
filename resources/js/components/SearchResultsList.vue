@@ -141,16 +141,41 @@ function invBadgeClass(inv) {
   return 'badge-success';
 }
 
+/**
+ * If the server or proxy returns the raw HTTP response as a string (e.g. "HTTP/1.0 200 OK ...\n\n{...}"),
+ * try to extract and parse the JSON body.
+ */
+function parseJsonFromResponse(value) {
+  if (value && typeof value === 'object') {
+    return value;
+  }
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const trimmed = value.trim();
+  const firstBrace = trimmed.indexOf('{');
+  if (firstBrace === -1) {
+    return null;
+  }
+  try {
+    return JSON.parse(trimmed.slice(firstBrace));
+  } catch {
+    return null;
+  }
+}
+
 async function loadUrl(url) {
   if (!url) return;
   loading.value = true;
   currentFetchUrl.value = url;
   try {
     const { data } = await axios.get(url, { headers: { Accept: 'application/json' } });
-    if (data && Array.isArray(data.data) && data.meta) {
-      apiData.value = data;
+    const parsed = parseJsonFromResponse(data);
+    if (parsed && Array.isArray(parsed.data) && parsed.meta) {
+      apiData.value = parsed;
     } else {
-      initialHtml.value = typeof data === 'string' ? data : '';
+      // Only show initial HTML fallback; never show raw response text (headers + body)
+      initialHtml.value = typeof window !== 'undefined' && window.__SEARCH_RESULTS_INITIAL_HTML__ ? window.__SEARCH_RESULTS_INITIAL_HTML__ : '';
       apiData.value = null;
     }
   } catch (_) {

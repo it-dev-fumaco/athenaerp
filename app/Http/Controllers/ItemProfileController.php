@@ -28,6 +28,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
@@ -126,10 +127,45 @@ class ItemProfileController extends Controller
             $itemStockAvailable = collect($siteWarehouses)->sum('available_qty');
         }
 
-        $itemImages = ItemImages::query()->where('parent', $itemCode)->orderBy('idx', 'asc')->pluck('image_path');
+        $itemImages = ItemImages::query()
+            ->where('parent', $itemCode)
+            ->orderBy('idx', 'asc')
+            ->pluck('image_path');
 
-        $itemImages = collect($itemImages)->map(function ($image) {
-            return $this->base64Image("/item-images/$image");
+        $itemImages = collect($itemImages)->map(function ($imagePath) {
+            $imagePath = $imagePath ? trim((string) $imagePath) : null;
+
+            if (! $imagePath) {
+                return $this->base64Image('icon/no-img.png');
+            }
+
+            // If a full URL was stored (legacy/backfilled data), just return it.
+            if (Str::startsWith($imagePath, ['http://', 'https://'])) {
+                return $imagePath;
+            }
+
+            // If the column already contains a directory (e.g. "items/foo.webp",
+            // "img/foo.webp", "item-images/foo.webp"), treat it as the storage key.
+            if (str_contains($imagePath, '/')) {
+                return $this->base64Image(ltrim($imagePath, '/'));
+            }
+
+            // Filename-only rows: prefer the new "items/" prefix, then fall back to legacy
+            // "img/" and "item-images/" prefixes for older data.
+            $disk = Storage::disk('upcloud');
+            $candidates = [
+                "items/{$imagePath}",
+                "img/{$imagePath}",
+                "item-images/{$imagePath}",
+            ];
+
+            foreach ($candidates as $candidate) {
+                if ($disk->exists($candidate)) {
+                    return $this->base64Image($candidate);
+                }
+            }
+
+            return $this->base64Image('icon/no-img.png');
         });
 
         $noImg = $this->base64Image('/icon/no-img.png');
@@ -449,28 +485,41 @@ class ItemProfileController extends Controller
 
                 // Unique filename (unpredictable, no path in item_code)
                 $safeItemCode = SafePath::sanitizeSegment($request->item_code);
-                $filename = (string) \Illuminate\Support\Str::random(24).'-'.($safeItemCode ?: 'item').'.webp';
-                $storageKey = "items/{$filename}";
+                $randomBase = (string) Str::random(24).'-'.($safeItemCode ?: 'item');
 
-                // Convert to webp
-                $webp = Webp::make($file);
+                $storageKey = null;
+                $tempPath = null;
 
-                // Save temporarily
-                $tempPath = storage_path("app/temp/$filename");
+                // Prefer WebP when supported; otherwise fall back to original file bytes.
+                try {
+                    if (function_exists('imagewebp')) {
+                        $filename = $randomBase.'.webp';
+                        $storageKey = "items/{$filename}";
 
-                if (! File::exists(dirname($tempPath))) {
-                    File::makeDirectory(dirname($tempPath), 0755, true);
+                        $webp = Webp::make($file);
+                        $tempPath = storage_path("app/temp/{$filename}");
+                        if (! File::exists(dirname($tempPath))) {
+                            File::makeDirectory(dirname($tempPath), 0755, true);
+                        }
+                        $webp->save($tempPath);
+                        Storage::disk('upcloud')->put($storageKey, file_get_contents($tempPath));
+                    } else {
+                        $ext = strtolower((string) $file->getClientOriginalExtension()) ?: 'jpg';
+                        $filename = $randomBase.'.'.$ext;
+                        $storageKey = "items/{$filename}";
+                        Storage::disk('upcloud')->put($storageKey, file_get_contents($file->getRealPath()));
+                    }
+                } catch (\Throwable $e) {
+                    // Last-resort fallback: store original bytes so upload never 500s.
+                    $ext = strtolower((string) $file->getClientOriginalExtension()) ?: 'jpg';
+                    $filename = $randomBase.'.'.$ext;
+                    $storageKey = "items/{$filename}";
+                    Storage::disk('upcloud')->put($storageKey, file_get_contents($file->getRealPath()));
+                } finally {
+                    if ($tempPath && is_file($tempPath)) {
+                        @unlink($tempPath);
+                    }
                 }
-
-                $webp->save($tempPath);
-
-                // Upload to cloud
-                Storage::disk('upcloud')->put(
-                    $storageKey,
-                    file_get_contents($tempPath)
-                );
-
-                unlink($tempPath);
 
                 $itemImagesArr[] = [
                     'name' => uniqid('', true),
@@ -498,6 +547,46 @@ class ItemProfileController extends Controller
         ]);
     }
 
+    /**
+     * Build public URL for an item image. If path is already a full URL (or contains one, e.g. malformed "item-images/https://..."), return that URL.
+     * Otherwise build URL using the upcloud disk (handles both prefixed and filename-only keys).
+     */
+    private function buildItemImageUrl(?string $path): string
+    {
+        if (! $path) {
+            return Storage::disk('upcloud')->url('icon/no-img.png');
+        }
+        if (Str::startsWith($path, ['http://', 'https://'])) {
+            return $path;
+        }
+        // Malformed path can be stored as "item-images/https://..." — use the URL part for display/download.
+        if (Str::contains($path, '://')) {
+            $scheme = Str::contains($path, 'https://') ? 'https://' : 'http://';
+            $after = Str::after($path, $scheme);
+
+            return $scheme.$after;
+        }
+        $storageKey = str_contains($path, '/') ? $path : 'item-images/'.$path;
+
+        return Storage::disk('upcloud')->url($storageKey);
+    }
+
+    /**
+     * Resolve storage key for the webp version of an image (same directory as original).
+     * Paths that contain a URL (e.g. "item-images/https://...") are not valid storage keys; use filename-only key.
+     */
+    private function itemImageStorageKey(string $originalPath, string $webpFilename): string
+    {
+        if (Str::contains($originalPath, '://')) {
+            return 'item-images/'.basename($webpFilename);
+        }
+        if (str_contains($originalPath, '/')) {
+            return dirname($originalPath).'/'.basename($webpFilename);
+        }
+
+        return 'item-images/'.$webpFilename;
+    }
+
     public function loadItemImages($itemCode, Request $request)
     {
         $images = ItemImages::where('parent', $itemCode)->select('image_path', 'owner', 'modified_by', 'creation', 'modified')->orderBy('idx', 'asc')->get();
@@ -511,13 +600,21 @@ class ItemProfileController extends Controller
         $images = collect($images)->map(function ($image) {
             $originalPath = $image->image_path;
             $image->image = $originalPath;
-            $image->image_path = $originalPath ? Storage::disk('upcloud')->url($originalPath) : Storage::disk('upcloud')->url('icon/no-img.png');
+
+            $image->image_url = $this->buildItemImageUrl($originalPath);
 
             $image->original = 1;
-            $webpKey = $originalPath ? explode('.', $originalPath)[0].'.webp' : null;
-            if ($webpKey && Storage::disk('upcloud')->exists($webpKey)) {
+            $isFullUrl = $originalPath && (Str::startsWith($originalPath, ['http://', 'https://']) || Str::contains($originalPath, '://'));
+            $webpKey = null;
+            $webpStorageKey = null;
+            if (! $isFullUrl && $originalPath) {
+                $webpKey = explode('.', basename($originalPath))[0].'.webp';
+                $webpStorageKey = $this->itemImageStorageKey($originalPath, $webpKey);
+            }
+            if ($webpStorageKey && Storage::disk('upcloud')->exists($webpStorageKey)) {
                 $image->original = 0;
-                $image->image = Storage::disk('upcloud')->url($webpKey);
+                $image->image = $webpStorageKey;
+                $image->image_url = Storage::disk('upcloud')->url($webpStorageKey);
             }
 
             return $image;
@@ -531,7 +628,39 @@ class ItemProfileController extends Controller
         $images = ItemImages::query()->where('parent', $itemCode)->orderBy('idx', 'asc')->pluck('image_path', 'name');
 
         return collect($images)->map(function ($image) {
-            return Storage::disk('upcloud')->url("img/$image");
+            $imagePath = $image ? trim((string) $image) : null;
+
+            if (! $imagePath) {
+                return Storage::disk('upcloud')->url('icon/no-img.png');
+            }
+
+            // If a full URL is already stored, just use it.
+            if (Str::startsWith($imagePath, ['http://', 'https://'])) {
+                return $imagePath;
+            }
+
+            $disk = Storage::disk('upcloud');
+
+            // If the path already includes a directory (e.g. "items/foo.webp",
+            // "img/foo.webp", "item-images/foo.webp"), treat it as the object key.
+            if (str_contains($imagePath, '/')) {
+                return $disk->url(ltrim($imagePath, '/'));
+            }
+
+            // Filename-only rows: first try the new "items/" prefix, then legacy prefixes.
+            $candidates = [
+                "items/{$imagePath}",
+                "img/{$imagePath}",
+                "item-images/{$imagePath}",
+            ];
+
+            foreach ($candidates as $candidate) {
+                if ($disk->exists($candidate)) {
+                    return $disk->url($candidate);
+                }
+            }
+
+            return $disk->url('icon/no-img.png');
         });
     }
 

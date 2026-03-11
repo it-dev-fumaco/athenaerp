@@ -15,7 +15,8 @@ class BuildPickingListPipe implements Pipe
     {
         $allowedWarehouses = $passable->allowedWarehouses;
         $search = trim((string) ($passable->search ?? ''));
-        $perPage = 20;
+        $perPage = (int) ($passable->perPage ?? config('delivery.per_page', 20));
+        $perPage = max(1, min($perPage, 500));
         $page = $passable->page ?? 1;
 
         $warehouseIds = $allowedWarehouses instanceof \Illuminate\Support\Collection
@@ -28,6 +29,8 @@ class BuildPickingListPipe implements Pipe
             return $next($passable);
         }
 
+        $creationFrom = now()->subMonths(config('delivery.creation_months', 12))->startOfDay();
+
         $pickingSlipQuery = PackingSlip::query()
             ->from('tabPacking Slip as ps')
             ->join('tabPacking Slip Item as psi', 'ps.name', '=', 'psi.parent')
@@ -37,6 +40,8 @@ class BuildPickingListPipe implements Pipe
             })
             ->leftJoin('tabDelivery Note as dr', 'dri.parent', '=', 'dr.name')
             ->whereIn('ps.docstatus', [0, 1])
+            ->where('ps.creation', '>=', $creationFrom)
+            ->where('psi.status', '!=', 'Issued')
             ->where(function ($query) {
                 $query->whereNull('dr.name')
                     ->orWhereIn('dr.docstatus', [0, 1]);
@@ -85,6 +90,7 @@ class BuildPickingListPipe implements Pipe
             ->where('purpose', 'Material Transfer')
             ->whereIn('s_warehouse', $warehouseIds)
             ->whereIn('transfer_as', ['Consignment', 'Sample Item'])
+            ->where('sted.status', '!=', 'Issued')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('sted.item_code', 'like', "%{$search}%")
@@ -113,7 +119,9 @@ class BuildPickingListPipe implements Pipe
             ->join('tabPacked Item as pi', 'pi.name', '=', 'psi.pi_detail')
             ->whereIn('dr.docstatus', [0, 1])
             ->whereIn('ps.docstatus', [0, 1])
+            ->where('ps.creation', '>=', $creationFrom)
             ->whereIn('dri.warehouse', $warehouseIds)
+            ->where('psi.status', '!=', 'Issued')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('pi.item_code', 'like', "%{$search}%")
@@ -135,6 +143,7 @@ class BuildPickingListPipe implements Pipe
 
         $unionQuery = $pickingSlipQuery->unionAll($stockEntryQuery)->unionAll($productBundleQuery);
 
+        // Use paginate so the UI can display correct totals/last_page.
         $passable->paginatedData = DB::table(DB::raw("({$unionQuery->toSql()}) as sub"))
             ->orderBy('creation', 'desc')
             ->orderByRaw("FIELD(status, 'For Checking', 'Issued') ASC")

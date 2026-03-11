@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -208,10 +207,6 @@ class BrochurePdfService
         $content[0]['image_data_uris'] = [1 => null, 2 => null, 3 => null];
         $content[0]['image_local_paths'] = [1 => null, 2 => null, 3 => null];
         $disk = Storage::disk(self::DISK);
-        $tempDir = storage_path('app/temp/brochure-pdf');
-        if (! File::isDirectory($tempDir)) {
-            File::makeDirectory($tempDir, 0755, true);
-        }
         $mimeMap = [
             'png' => 'image/png',
             'jpg' => 'image/jpeg',
@@ -232,10 +227,6 @@ class BrochurePdfService
             $jpegData = $this->imageDataToJpegBytes($data, $key);
             if ($jpegData !== null) {
                 $content[0]['image_data_uris'][$i] = 'data:image/jpeg;base64,'.base64_encode($jpegData);
-                $tempFile = $tempDir.'/brochure_'.$i.'_'.Str::uuid().'.jpg';
-                if (file_put_contents($tempFile, $jpegData) !== false) {
-                    $content[0]['image_local_paths'][$i] = $tempFile;
-                }
             } else {
                 $ext = strtolower(pathinfo($key, PATHINFO_EXTENSION));
                 $mime = $mimeMap[$ext] ?? 'image/png';

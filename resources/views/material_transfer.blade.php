@@ -34,8 +34,9 @@
 								</div>
 								<div class="col-xl-2 col-lg-3 col-md-3">
 									<div class="text-center m-1">
-									   <span class="font-weight-bold">TOTAL RESULT:</span>
-									   <span class="badge bg-info" style="font-size: 12pt;">@{{ mt_filtered.length }}</span>
+										<span class="font-weight-bold">TOTAL RESULT:</span>
+										<span class="badge bg-info" style="font-size: 12pt;">@{{ (searchText || fltr) ? mt_filtered.length : totalResults }}</span>
+										<span class="small text-muted" ng-if="(searchText || fltr) && totalResults > 0">(of @{{ totalResults }})</span>
 									</div>
 								</div>
 							</div>
@@ -312,10 +313,12 @@
 			$scope.wh = response.data.wh;
 		});
 		
+		$scope.totalResults = 0;
 		$scope.loadData = function(){
-		$scope.custom_loading_spinner = true;
+			$scope.custom_loading_spinner = true;
 			$http.get("/material_transfer?arr=1").then(function (response) {
-				$scope.mt = response.data.records;
+				$scope.mt = response.data.records || [];
+				$scope.totalResults = $scope.mt.length;
 				$scope.custom_loading_spinner = false;
 			});
 		}

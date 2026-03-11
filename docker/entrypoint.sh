@@ -1,9 +1,17 @@
 #!/usr/bin/env bash
-set -e
+# Don't use set -e so one failing step (e.g. chmod on mount) doesn't prevent PHP-FPM from starting
+
+# Ensure storage subdirs exist and are writable (FPM runs as root in Docker pool)
+if [ -d "storage" ]; then
+    mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache storage/logs bootstrap/cache 2>/dev/null || true
+    chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+    chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+    chmod -R 777 storage/framework/sessions storage/framework/views storage/framework/cache storage/logs bootstrap/cache 2>/dev/null || true
+fi
 
 # When source is mounted (e.g. docker-compose volume), ensure dependencies are installed
 if [ -f "composer.json" ] && [ ! -d "vendor" ]; then
-    composer install --no-interaction --prefer-dist
+    composer install --no-interaction --prefer-dist || true
 fi
 
 # Ensure .env exists (e.g. staging/production where .env is not in the image or volume)
@@ -23,6 +31,14 @@ fi
 # Use built Vite assets in container (no dev server). Remove hot so @vite() uses manifest.
 if [ -f "public/hot" ]; then
     rm -f public/hot
+fi
+
+# Production: cache config, routes, views for faster response (no business logic change).
+# Use --force so Laravel does not prompt for confirmation in non-interactive mode.
+if [ "${APP_ENV:-local}" = "production" ] && [ -f "artisan" ]; then
+    php artisan config:cache --no-interaction --force 2>/dev/null || true
+    php artisan route:cache --no-interaction --force 2>/dev/null || true
+    php artisan view:cache --no-interaction --force 2>/dev/null || true
 fi
 
 exec "$@"

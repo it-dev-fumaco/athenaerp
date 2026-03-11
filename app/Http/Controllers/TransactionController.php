@@ -282,12 +282,12 @@ class TransactionController extends Controller
             }
 
             // Ensure ALL item qty are not string
-            $values->items = collect($values->items)->map(function ($item) {
+            $values->setRelation('items', collect($values->items)->map(function ($item) {
                 $item->net_weight = (float) $item->net_weight;
                 $item->qty = (float) $item->qty;
 
                 return $item;
-            });
+            }));
 
             $stockReservationDetails = [];
             if ($request->has_reservation && $request->has_reservation == 1) {
@@ -314,8 +314,47 @@ class TransactionController extends Controller
 
             $response = $this->erpPut('Packing Slip', $packingSlip->name, $values->toArray(), true);
             if (! isset($response['data'])) {
-                $err = $response['exception'] ?? 'An error occured while updating picking slip';
-                throw new Exception($err);
+                $isTimestampMismatch = ($response['exc_type'] ?? null) === 'TimestampMismatchError';
+                if ($isTimestampMismatch) {
+                    $freshGet = $this->erpGet('Packing Slip', $packingSlip->name, [], true);
+                    $freshDoc = Arr::get($freshGet, 'data');
+                    if ($freshDoc) {
+                        $freshDoc = is_array($freshDoc) ? (object) $freshDoc : $freshDoc;
+                        foreach ($freshDoc->items ?? [] as $item) {
+                            if (isset($item->name) && $item->name === $childId) {
+                                $item->session_user = Auth::user()->wh_user;
+                                $item->status = 'Issued';
+                                $item->barcode = $request->barcode;
+                                $item->date_modified = now()->toDateTimeString();
+                                $item->qty = (float) ($request->qty ?? $item->qty);
+                                break;
+                            }
+                        }
+                        $countPending = collect($freshDoc->items ?? [])->where('name', '!=', $childId)->where('status', 'For Checking')->count();
+                        if ($countPending < 1) {
+                            $freshDoc->item_status = 'Issued';
+                            $freshDoc->docstatus = 1;
+                        }
+                        $payload = $freshDoc instanceof \stdClass ? json_decode(json_encode($freshDoc), true) : (array) $freshDoc;
+                        $response = $this->erpPut('Packing Slip', $packingSlip->name, $payload, true);
+                    }
+                }
+                if (! isset($response['data'])) {
+                    $err = $response['exception'] ?? $response['exc'] ?? $response['message'] ?? $response['error'] ?? null;
+                    if (is_array($err)) {
+                        $err = $err['message'] ?? $err['exception'] ?? json_encode($err);
+                    }
+                    if ($err === null || $err === '') {
+                        $err = 'An error occurred while updating picking slip';
+                    }
+                    Log::error('TransactionController checkoutPickingSlip ERP put failed', [
+                        'packing_slip' => $packingSlip->name,
+                        'child_tbl_id' => $childId,
+                        'erp_response' => $response,
+                        'erp_response_keys' => array_keys($response),
+                    ]);
+                    throw new Exception((string) $err);
+                }
             }
 
             $this->insertTransactionLog('Picking Slip', $childId);
@@ -330,11 +369,16 @@ class TransactionController extends Controller
         } catch (Exception $e) {
             Log::error('TransactionController checkoutPickingSlip failed', [
                 'message' => $e->getMessage(),
+                'child_tbl_id' => $request->child_tbl_id ?? null,
                 'trace' => $e->getTraceAsString(),
             ]);
             DB::connection('mysql')->rollback();
 
-            return ApiResponse::modal(false, 'Error', 'Error creating transaction.', 422);
+            $message = $e->getMessage();
+            if ($this->isErpConnectionError($message)) {
+                $message = ERPTrait::erpConnectionUnavailableMessage();
+            }
+            return ApiResponse::failure($message);
         }
     }
 
