@@ -33,9 +33,11 @@ if [ -f "public/hot" ]; then
     rm -f public/hot
 fi
 
-# Production: cache config, routes, views for faster response (no business logic change).
+# Production: clear view cache first so compiled Blade uses current Vite manifest (avoids 404 for assets after deploy).
+# Then cache config, routes, views for faster response (no business logic change).
 # Use --force so Laravel does not prompt for confirmation in non-interactive mode.
 if [ "${APP_ENV:-local}" = "production" ] && [ -f "artisan" ]; then
+    php artisan view:clear --no-interaction 2>/dev/null || true
     php artisan config:cache --no-interaction --force 2>/dev/null || true
     php artisan route:cache --no-interaction --force 2>/dev/null || true
     php artisan view:cache --no-interaction --force 2>/dev/null || true

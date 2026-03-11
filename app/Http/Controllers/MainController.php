@@ -829,6 +829,43 @@ class MainController extends Controller
                 ->keyBy('name');
         }
 
+        // Batch-load session_user from child rows (Packing Slip Item, Stock Entry Detail, Delivery Note Item) for "Issued By" fallback when warehouse_user is empty
+        $childTableByRefType = [
+            'Packing Slip' => 'tabPacking Slip Item',
+            'Stock Entry' => 'tabStock Entry Detail',
+            'Delivery Note' => 'tabDelivery Note Item',
+        ];
+        $pairsByRefType = [];
+        foreach ($logs as $row) {
+            $refType = in_array($row->reference_type, $psRef) ? 'Packing Slip' : $row->reference_type;
+            if (! isset($childTableByRefType[$refType])) {
+                continue;
+            }
+            $pairsByRefType[$refType][$row->reference_parent.'|'.$row->reference_name] = [$row->reference_parent, $row->reference_name];
+        }
+        $childSessionUserMap = [];
+        foreach ($pairsByRefType as $refType => $pairs) {
+            $table = $childTableByRefType[$refType];
+            $uniquePairs = collect($pairs)->unique(fn ($p) => $p[0].'|'.$p[1])->values()->all();
+            if (empty($uniquePairs)) {
+                continue;
+            }
+            $query = DB::table($table)->select('parent', 'name', 'session_user');
+            $query->where(function ($q) use ($uniquePairs) {
+                foreach ($uniquePairs as [$parent, $name]) {
+                    $q->orWhere(function ($q2) use ($parent, $name) {
+                        $q2->where('parent', $parent)->where('name', $name);
+                    });
+                }
+            });
+            foreach ($query->get() as $r) {
+                $sessionUser = trim((string) ($r->session_user ?? ''));
+                if ($sessionUser !== '') {
+                    $childSessionUserMap[$r->parent.'|'.$r->name] = $sessionUser;
+                }
+            }
+        }
+
         $list = [];
         foreach ($logs as $row) {
             $referenceType = (in_array($row->reference_type, $psRef)) ? 'Packing Slip' : $row->reference_type;
@@ -868,9 +905,11 @@ class MainController extends Controller
             $requestedBy = trim((string) (data_get($existingReferenceNo, 'owner') ?? ''));
             $requestedBy = $requestedBy !== '' ? $requestedBy : AthenaTransaction::EMPTY_USER_PLACEHOLDER;
 
+            // Issued By: Athena Transaction warehouse_user (session at insert), or fallback to reference child row session_user (e.g. Packing Slip Item)
             $issuedBy = trim((string) ($row->warehouse_user ?? ''));
-            if ($issuedBy === '' && $existingReferenceNo) {
-                $issuedBy = trim((string) (data_get($existingReferenceNo, 'modified_by') ?? ''));
+            if ($issuedBy === '') {
+                $childKey = $row->reference_parent.'|'.$row->reference_name;
+                $issuedBy = $childSessionUserMap[$childKey] ?? '';
             }
             $issuedBy = $issuedBy !== '' ? $issuedBy : AthenaTransaction::EMPTY_USER_PLACEHOLDER;
 

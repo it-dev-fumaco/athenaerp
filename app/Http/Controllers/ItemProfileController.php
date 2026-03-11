@@ -549,7 +549,7 @@ class ItemProfileController extends Controller
 
     /**
      * Build public URL for an item image. If path is already a full URL (or contains one, e.g. malformed "item-images/https://..."), return that URL.
-     * Otherwise build URL using the upcloud disk (handles both prefixed and filename-only keys).
+     * Otherwise build URL using the upcloud disk. Prefers webp when it exists, otherwise returns original (jpg, png, etc.).
      */
     private function buildItemImageUrl(?string $path): string
     {
@@ -566,9 +566,20 @@ class ItemProfileController extends Controller
 
             return $scheme.$after;
         }
-        $storageKey = str_contains($path, '/') ? $path : 'item-images/'.$path;
+        $disk = Storage::disk('upcloud');
+        $storageKey = str_contains($path, '/') ? ltrim($path, '/') : 'item-images/'.$path;
 
-        return Storage::disk('upcloud')->url($storageKey);
+        // Prefer webp when it exists, otherwise use original (jpg, png, etc.)
+        if (str_starts_with($storageKey, 'item-images/')) {
+            $baseName = pathinfo($storageKey, PATHINFO_FILENAME);
+            $dir = dirname($storageKey);
+            $webpKey = ($dir === '.' || $dir === 'item-images') ? 'item-images/'.$baseName.'.webp' : $dir.'/'.$baseName.'.webp';
+            if ($disk->exists($webpKey)) {
+                return $disk->url($webpKey);
+            }
+        }
+
+        return $disk->url($storageKey);
     }
 
     /**
@@ -641,13 +652,15 @@ class ItemProfileController extends Controller
 
             $disk = Storage::disk('upcloud');
 
-            // If the path already includes a directory (e.g. "items/foo.webp",
-            // "img/foo.webp", "item-images/foo.webp"), treat it as the object key.
+            // If the path already includes a directory, treat it as the object key.
             if (str_contains($imagePath, '/')) {
-                return $disk->url(ltrim($imagePath, '/'));
+                $storageKey = ltrim($imagePath, '/');
+                $url = $this->preferWebpUrlOrOriginal($disk, $storageKey);
+
+                return $url ?? $disk->url($storageKey);
             }
 
-            // Filename-only rows: first try the new "items/" prefix, then legacy prefixes.
+            // Filename-only rows: try items/, img/, item-images/.
             $candidates = [
                 "items/{$imagePath}",
                 "img/{$imagePath}",
@@ -656,12 +669,29 @@ class ItemProfileController extends Controller
 
             foreach ($candidates as $candidate) {
                 if ($disk->exists($candidate)) {
-                    return $disk->url($candidate);
+                    $url = $this->preferWebpUrlOrOriginal($disk, $candidate);
+
+                    return $url ?? $disk->url($candidate);
                 }
             }
 
             return $disk->url('icon/no-img.png');
         });
+    }
+
+    /**
+     * Return webp URL if webp exists for this key, otherwise null (caller uses original).
+     */
+    private function preferWebpUrlOrOriginal(\Illuminate\Contracts\Filesystem\Filesystem $disk, string $storageKey): ?string
+    {
+        $baseName = pathinfo($storageKey, PATHINFO_FILENAME);
+        $dir = dirname($storageKey);
+        $webpKey = ($dir === '.' ? 'item-images/' : $dir.'/').$baseName.'.webp';
+        if ($disk->exists($webpKey)) {
+            return $disk->url($webpKey);
+        }
+
+        return null;
     }
 
     /**

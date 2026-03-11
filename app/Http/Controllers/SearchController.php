@@ -515,17 +515,20 @@ class SearchController extends Controller
 
             $dir = $request->dir == 'next' ? 0 : count($itemImages) - 1;
 
-            $img = Arr::exists($itemImages, $request->img_key) ? $itemImages[$request->img_key]->image_path : $itemImages[$dir]->image_path;
+            $imgPath = Arr::exists($itemImages, $request->img_key) ? $itemImages[$request->img_key]->image_path : $itemImages[$dir]->image_path;
             $currentKey = Arr::exists($itemImages, $request->img_key) ? $request->img_key : $dir;
 
-            $imgWebpKey = explode('.', $img)[0].'.webp';
+            $storageKey = str_contains($imgPath, '/') ? ltrim($imgPath, '/') : 'item-images/'.$imgPath;
+            $imgWebpBasename = explode('.', basename($imgPath))[0].'.webp';
+            $webpStorageKey = str_contains($imgPath, '/') ? dirname($storageKey).'/'.$imgWebpBasename : 'item-images/'.$imgWebpBasename;
+
             $imgArr = [
                 'item_code' => $request->item_code,
                 'alt' => Str::slug(explode('.', $itemImages[$currentKey]->image_path)[0]),
-                'orig_image_path' => Storage::disk('upcloud')->url($img),
-                'orig_path' => Storage::disk('upcloud')->exists($img) ? 1 : 0,
-                'webp_image_path' => Storage::disk('upcloud')->url($imgWebpKey),
-                'webp_path' => Storage::disk('upcloud')->exists($imgWebpKey) ? 1 : 0,
+                'orig_image_path' => Storage::disk('upcloud')->url($storageKey),
+                'orig_path' => Storage::disk('upcloud')->exists($storageKey) ? 1 : 0,
+                'webp_image_path' => Storage::disk('upcloud')->url($webpStorageKey),
+                'webp_path' => Storage::disk('upcloud')->exists($webpStorageKey) ? 1 : 0,
                 'current_img_key' => $currentKey,
             ];
 

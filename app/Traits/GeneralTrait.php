@@ -239,9 +239,26 @@ trait GeneralTrait
 
     public function base64Image($file, $original = 0)
     {
-        // $file = explode('.', $file);
-        // $file = $file[0].'.webp';
-        return Storage::disk('upcloud')->url($file);
+        if (! $file) {
+            return Storage::disk('upcloud')->url('icon/no-img.png');
+        }
+        $disk = Storage::disk('upcloud');
+        // Storage keys must not have leading slash (S3/compat)
+        $key = ltrim((string) $file, '/');
+        // If path is filename-only, use item-images/ prefix for item images
+        if (! str_contains($key, '/')) {
+            $key = 'item-images/'.$key;
+        }
+        // Prefer webp when it exists, otherwise use original (jpg, png, etc.)
+        if (! $original && str_starts_with($key, 'item-images/')) {
+            $baseName = pathinfo($key, PATHINFO_FILENAME);
+            $dir = dirname($key);
+            $webpKey = $dir === '.' ? 'item-images/'.$baseName.'.webp' : $dir.'/'.$baseName.'.webp';
+            if ($disk->exists($webpKey)) {
+                return $disk->url($webpKey);
+            }
+        }
+        return $disk->url($key);
         // if(!$file){
         //     return null;
         // }
