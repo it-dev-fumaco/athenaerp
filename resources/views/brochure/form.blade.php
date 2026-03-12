@@ -102,7 +102,7 @@
         <div
           id="brochure-form-app"
           data-csrf="{{ csrf_token() }}"
-          data-template-url="{{ Storage::disk('upcloud')->url('templates/AthenaERP - Brochure-Import-Template.xlsx') }}"
+          data-template-url="{{ route('brochure.template') }}"
         ></div>
       </div>
 

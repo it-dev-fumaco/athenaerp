@@ -131,8 +131,15 @@
                                         @endif
                                         <table border="0" style="border-collapse: collapse; width: 100%; font-size: 11.5px; margin-top: 30px !important;">
                                             @foreach ($attributes as $val)
+                                            @php
+                                                $attributeCode = isset($val->attribute) ? trim((string) $val->attribute) : '';
+                                                $attributeLabel = isset($val->attr_name) ? trim((string) $val->attr_name) : '';
+                                                $normalizedLabel = ($attributeCode === 'Wattage' && strtoupper($attributeLabel) === 'BATTERY')
+                                                    ? 'Wattage'
+                                                    : (($attributeLabel !== '' ? $attributeLabel : $attributeCode));
+                                            @endphp
                                             <tr>
-                                                <td style="padding: 5px 0 5px 0 !important;width: 40%;">{{ $val->attr_name ? $val->attr_name : $val->attribute }}</td>
+                                                <td style="padding: 5px 0 5px 0 !important;width: 40%;">{{ $normalizedLabel }}</td>
                                                 <td style="padding: 5px 0 5px 0 !important;width: 60%;"><strong>{{ $val->attribute_value }}</strong></td>
                                             </tr>
                                             @endforeach

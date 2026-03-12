@@ -138,7 +138,7 @@ function getFormData(readOnly = false) {
   if (!form) return null;
   const formData = new FormData(form);
   if (readOnly) {
-    formData.append('is_readonly', true);
+    formData.append('is_readonly', '1');
   }
   return formData;
 }

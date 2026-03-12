@@ -20,10 +20,19 @@ class StoreBrochureFilePipe implements Pipe
         if (! Storage::disk('upcloud')->exists($directory)) {
             Storage::disk('upcloud')->makeDirectory($directory);
         }
-        $destination = Storage::disk('upcloud')->path($directory.'/'.$filename);
 
-        // Copy instead of move: the file may still be locked by PhpSpreadsheet after ReadBrochureSpreadsheetPipe
-        if (! copy($passable->file->getRealPath(), $destination)) {
+        // IMPORTANT: UpCloud disk is S3-compatible; do not use disk->path() + copy() (local FS).
+        // Use Storage streaming upload instead.
+        $tmpPath = $passable->file->getRealPath();
+        $stream = @fopen($tmpPath, 'rb');
+        if ($stream === false) {
+            throw new \RuntimeException('Could not open uploaded file for streaming.');
+        }
+
+        $stored = Storage::disk('upcloud')->put($directory.'/'.$filename, $stream);
+        @fclose($stream);
+
+        if (! $stored) {
             throw new \RuntimeException('Could not save brochure file to '.$directory);
         }
 

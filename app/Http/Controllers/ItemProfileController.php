@@ -94,7 +94,6 @@ class ItemProfileController extends Controller
 
         if ($request->ajax()) {
             $uoms = UOM::query()->pluck('name');
-
             return view('item_information', compact('itemDetails', 'uoms'));
         }
 

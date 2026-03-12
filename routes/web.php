@@ -328,6 +328,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
     });
 
     Route::get('/brochure', [BrochureController::class, 'viewForm'])->name('brochure');
+    Route::get('/brochure/template', [BrochureController::class, 'downloadTemplate'])->name('brochure.template');
     Route::post('/read_file', [BrochureController::class, 'readExcelFile']);
     Route::post('/upload_image', [BrochureController::class, 'uploadImage']);
     Route::get('/preview/{project}/{filename}', [BrochureController::class, 'previewBrochure']);

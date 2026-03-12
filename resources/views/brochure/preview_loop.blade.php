@@ -1,6 +1,6 @@
 <div id="preview-loop" class="row">
     <div id="top-btn-container" style="z-index: 10;">
-        <a href="/generate_multiple_brochures?pdf=1" target="_blank" class="btn-ctrl" style="display: block;"><i class="fas fa-print"></i></a>
+        <button type="button" class="btn-ctrl" id="brochure-preview-print-pdf" aria-label="Print brochure as PDF" style="display: block;"><i class="fas fa-print"></i></button>
     </div>
     <div class="col-3">
         <h3 style="text-align: center; font-weight: bolder; text-transform: uppercase; margin: 15px 0 8px 0 !important; letter-spacing: 0.5px; font-size: 20px;">Product Brochure</h3>

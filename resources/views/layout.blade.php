@@ -878,6 +878,7 @@
 			<div class="modal-content">
 				<div class="modal-header">
 					<h4 class="modal-title responsive-modal-title">Item Inquiry</h4>
+					<span id="selected-item-code" class="d-none"></span>
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 						<span aria-hidden="true">&times;</span>
 					</button>
@@ -1259,6 +1260,30 @@
 		document.getElementById('loader-wrapper').removeAttribute('hidden');
 		$(document).ready(function(){
 			$('#loader-wrapper').attr('hidden', true);
+			// Brochure: capture-phase handlers so they run first
+			document.addEventListener('click', function(e) {
+				var link = e.target && e.target.closest ? e.target.closest('a') : null;
+				var btn = e.target && e.target.closest ? e.target.closest('button#brochure-preview-print-pdf, button.btn-ctrl') : null;
+				var modal = document.getElementById('brochure-preview-modal');
+				var modalOpen = modal && modal.classList && modal.classList.contains('show');
+				// When preview modal is open, block any link to base URL (e.g. floater "Generate Brochure") so only PDF link is used
+				if (modalOpen && link && link.href && link.href.indexOf('generate_multiple_brochures') !== -1 && link.href.indexOf('pdf=1') === -1) {
+					e.preventDefault();
+					e.stopPropagation();
+					e.stopImmediatePropagation();
+					return;
+				}
+				// Print button/link: open PDF in new tab only
+				var isPrintLink = link && link.href && link.href.indexOf('generate_multiple_brochures') !== -1 && link.href.indexOf('pdf=1') !== -1 && link.classList && link.classList.contains('btn-ctrl');
+				var previewLoop = document.getElementById('preview-loop');
+				var previewContainer = document.getElementById('brochure-preview-container');
+				var isPrintButton = btn && ((previewLoop && previewLoop.contains(btn)) || (previewContainer && previewContainer.contains(btn)));
+				if (!isPrintLink && !isPrintButton) return;
+				e.preventDefault();
+				e.stopPropagation();
+				e.stopImmediatePropagation();
+				window.open('/generate_multiple_brochures?pdf=1', '_blank', 'noopener,noreferrer');
+			}, true);
 			$(document).on('ajaxComplete', function(event, xhr, settings) {
 				if(typeof xhr.status !== 'undefined' && xhr.status == 401){
 					$('#loader-wrapper').attr('hidden', true);
@@ -1639,9 +1664,100 @@
 				e.preventDefault();
 				var item_code = $(this).data('item-code');
 				var item_classification = $(this).data('item-classification');
+
+				$('#selected-item-code').text((item_code || '').toString().trim());
 				$('#view-item-details-modal .modal-title').text(item_code + " [" + item_classification + "]");
 				$('#view-item-details-modal').modal('show');
 				view_item_details(item_code);
+			});
+
+			function view_item_details(item_code){
+				$('#item-preloader').removeClass('d-none').show();
+				$('#item-detail-content').html('');
+				$('#athena-transactions-table').html('');
+				$('#stock-ledger-table').html('');
+				$('#stock-reservation-table').html('');
+
+				$.ajax({
+					type: 'GET',
+					url: '/get_item_details/' + encodeURIComponent(item_code),
+					success: function(response){
+						if (typeof response === 'string' && response.trim().length > 0) {
+							$('#item-detail-content').html(response);
+						} else {
+							$('#item-detail-content').html('<div class="p-2 text-muted">No item details returned.</div>');
+						}
+					},
+					error: function(xhr){
+						var msg = (xhr && xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to load item details.';
+						showNotification("danger", msg, "fa fa-info");
+					},
+					complete: function(){
+						$('#item-preloader').hide();
+					}
+				});
+
+				// Load tab content (best-effort) for the modal tabs.
+				get_athena_transactions(item_code);
+				get_stock_ledger(item_code);
+				get_stock_reservations(item_code);
+			}
+
+			function get_athena_transactions(item_code, page){
+				var pageNo = page || 1;
+				$.ajax({
+					type: 'GET',
+					url: '/get_athena_transactions/' + encodeURIComponent(item_code) + '?page=' + pageNo,
+					success: function(response){
+						$('#athena-transactions-table').html(response);
+					},
+					error: function(){ }
+				});
+			}
+
+			function get_stock_ledger(item_code, page){
+				var pageNo = page || 1;
+				$.ajax({
+					type: 'GET',
+					url: '/get_stock_ledger/' + encodeURIComponent(item_code) + '?page=' + pageNo,
+					success: function(response){
+						$('#stock-ledger-table').html(response);
+					},
+					error: function(){ }
+				});
+			}
+
+			function get_stock_reservations(item_code, page){
+				var pageNo = page || 1;
+				$.ajax({
+					type: 'GET',
+					url: '/get_stock_reservation/' + encodeURIComponent(item_code) + '?page=' + pageNo,
+					success: function(response){
+						$('#stock-reservation-table').html(response);
+					},
+					error: function(){ }
+				});
+			}
+
+			$(document).on('click', '#athena-transactions-pagination a', function(event){
+				event.preventDefault();
+				var item_code = $('#selected-item-code').text().trim();
+				var page = ($(this).attr('href') || '').split('page=')[1] || 1;
+				get_athena_transactions(item_code, page);
+			});
+
+			$(document).on('click', '#stock-ledger-pagination a', function(event){
+				event.preventDefault();
+				var item_code = $('#selected-item-code').text().trim();
+				var page = ($(this).attr('href') || '').split('page=')[1] || 1;
+				get_stock_ledger(item_code, page);
+			});
+
+			$(document).on('click', '#stock-reservations-pagination-1 a, #stock-reservations-pagination-2 a, #stock-reservations-pagination-3 a', function(event){
+				event.preventDefault();
+				var item_code = $('#selected-item-code').text().trim();
+				var page = ($(this).attr('href') || '').split('page=')[1] || 1;
+				get_stock_reservations(item_code, page);
 			});
 
 			$(document).on('submit', '.cancel-modal form', function(e){

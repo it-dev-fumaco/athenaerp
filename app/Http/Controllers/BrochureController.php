@@ -34,6 +34,19 @@ class BrochureController extends Controller
 {
     use GeneralTrait;
 
+    private function normalizeBrochureAttributeName(?string $attributeCode, ?string $attributeLabel): string
+    {
+        $attributeCode = $attributeCode !== null ? trim((string) $attributeCode) : '';
+        $attributeLabel = $attributeLabel !== null ? trim((string) $attributeLabel) : '';
+
+        // Prefer stable attribute code in this known-bad mapping so brochures show the expected label.
+        if ($attributeCode === 'Wattage' && strtoupper($attributeLabel) === 'BATTERY') {
+            return 'Wattage';
+        }
+
+        return $attributeLabel !== '' ? $attributeLabel : ($attributeCode !== '' ? $attributeCode : '');
+    }
+
     public function __construct(
         protected BrochureUploadPipeline $brochureUploadPipeline,
         protected BrochureImageService $brochureImageService,
@@ -57,6 +70,36 @@ class BrochureController extends Controller
         }
 
         return view('brochure.form');
+    }
+
+    /**
+     * Serve brochure import template (local storage first, then UpCloud fallback).
+     */
+    public function downloadTemplate()
+    {
+        $localTemplateKey = 'templates/AthenaERP - Brochure-Import-Template.xlsx';
+        $upcloudTemplateKey = 'excelTepmplates/AthenaERP - Brochure-Import-Template.xlsx';
+
+        if (Storage::disk('public')->exists($localTemplateKey)) {
+            $path = storage_path('app/public/' . $localTemplateKey);
+            return response()->file($path, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition' => 'attachment; filename="AthenaERP - Brochure-Import-Template.xlsx"',
+            ]);
+        }
+
+        try {
+            if (Storage::disk('upcloud')->exists($upcloudTemplateKey)) {
+                $contents = Storage::disk('upcloud')->get($upcloudTemplateKey);
+                return response($contents, 200, [
+                    'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'Content-Disposition' => 'attachment; filename="AthenaERP - Brochure-Import-Template.xlsx"',
+                ]);
+            }
+        } catch (\Throwable $e) {
+        }
+
+        abort(404, 'Template file not found. Add it to storage/app/public/templates/ or to UpCloud at excelTepmplates/AthenaERP - Brochure-Import-Template.xlsx.');
     }
 
     public function readExcelFile(ReadBrochureExcelRequest $request)
@@ -574,7 +617,7 @@ class BrochureController extends Controller
                     }
                     $attrib[$att->attribute] = $att->attribute_value;
                     $attributesArr[] = [
-                        'attribute_name' => $att->attr_name ?? $att->attribute,
+                        'attribute_name' => $this->normalizeBrochureAttributeName($att->attribute ?? null, $att->attr_name ?? null),
                         'attribute_value' => $att->attribute_value,
                     ];
                 }
@@ -585,7 +628,7 @@ class BrochureController extends Controller
                         continue;
                     }
                     $filename = $e->image_path;
-                    if ($filename && ! $upcloudDisk->exists('item-images/'.$filename)) {
+                    if ($filename && ! $pdf && ! $upcloudDisk->exists('item-images/'.$filename)) {
                         $filename = explode('.', $filename)[0].'.webp';
                     }
                     $currentImages[] = [
@@ -673,35 +716,40 @@ class BrochureController extends Controller
                         return null;
                     }
 
-                    // If still webp, convert to PNG using GD when available (DOMPDF webp support is unreliable).
-                    if ($ext === 'webp' && function_exists('imagecreatefromwebp') && function_exists('imagepng')) {
-                        $tmpWebp = tempnam(sys_get_temp_dir(), 'brochure_webp_');
-                        if ($tmpWebp) {
-                            try {
-                                file_put_contents($tmpWebp, $data);
-                                $img = @imagecreatefromwebp($tmpWebp);
-                                if ($img !== false) {
-                                    ob_start();
-                                    imagepng($img);
-                                    imagedestroy($img);
-                                    $pngData = ob_get_clean();
-                                    if ($pngData !== false && $pngData !== '') {
-                                        $dataUri = 'data:image/png;base64,'.base64_encode($pngData);
-                                        $dataUriCache[$originalKey] = $dataUri;
+                    // If still webp, convert to PNG using GD when available (DOMPDF cannot use WebP without GD support).
+                    if ($ext === 'webp') {
+                        if (function_exists('imagecreatefromwebp') && function_exists('imagepng')) {
+                            $tmpWebp = tempnam(sys_get_temp_dir(), 'brochure_webp_');
+                            if ($tmpWebp) {
+                                try {
+                                    file_put_contents($tmpWebp, $data);
+                                    $img = @imagecreatefromwebp($tmpWebp);
+                                    if ($img !== false) {
+                                        ob_start();
+                                        imagepng($img);
+                                        imagedestroy($img);
+                                        $pngData = ob_get_clean();
+                                        if ($pngData !== false && $pngData !== '') {
+                                            $dataUri = 'data:image/png;base64,'.base64_encode($pngData);
+                                            $dataUriCache[$originalKey] = $dataUri;
 
-                                        return $dataUri;
+                                            return $dataUri;
+                                        }
                                     }
+                                } finally {
+                                    @unlink($tmpWebp);
                                 }
-                            } finally {
-                                @unlink($tmpWebp);
                             }
                         }
+                        // GD cannot convert WebP; skip image so PDF can generate (Dompdf would throw otherwise).
+                        $dataUriCache[$originalKey] = null;
+
+                        return null;
                     }
 
                     $mime = match ($ext) {
                         'jpg', 'jpeg' => 'image/jpeg',
                         'png' => 'image/png',
-                        'webp' => 'image/webp',
                         default => 'application/octet-stream',
                     };
 
@@ -720,17 +768,30 @@ class BrochureController extends Controller
                     $content[$idx]['image_data_uris'] = $imageDataUris;
                 }
 
+                $fumacoLogoDataUri = null;
+                $logoKey = 'logo/fumaco-transparent.png';
+                $logoData = $upcloudDisk->get($logoKey);
+                if ($logoData !== null && $logoData !== '') {
+                    $fumacoLogoDataUri = 'data:image/png;base64,'.base64_encode($logoData);
+                }
+
                 $isStandard = true;
                 $filename = Str::slug($project, '-');
                 $newFilename = Str::slug($project, '-').'-'.now()->format('Y-m-d');
                 $remarks = '';
-                $pdfDoc = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename', 'isStandard', 'remarks'));
+                $pdfDoc = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename', 'isStandard', 'remarks', 'fumacoLogoDataUri'));
+                $pdfDoc->setOption('isRemoteEnabled', false);
 
                 return $pdfDoc->stream($newFilename.'.pdf');
             }
 
             return view('brochure.multiple_brochure', compact('content', 'project', 'customer'));
         } catch (\Throwable $th) {
+            $isPdfRequest = $request->query('pdf');
+            if ($isPdfRequest) {
+                report($th);
+                return redirect('/generate_multiple_brochures')->with('error', 'An error occured. Please try again.');
+            }
             return redirect()->back()->with('error', 'An error occured. Please try again.');
         }
     }
@@ -809,7 +870,7 @@ class BrochureController extends Controller
                 foreach ($attributes as $att) {
                     $attrib[$att->attribute] = $att->attribute_value;
                     $attributesArr[] = [
-                        'attribute_name' => $att->attr_name ?: $att->attribute,
+                        'attribute_name' => $this->normalizeBrochureAttributeName($att->attribute ?? null, $att->attr_name ?? null),
                         'attribute_value' => $att->attribute_value,
                     ];
                 }
