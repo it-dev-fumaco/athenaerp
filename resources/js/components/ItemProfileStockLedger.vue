@@ -20,15 +20,29 @@ const loading = ref(true);
 
 const basePath = '/get_stock_ledger';
 
+/** @type {string|undefined} */
+let pendingErpWh;
+/** @type {string|undefined} */
+let pendingWhUser;
+/** @type {string|undefined} */
+let pendingErpD;
+
 function getFilterParams() {
   const container = document.querySelector('#history') || document;
   const user = container.querySelector('#erp-warehouse-user-filter');
   const wh = container.querySelector('#erp-warehouse-filter');
   const dates = container.querySelector('#erp_dates');
+  // Prefer values passed from select2:select (avoids timing/DOM sync issues)
+  const erpWh = pendingErpWh !== undefined ? pendingErpWh : (wh ? wh.value : '');
+  const whUser = pendingWhUser !== undefined ? pendingWhUser : (user ? user.value : '');
+  const erpD = pendingErpD !== undefined ? pendingErpD : (dates ? dates.value : '');
+  pendingErpWh = undefined;
+  pendingWhUser = undefined;
+  pendingErpD = undefined;
   return {
-    wh_user: user ? user.value : '',
-    erp_wh: wh ? wh.value : '',
-    erp_d: dates ? dates.value : '',
+    wh_user: whUser,
+    erp_wh: erpWh,
+    erp_d: erpD,
   };
 }
 
@@ -68,16 +82,22 @@ function onContainerClick(event) {
   }
 }
 
-function onRefresh() {
+function onRefresh(event) {
+  const detail = event && event.detail;
+  if (detail) {
+    if (detail.erp_wh !== undefined) pendingErpWh = detail.erp_wh;
+    if (detail.wh_user !== undefined) pendingWhUser = detail.wh_user;
+    if (detail.erp_d !== undefined) pendingErpD = detail.erp_d;
+  }
   load();
 }
 
-onMounted(() => {
+ onMounted(() => {
   load();
-  window.addEventListener('item-profile-stock-ledger-refresh', onRefresh);
-});
+  document.addEventListener('item-profile-stock-ledger-refresh', onRefresh);
+ });
 
-onUnmounted(() => {
-  window.removeEventListener('item-profile-stock-ledger-refresh', onRefresh);
-});
+ onUnmounted(() => {
+  document.removeEventListener('item-profile-stock-ledger-refresh', onRefresh);
+ });
 </script>

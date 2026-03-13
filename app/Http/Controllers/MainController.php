@@ -1190,8 +1190,8 @@ class MainController extends Controller
                         sle.modified_by
                     END)'), $warehouseUser);
             })
-            ->when($request->erp_wh != '' and $request->erp_wh != 'null', function ($query) use ($request) {
-                return $query->where('sle.warehouse', $request->erp_wh);
+            ->when($request->filled('erp_wh') && $request->input('erp_wh') !== 'null', function ($query) use ($request) {
+                return $query->where('sle.warehouse', $request->input('erp_wh'));
             })
             ->when($request->erp_d != '' and $request->erp_d != 'null', function ($query) use ($request) {
                 $dates = explode(' to ', $request->erp_d);

@@ -599,7 +599,8 @@ class MaterialTransferController extends Controller
 
             unset($stockEntry->creation, $stockEntry->owner);
 
-            $response = $this->erpPut('Stock Entry', $stockEntry->name, collect($stockEntry)->toArray(), true);
+            $payload = $this->stockEntryToPutPayload($stockEntry);
+            $response = $this->erpPut('Stock Entry', $stockEntry->name, $payload, true);
 
             if (! Arr::has($response, 'data')) {
                 if (Arr::has($response, 'exc_type') && $response['exc_type'] == 'TimestampMismatchError') {
@@ -625,7 +626,9 @@ class MaterialTransferController extends Controller
                         $stockEntry['item_status'] = 'Issued';
                     }
 
-                    $response = $this->erpPut('Stock Entry', $stockEntry['name'], collect($stockEntry)->toArray(), true);
+                    $retryPayload = $stockEntry;
+                    unset($retryPayload['creation'], $retryPayload['owner']);
+                    $response = $this->erpPut('Stock Entry', $stockEntry['name'], $retryPayload, true);
 
                     if (! Arr::has($response, 'data')) {
                         $err = data_get($response, 'exception', 'An error occured while updating Stock Entry');
@@ -644,6 +647,32 @@ class MaterialTransferController extends Controller
             }
 
             $this->insertTransactionLog('Stock Entry', $childId);
+
+            // Keep local DB in sync so deliveries list (built from local tabStock Entry/Detail) shows Issued
+            $detailUpdate = [
+                'status' => 'Issued',
+                'session_user' => Auth::user()->wh_user,
+                'issued_qty' => $request->qty,
+                'transfer_qty' => $request->qty,
+                'qty' => (float) $request->qty,
+                'validate_item_code' => $request->barcode,
+                'date_modified' => $now->toDateTimeString(),
+                'modified' => $now->toDateTimeString(),
+                'modified_by' => Auth::user()->wh_user,
+            ];
+            StockEntryDetail::query()->where('name', $childId)->update($detailUpdate);
+
+            $remainingForChecking = StockEntryDetail::query()
+                ->where('parent', $steName)
+                ->where('status', 'For Checking')
+                ->count();
+            if ($remainingForChecking === 0) {
+                StockEntry::query()->where('name', $steName)->update([
+                    'item_status' => 'Issued',
+                    'modified' => $now->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                ]);
+            }
 
             $allItemsIssuedInErp = $steName && $this->steAllItemsIssuedInErpNext($steName, true);
             if ($allItemsIssuedInErp) {
@@ -668,6 +697,12 @@ class MaterialTransferController extends Controller
 
                     return ApiResponse::failure($message);
                 }
+                // Sync local docstatus so list (filtered by docstatus = 0) no longer shows this STE
+                StockEntry::query()->where('name', $steName)->update([
+                    'docstatus' => 1,
+                    'modified' => $now->toDateTimeString(),
+                    'modified_by' => Auth::user()->wh_user,
+                ]);
             }
 
             return ApiResponse::success("Item <b>$itemCode</b> has been checked out.");
@@ -979,5 +1014,24 @@ class MaterialTransferController extends Controller
 
             return ApiResponse::modal(false, 'Warning', 'There was a problem creating transaction.', 422);
         }
+    }
+
+    /**
+     * Build a flat document array for Frappe PUT from a Stock Entry (Model or stdClass).
+     * Using collect($stockEntry)->toArray() when $stockEntry is a single Model yields
+     * [0 => document], which the API does not accept; the detail status is never updated.
+     *
+     * @param  \App\Models\StockEntry|object  $stockEntry
+     * @return array<string, mixed>
+     */
+    private function stockEntryToPutPayload($stockEntry): array
+    {
+        $payload = $stockEntry instanceof StockEntry
+            ? $stockEntry->toArray()
+            : json_decode(json_encode($stockEntry), true);
+
+        unset($payload['creation'], $payload['owner']);
+
+        return $payload;
     }
 }

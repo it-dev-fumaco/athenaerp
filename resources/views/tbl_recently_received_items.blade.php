@@ -18,8 +18,9 @@
                 $file = 'icon/no-img.png';
             }
 
-            $img = "/img/".$file;
-            $imgWebp = "/img/".explode('.', $file)[0].'.webp';
+            $isNoImg = ($file === 'icon/no-img.png');
+            $img = $isNoImg ? $file : "/img/".$file;
+            $imgWebp = $isNoImg ? null : "/img/".explode('.', $file)[0].'.webp';
         @endphp
         <tr>
             <td>
@@ -34,7 +35,9 @@
             <td>
                 <div class="row">
                     <div class="col-2" style="display: flex; justify-content: center; align-items: center;">
-                        @if(!Storage::disk('public')->exists('/img/'.$imgWebp))
+                        @if($isNoImg)
+                            <img src="{{ Storage::disk('upcloud')->url('icon/no-img.png') }}" class="img w-100" alt="" style="object-fit: contain;">
+                        @elseif(!Storage::disk('public')->exists('/img/'.$imgWebp))
                             <img src="{{ Storage::disk('upcloud')->url($img) }}" class="img w-100">
                         @elseif(!Storage::disk('public')->exists('/img/'.$img))
                             <img src="{{ Storage::disk('upcloud')->url($imgWebp) }}" class="img w-100">

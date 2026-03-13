@@ -1147,11 +1147,13 @@
         });
 
         $(document).on('select2:select', '#erp-warehouse-user-filter', function(e){
-            document.dispatchEvent(new CustomEvent('item-profile-stock-ledger-refresh'));
+            var data = e.params.data;
+            document.dispatchEvent(new CustomEvent('item-profile-stock-ledger-refresh', { detail: { wh_user: data && data.id ? data.id : '' } }));
         });
 
         $(document).on('select2:select', '#erp-warehouse-filter', function(e){
-            document.dispatchEvent(new CustomEvent('item-profile-stock-ledger-refresh'));
+            var data = e.params.data;
+            document.dispatchEvent(new CustomEvent('item-profile-stock-ledger-refresh', { detail: { erp_wh: data && data.id ? data.id : '' } }));
         });
 
         @if (in_array($userGroup, ['Manager', 'Director']))

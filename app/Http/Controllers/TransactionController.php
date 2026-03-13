@@ -169,6 +169,32 @@ class TransactionController extends Controller
                 return ApiResponse::failure($this->isErpConnectionError($submitMsg) ? ERPTrait::erpConnectionUnavailableMessage() : $submitMsg, 500);
             }
 
+            // Keep local DB in sync so deliveries list (built from local tabStock Entry/Detail) shows Issued
+            $now = now()->toDateTimeString();
+            StockEntryDetail::query()->where('name', $request->child_tbl_id)->update([
+                'status' => 'Issued',
+                'session_user' => Auth::user()->wh_user,
+                'issued_qty' => $request->qty,
+                'transfer_qty' => $request->qty,
+                'qty' => (float) $request->qty,
+                'validate_item_code' => $request->barcode,
+                'date_modified' => $now,
+                'modified' => $now,
+                'modified_by' => Auth::user()->wh_user,
+            ]);
+            $remainingForChecking = StockEntryDetail::query()
+                ->where('parent', $steDetails->parent_se)
+                ->where('status', 'For Checking')
+                ->count();
+            if ($remainingForChecking === 0) {
+                StockEntry::query()->where('name', $steDetails->parent_se)->update([
+                    'item_status' => 'Issued',
+                    'docstatus' => 1,
+                    'modified' => $now,
+                    'modified_by' => Auth::user()->wh_user,
+                ]);
+            }
+
             if ($request->deduct_reserve == 1) {
                 return ApiResponse::success("Item $steDetails->item_code has been deducted from reservation.");
             }
