@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="default">
 	<title>{{ $namePage }} - {{ Auth::check() ? Auth::user()->full_name : null }}</title>
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="csrf-token" content="{{ csrf_token() }}">
@@ -1257,8 +1259,17 @@
 	@yield('script')
 
 	<script>
-		document.getElementById('loader-wrapper').removeAttribute('hidden');
+		(function() {
+			var loader = document.getElementById('loader-wrapper');
+			if (loader) loader.removeAttribute('hidden');
+			// Fallback: hide loader after 5s so content shows even if jQuery/Vue fail (e.g. iPad/Safari)
+			setTimeout(function() {
+				if (loader) loader.setAttribute('hidden', '');
+			}, 5000);
+		})();
 		$(document).ready(function(){
+			var loader = document.getElementById('loader-wrapper');
+			if (loader) loader.setAttribute('hidden', '');
 			$('#loader-wrapper').attr('hidden', true);
 			// Brochure: capture-phase handlers so they run first
 			document.addEventListener('click', function(e) {
