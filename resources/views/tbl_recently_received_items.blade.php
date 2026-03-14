@@ -1,3 +1,6 @@
+@php
+    $noImgUrl = Storage::disk('upcloud')->url('icon/no-img.png');
+@endphp
 <div class="contaner text-right p-2">
     Total: <span class="badge badge-info">{{ $list->total() }}</span>
 </div>
@@ -36,16 +39,16 @@
                 <div class="row">
                     <div class="col-2" style="display: flex; justify-content: center; align-items: center;">
                         @if($isNoImg)
-                            <img src="{{ Storage::disk('upcloud')->url('icon/no-img.png') }}" class="img w-100" alt="" style="object-fit: contain;">
+                            <img src="{{ $noImgUrl }}" class="img w-100" alt="" style="object-fit: contain;">
                         @elseif(!Storage::disk('public')->exists('/img/'.$imgWebp))
-                            <img src="{{ Storage::disk('upcloud')->url($img) }}" class="img w-100">
+                            <img src="{{ Storage::disk('upcloud')->url($img) }}" class="img w-100" alt="" onerror="this.onerror=null; this.src='{{ $noImgUrl }}';">
                         @elseif(!Storage::disk('public')->exists('/img/'.$img))
-                            <img src="{{ Storage::disk('upcloud')->url($imgWebp) }}" class="img w-100">
+                            <img src="{{ Storage::disk('upcloud')->url($imgWebp) }}" class="img w-100" alt="" onerror="this.onerror=null; this.src='{{ $noImgUrl }}';">
                         @else
                             <picture>
                                 <source srcset="{{ Storage::disk('upcloud')->url($imgWebp) }}" type="image/webp">
                                 <source srcset="{{ Storage::disk('upcloud')->url($img) }}" type="image/jpeg">
-                                <img src="{{ Storage::disk('upcloud')->url($img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="img-responsive hover" style="width: 100% !important;">
+                                <img src="{{ Storage::disk('upcloud')->url($img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="img-responsive hover" style="width: 100% !important;" onerror="this.onerror=null; this.src='{{ $noImgUrl }}';">
                             </picture>
                         @endif
                     </div>
