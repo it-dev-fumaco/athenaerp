@@ -1082,9 +1082,9 @@
         });
 
         function loadFiles(){
-            get_item_files('{{ isset($item_details) ? $item_details->name : "" }}', 'Supplier Brochure', 'supplier-brochure-files-div');
-            get_item_files('{{ isset($item_details) ? $item_details->name : "" }}', 'Photometric Data', 'photometric-data-files-div');
-            get_item_files('{{ isset($item_details) ? $item_details->name : "" }}', 'IES Files', 'ies-files-div');
+            get_item_files('{{ isset($itemDetails) ? $itemDetails->name : "" }}', 'Supplier Brochure', 'supplier-brochure-files-div');
+            get_item_files('{{ isset($itemDetails) ? $itemDetails->name : "" }}', 'Photometric Data', 'photometric-data-files-div');
+            get_item_files('{{ isset($itemDetails) ? $itemDetails->name : "" }}', 'IES Files', 'ies-files-div');
         }
 
         loadFiles()
