@@ -81,12 +81,14 @@
             $data = @file_get_contents($path);
             return $data !== false ? 'data:' . $mime . ';base64,' . base64_encode($data) : null;
         };
-        $fumacoLogoSrc = null;
-        $upcloudLogoKey = 'logo/fumaco-transparent.png';
-        if (Storage::disk('upcloud')->exists($upcloudLogoKey)) {
-            $logoData = Storage::disk('upcloud')->get($upcloudLogoKey);
-            if ($logoData !== null && $logoData !== '') {
-                $fumacoLogoSrc = 'data:image/png;base64,' . base64_encode($logoData);
+        $fumacoLogoSrc = (isset($fumacoLogoDataUri) && $fumacoLogoDataUri) ? $fumacoLogoDataUri : null;
+        if (!$fumacoLogoSrc) {
+            $upcloudLogoKey = 'logo/fumaco-transparent.png';
+            if (Storage::disk('upcloud')->exists($upcloudLogoKey)) {
+                $logoData = Storage::disk('upcloud')->get($upcloudLogoKey);
+                if ($logoData !== null && $logoData !== '') {
+                    $fumacoLogoSrc = 'data:image/png;base64,' . base64_encode($logoData);
+                }
             }
         }
         if (!$fumacoLogoSrc) {

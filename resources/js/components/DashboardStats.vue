@@ -117,7 +117,7 @@ async function loadCounts() {
       axios.get('/count_ste_for_issue/Material%20Receipt'),
       axios.get('/count_ste_for_issue/Material%20Transfer%20for%20Manufacture'),
       axios.get('/count_production_to_receive'),
-      axios.get('/count_ps_for_issue'),
+      axios.get('/count_deliveries'),
     ]);
 
     const issue = rest[0];
@@ -125,7 +125,7 @@ async function loadCounts() {
     const receipt = rest[2];
     const manufacture = rest[3];
     const productionReceive = rest[4];
-    const psIssue = rest[5];
+    const deliveryCount = rest[5];
 
     counts.value = {
       pReturns: receipt.data ?? '-',
@@ -134,7 +134,7 @@ async function loadCounts() {
       pInTransit: dashboardData.data?.goods_in_transit ?? '-',
       materialManufacture: manufacture.data ?? '-',
       materialIssue: issue.data ?? '-',
-      pickingSlip: psIssue.data ?? '-',
+      pickingSlip: deliveryCount.data ?? '-',
       pReplacements: dashboardData.data?.p_replacements ?? '-',
     };
   } catch (_) {

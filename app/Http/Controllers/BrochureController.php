@@ -34,6 +34,19 @@ class BrochureController extends Controller
 {
     use GeneralTrait;
 
+    private function normalizeBrochureAttributeName(?string $attributeCode, ?string $attributeLabel): string
+    {
+        $attributeCode = $attributeCode !== null ? trim((string) $attributeCode) : '';
+        $attributeLabel = $attributeLabel !== null ? trim((string) $attributeLabel) : '';
+
+        // Prefer stable attribute code in this known-bad mapping so brochures show the expected label.
+        if ($attributeCode === 'Wattage' && strtoupper($attributeLabel) === 'BATTERY') {
+            return 'Wattage';
+        }
+
+        return $attributeLabel !== '' ? $attributeLabel : ($attributeCode !== '' ? $attributeCode : '');
+    }
+
     public function __construct(
         protected BrochureUploadPipeline $brochureUploadPipeline,
         protected BrochureImageService $brochureImageService,
@@ -41,6 +54,23 @@ class BrochureController extends Controller
         protected BrochureAttributeService $brochureAttributeService,
         protected BrochureExcelService $brochureExcelService
     ) {}
+
+    /**
+     * Return a working URL for an upcloud storage key (prefer temporary URL for private buckets).
+     */
+    private function brochureImageUrl(string $key): string
+    {
+        $disk = Storage::disk('upcloud');
+        try {
+            if (method_exists($disk, 'temporaryUrl')) {
+                return $disk->temporaryUrl($key, now()->addHours(1));
+            }
+        } catch (\Throwable $e) {
+            Log::debug('Brochure image temporaryUrl failed, using url()', ['key' => $key, 'error' => $e->getMessage()]);
+        }
+
+        return $disk->url($key);
+    }
 
     public function viewForm(Request $request)
     {
@@ -57,6 +87,36 @@ class BrochureController extends Controller
         }
 
         return view('brochure.form');
+    }
+
+    /**
+     * Serve brochure import template (local storage first, then UpCloud fallback).
+     */
+    public function downloadTemplate()
+    {
+        $localTemplateKey = 'templates/AthenaERP - Brochure-Import-Template.xlsx';
+        $upcloudTemplateKey = 'excelTepmplates/AthenaERP - Brochure-Import-Template.xlsx';
+
+        if (Storage::disk('public')->exists($localTemplateKey)) {
+            $path = storage_path('app/public/' . $localTemplateKey);
+            return response()->file($path, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition' => 'attachment; filename="AthenaERP - Brochure-Import-Template.xlsx"',
+            ]);
+        }
+
+        try {
+            if (Storage::disk('upcloud')->exists($upcloudTemplateKey)) {
+                $contents = Storage::disk('upcloud')->get($upcloudTemplateKey);
+                return response($contents, 200, [
+                    'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'Content-Disposition' => 'attachment; filename="AthenaERP - Brochure-Import-Template.xlsx"',
+                ]);
+            }
+        } catch (\Throwable $e) {
+        }
+
+        abort(404, 'Template file not found. Add it to storage/app/public/templates/ or to UpCloud at excelTepmplates/AthenaERP - Brochure-Import-Template.xlsx.');
     }
 
     public function readExcelFile(ReadBrochureExcelRequest $request)
@@ -297,8 +357,20 @@ class BrochureController extends Controller
     {
         DB::beginTransaction();
         try {
-            if ($request->id) {
-                ItemBrochureImage::where('name', $request->id)->delete();
+            $id = $request->id ? trim((string) $request->id) : null;
+            $itemCode = $request->item_code ? trim((string) $request->item_code) : null;
+            $imageIdx = $request->image_idx !== null && $request->image_idx !== '' ? (string) $request->image_idx : null;
+
+            if ($id) {
+                ItemBrochureImage::where('name', $id)->delete();
+                DB::commit();
+
+                return ApiResponse::success('Image removed.');
+            }
+
+            // Standard brochure image removal: allow deleting by item_code + image_idx when the UI doesn't have the record id.
+            if ($itemCode && $imageIdx) {
+                ItemBrochureImage::where('parent', $itemCode)->where('idx', $imageIdx)->delete();
                 DB::commit();
 
                 return ApiResponse::success('Image removed.');
@@ -527,7 +599,9 @@ class BrochureController extends Controller
                 ->orderByRaw('LENGTH(idx) ASC')
                 ->orderBy('idx', 'ASC')
                 ->get();
-            $brochureImagesGroup = $brochureImagesQry->groupBy('parent')->toArray();
+            // Keep models as objects (do NOT toArray), since we read ->image_path/->image_filename below.
+            $brochureImagesGroup = $brochureImagesQry->groupBy('parent');
+            $upcloudDisk = Storage::disk('upcloud');
 
             $content = [];
             $no = 1;
@@ -547,7 +621,7 @@ class BrochureController extends Controller
 
                 $attributes = $attributeGroup[$itemCode] ?? [];
                 $currentItemImages = $currentItemImagesGroup[$itemCode] ?? [];
-                $brochureImages = $brochureImagesGroup[$itemCode] ?? [];
+                $brochureImages = $brochureImagesGroup->get($itemCode, collect());
 
                 $itemName = $itemDetails->item_brochure_name ?: $itemDetails->item_name;
                 $itemDescription = $itemDetails->item_brochure_description ?: $itemDetails->description;
@@ -560,7 +634,7 @@ class BrochureController extends Controller
                     }
                     $attrib[$att->attribute] = $att->attribute_value;
                     $attributesArr[] = [
-                        'attribute_name' => $att->attr_name ?? $att->attribute,
+                        'attribute_name' => $this->normalizeBrochureAttributeName($att->attribute ?? null, $att->attr_name ?? null),
                         'attribute_value' => $att->attribute_value,
                     ];
                 }
@@ -571,9 +645,12 @@ class BrochureController extends Controller
                         continue;
                     }
                     $filename = $e->image_path;
+                    if ($filename && ! $pdf && ! $upcloudDisk->exists('item-images/'.$filename)) {
+                        $filename = explode('.', $filename)[0].'.webp';
+                    }
                     $currentImages[] = [
                         'filename' => $filename,
-                        'filepath' => 'storage/img/'.$filename,
+                        'filepath' => $filename ? 'item-images/'.$filename : null,
                     ];
                 }
 
@@ -583,7 +660,7 @@ class BrochureController extends Controller
                     $img = $brochureImages[$i] ?? null;
                     $images['image'.$row] = [
                         'id' => $img?->name ?? null,
-                        'filepath' => ($img && isset($img->image_path, $img->image_filename)) ? $img->image_path.$img->image_filename : null,
+                        'filepath' => ($img && $img->image_path && $img->image_filename) ? $img->image_path.$img->image_filename : null,
                     ];
                 }
 
@@ -613,17 +690,125 @@ class BrochureController extends Controller
             }
 
             if ($pdf) {
+                // Embed remote images (upcloud) as data URIs for PDF rendering.
+                // DOMPDF can't reliably fetch remote S3 URLs in all environments.
+                $upcloudDisk = Storage::disk('upcloud');
+                $dataUriCache = [];
+
+                $toDataUriFromKey = function (?string $key) use ($upcloudDisk, &$dataUriCache): ?string {
+                    if (! $key) {
+                        return null;
+                    }
+                    $key = ltrim($key, '/');
+                    $originalKey = $key;
+                    if (isset($dataUriCache[$originalKey])) {
+                        return $dataUriCache[$originalKey];
+                    }
+
+                    $ext = strtolower(pathinfo($key, PATHINFO_EXTENSION));
+                    $data = null;
+
+                    // Prefer non-webp for DOMPDF; try alternative extensions only when key is webp.
+                    if ($ext === 'webp') {
+                        $base = preg_replace('/\.webp$/i', '', $key) ?? $key;
+                        foreach ([$base.'.png', $base.'.jpg', $base.'.jpeg'] as $altKey) {
+                            if (! $altKey) {
+                                continue;
+                            }
+                            $data = $upcloudDisk->get($altKey);
+                            if ($data !== null && $data !== '') {
+                                $key = $altKey;
+                                $ext = strtolower(pathinfo($key, PATHINFO_EXTENSION));
+                                break;
+                            }
+                        }
+                    }
+
+                    if ($data === null || $data === '') {
+                        $data = $upcloudDisk->get($key);
+                    }
+                    if ($data === null || $data === '') {
+                        $dataUriCache[$originalKey] = null;
+
+                        return null;
+                    }
+
+                    // If still webp, convert to PNG using GD when available (DOMPDF cannot use WebP without GD support).
+                    if ($ext === 'webp') {
+                        if (function_exists('imagecreatefromwebp') && function_exists('imagepng')) {
+                            $tmpWebp = tempnam(sys_get_temp_dir(), 'brochure_webp_');
+                            if ($tmpWebp) {
+                                try {
+                                    file_put_contents($tmpWebp, $data);
+                                    $img = @imagecreatefromwebp($tmpWebp);
+                                    if ($img !== false) {
+                                        ob_start();
+                                        imagepng($img);
+                                        imagedestroy($img);
+                                        $pngData = ob_get_clean();
+                                        if ($pngData !== false && $pngData !== '') {
+                                            $dataUri = 'data:image/png;base64,'.base64_encode($pngData);
+                                            $dataUriCache[$originalKey] = $dataUri;
+
+                                            return $dataUri;
+                                        }
+                                    }
+                                } finally {
+                                    @unlink($tmpWebp);
+                                }
+                            }
+                        }
+                        // GD cannot convert WebP; skip image so PDF can generate (Dompdf would throw otherwise).
+                        $dataUriCache[$originalKey] = null;
+
+                        return null;
+                    }
+
+                    $mime = match ($ext) {
+                        'jpg', 'jpeg' => 'image/jpeg',
+                        'png' => 'image/png',
+                        default => 'application/octet-stream',
+                    };
+
+                    $dataUri = 'data:'.$mime.';base64,'.base64_encode($data);
+                    $dataUriCache[$originalKey] = $dataUri;
+
+                    return $dataUri;
+                };
+
+                foreach ($content as $idx => $row) {
+                    $imageDataUris = [];
+                    for ($i = 1; $i <= 3; $i++) {
+                        $key = data_get($row, 'images.image'.$i.'.filepath');
+                        $imageDataUris[$i] = $toDataUriFromKey(is_string($key) ? $key : null);
+                    }
+                    $content[$idx]['image_data_uris'] = $imageDataUris;
+                }
+
+                $fumacoLogoDataUri = null;
+                $logoKey = 'logo/fumaco-transparent.png';
+                $logoData = $upcloudDisk->get($logoKey);
+                if ($logoData !== null && $logoData !== '') {
+                    $fumacoLogoDataUri = 'data:image/png;base64,'.base64_encode($logoData);
+                }
+
                 $isStandard = true;
                 $filename = Str::slug($project, '-');
                 $newFilename = Str::slug($project, '-').'-'.now()->format('Y-m-d');
                 $remarks = '';
-                $pdfDoc = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename', 'isStandard', 'remarks'));
+                $pdfDoc = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename', 'isStandard', 'remarks', 'fumacoLogoDataUri'));
+                $pdfDoc->setOption('isRemoteEnabled', false);
 
                 return $pdfDoc->stream($newFilename.'.pdf');
             }
 
             return view('brochure.multiple_brochure', compact('content', 'project', 'customer'));
         } catch (\Throwable $th) {
+            $isPdfRequest = $request->query('pdf');
+            if ($isPdfRequest) {
+                report($th);
+                return redirect('/generate_multiple_brochures')->with('error', 'An error occured. Please try again.');
+            }
             return redirect()->back()->with('error', 'An error occured. Please try again.');
         }
     }
@@ -673,9 +858,11 @@ class BrochureController extends Controller
                 $storageKey = null;
                 if (isset($brochureImages[$i])) {
                     $pathPrefix = $brochureImages[$i]->image_path;
-                    if ($pathPrefix === null || trim((string) $pathPrefix) === '' || ! Str::startsWith(trim((string) $pathPrefix), 'item-brochures')) {
+                    if ($pathPrefix === null || trim((string) $pathPrefix) === '') {
+                        // Default to item-brochures/ when path is missing to keep legacy behaviour.
                         $pathPrefix = 'item-brochures/';
                     } else {
+                        // Respect stored path (e.g. item-brochures/, item-images/, or other valid prefixes).
                         $pathPrefix = rtrim($pathPrefix, '/').'/';
                     }
                     $storageKey = $pathPrefix.$brochureImages[$i]->image_filename;
@@ -683,6 +870,7 @@ class BrochureController extends Controller
                 $images['image'.$row] = [
                     'id' => $brochureImages[$i]->name ?? null,
                     'filepath' => $storageKey,
+                    'url' => $storageKey ? $this->brochureImageUrl($storageKey) : null,
                 ];
             }
 
@@ -702,7 +890,7 @@ class BrochureController extends Controller
                 foreach ($attributes as $att) {
                     $attrib[$att->attribute] = $att->attribute_value;
                     $attributesArr[] = [
-                        'attribute_name' => $att->attr_name ?: $att->attribute,
+                        'attribute_name' => $this->normalizeBrochureAttributeName($att->attribute ?? null, $att->attr_name ?? null),
                         'attribute_value' => $att->attribute_value,
                     ];
                 }
@@ -811,19 +999,21 @@ class BrochureController extends Controller
             }
 
             $existingImage = ItemBrochureImage::where('parent', $itemCode)->where('idx', $request->image_idx)->first();
+            $imageRecordId = $existingImage?->name;
             $updateData = [
                 'modified' => $transactionDate,
                 'modified_by' => Auth::user()->wh_user,
                 'idx' => $request->image_idx,
                 'image_filename' => $storedFilename,
-                'image_path' => 'item-brochures/',
+                'image_path' => $imagePath,
             ];
 
             if ($existingImage) {
                 $existingImage->update($updateData);
             } else {
+                $imageRecordId = uniqid();
                 ItemBrochureImage::insert([
-                    'name' => uniqid(),
+                    'name' => $imageRecordId,
                     'creation' => $transactionDate,
                     'modified' => $transactionDate,
                     'modified_by' => Auth::user()->wh_user,
@@ -831,7 +1021,7 @@ class BrochureController extends Controller
                     'parent' => $itemCode,
                     'idx' => $request->image_idx,
                     'image_filename' => $storedFilename,
-                    'image_path' => 'item-brochures/',
+                    'image_path' => $imagePath,
                 ]);
             }
 
@@ -851,15 +1041,22 @@ class BrochureController extends Controller
 
             DB::commit();
 
-            $dataSrc = Storage::disk('upcloud')->url($imagePath.$storedFilename);
+            $storageKey = $imagePath.$storedFilename;
+            $dataSrc = $this->brochureImageUrl($storageKey);
 
             Log::info('uploadImageForStandard success', [
                 'item_code' => $itemCode,
                 'image_idx' => $request->image_idx,
-                'image_path' => $dataSrc,
+                'storage_key' => $storageKey,
             ]);
 
-            return ApiResponse::successWith('Image uploaded.', ['src' => $dataSrc]);
+            return ApiResponse::successWith('Image uploaded.', [
+                'src' => $dataSrc,
+                'id' => $imageRecordId,
+                'filename' => $storedFilename,
+                'item_code' => $itemCode,
+                'image_idx' => (string) $request->image_idx,
+            ]);
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('uploadImageForStandard failed', [

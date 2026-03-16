@@ -237,11 +237,35 @@ trait GeneralTrait
         return $availableMap;
     }
 
-    public function base64Image($file, $original = 0)
+    /**
+     * Return public URL for an image. Avoids Storage::exists() when $skipExistsCheck is true (faster; use for lists/thumbnails).
+     *
+     * @param  mixed  $file  Storage key or path (leading slash stripped). Filename-only is treated as item-images/ prefix.
+     * @param  int  $original  If 0 and path is item-images/, prefer webp URL when file exists (unless $skipExistsCheck).
+     * @param  bool  $skipExistsCheck  If true, return URL for given key without checking webp existence (no remote HEAD requests).
+     */
+    public function base64Image($file, $original = 0, bool $skipExistsCheck = false)
     {
-        // $file = explode('.', $file);
-        // $file = $file[0].'.webp';
-        return Storage::disk('upcloud')->url($file);
+        if (! $file) {
+            return Storage::disk('upcloud')->url('icon/no-img.png');
+        }
+        $disk = Storage::disk('upcloud');
+        // Storage keys must not have leading slash (S3/compat)
+        $key = ltrim((string) $file, '/');
+        // If path is filename-only, use item-images/ prefix for item images
+        if (! str_contains($key, '/')) {
+            $key = 'item-images/'.$key;
+        }
+        // Prefer webp when it exists, otherwise use original (skip existence check when optimizing for speed)
+        if (! $original && ! $skipExistsCheck && str_starts_with($key, 'item-images/')) {
+            $baseName = pathinfo($key, PATHINFO_FILENAME);
+            $dir = dirname($key);
+            $webpKey = $dir === '.' ? 'item-images/'.$baseName.'.webp' : $dir.'/'.$baseName.'.webp';
+            if ($disk->exists($webpKey)) {
+                return $disk->url($webpKey);
+            }
+        }
+        return $disk->url($key);
         // if(!$file){
         //     return null;
         // }
@@ -478,7 +502,7 @@ trait GeneralTrait
             'qty' => $q->qty,
             'barcode' => $barcode,
             'transaction_date' => $now->toDateTimeString(),
-            'warehouse_user' => $q->session_user,
+            'warehouse_user' => Auth::user()->wh_user,
             'issued_qty' => $q->qty,
             'remarks' => $remarks,
             'source_warehouse' => $sWarehouse,
@@ -492,6 +516,7 @@ trait GeneralTrait
             'uom' => $q->stock_uom,
             'purpose' => $purpose,
             'transaction_type' => $type,
+            'status' => 'Issued',
         ];
 
         $existingLog = DB::table('tabAthena Transactions')
@@ -597,7 +622,7 @@ trait GeneralTrait
 
     /**
      * Submit STE to ERPNext so that docstatus = 1 and Stock Ledger Entry is created.
-     * Uses ERPNext as source of truth for child item status; syncs parent Item Status to ERPNext when all children are issued so submission is allowed.
+     * Uses ERPNext as source of truth for child item status; syncs parent Item Status to ERPNext. Submission is allowed even when some items are not yet issued.
      *
      * @param  string  $id  Stock Entry name (e.g. STE-XXX)
      * @param  int  $systemGenerated  1 when called from backend (return array on error); 0 for user-facing (return JSON response)
@@ -623,25 +648,7 @@ trait GeneralTrait
                 $erpData = $erpResponse['data'];
             }
 
-            $itemsToCheck = isset($erpData['items']) && is_array($erpData['items'])
-                ? collect($erpData['items'])
-                : $draftSte->items;
-
             $childTblByName = $this->normalizeChildTblToKeyedRows($child_tbl);
-            $issuedOrReturned = [StockEntryConstants::STATUS_ISSUED, StockEntryConstants::STATUS_RETURNED];
-            $countNotIssuedItems = collect($itemsToCheck)->reduce(function ($count, $item) use ($childTblByName, $issuedOrReturned) {
-                $name = data_get($item, 'name');
-                $child = $name ? $childTblByName->get($name) : null;
-                $status = $child && isset($child['status'])
-                    ? $child['status']
-                    : data_get($item, 'status');
-
-                return $count + (in_array($status, $issuedOrReturned, true) ? 0 : 1);
-            }, 0);
-
-            if ($countNotIssuedItems > 0) {
-                throw new Exception('All item(s) must be issued before submitting. '.$countNotIssuedItems.' item(s) still pending.');
-            }
 
             $transferAs = $erpData['transfer_as'] ?? $draftSte->transfer_as;
             if ($transferAs == StockEntryConstants::TRANSFER_AS_CONSIGNMENT) {
@@ -651,19 +658,43 @@ trait GeneralTrait
             $steDocForStatus = $erpData ?? $draftSte;
             $parentItemStatus = $this->computeSteParentItemStatus($steDocForStatus);
 
-            $items = $draftSte->items->map(function ($item) use ($childTblByName) {
-                $child = $childTblByName->get($item->name);
-                if ($child) {
-                    $item->session_user = Auth::user()->wh_user;
-                    $item->status = data_get($child, 'status');
-                    $item->transfer_qty = data_get($child, 'qty');
-                    $item->qty = data_get($child, 'qty');
-                    $item->issued_qty = data_get($child, 'qty');
-                    $item->validate_item_code = data_get($child, 'barcode') ?? data_get($child, 'validate_item_code');
-                }
-                unset($item->modified, $item->creation, $item->name);
-                return $item;
-            })->toArray();
+            // When ERP is still draft, use ERP item statuses as base so we don't push stale local "Issued" and show all as issued incorrectly
+            $erpDocstatus = (int) data_get($erpData, 'docstatus', -1);
+            $erpItems = isset($erpData['items']) && is_array($erpData['items']) ? $erpData['items'] : [];
+            $useErpItemsAsBase = ($erpDocstatus === 0 && $erpItems !== []);
+
+            if ($useErpItemsAsBase) {
+                $items = collect($erpItems)->map(function ($row) use ($childTblByName) {
+                    $name = data_get($row, 'name');
+                    $child = $name ? $childTblByName->get($name) : null;
+                    $item = (object) array_merge(
+                        Arr::except($row, ['modified', 'creation', 'name']),
+                        $child ? [
+                            'session_user' => Auth::user()->wh_user,
+                            'status' => data_get($child, 'status'),
+                            'transfer_qty' => data_get($child, 'qty'),
+                            'qty' => data_get($child, 'qty'),
+                            'issued_qty' => data_get($child, 'qty'),
+                            'validate_item_code' => data_get($child, 'barcode') ?? data_get($child, 'validate_item_code'),
+                        ] : []
+                    );
+                    return $item;
+                })->toArray();
+            } else {
+                $items = $draftSte->items->map(function ($item) use ($childTblByName) {
+                    $child = $childTblByName->get($item->name);
+                    if ($child) {
+                        $item->session_user = Auth::user()->wh_user;
+                        $item->status = data_get($child, 'status');
+                        $item->transfer_qty = data_get($child, 'qty');
+                        $item->qty = data_get($child, 'qty');
+                        $item->issued_qty = data_get($child, 'qty');
+                        $item->validate_item_code = data_get($child, 'barcode') ?? data_get($child, 'validate_item_code');
+                    }
+                    unset($item->modified, $item->creation, $item->name);
+                    return $item;
+                })->toArray();
+            }
 
             $pendingForChecking = collect($items)->where('status', StockEntryConstants::STATUS_FOR_CHECKING)->count();
             $docstatus = ($erpData['docstatus'] ?? 0) || $pendingForChecking <= 0 ? 1 : 0;

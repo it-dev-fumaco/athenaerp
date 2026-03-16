@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="default">
 	<title>{{ $namePage }} - {{ Auth::check() ? Auth::user()->full_name : null }}</title>
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="csrf-token" content="{{ csrf_token() }}">
@@ -344,58 +346,120 @@
 			padding-left: 10px;
 			padding-right: 10px;
 		}
-		/* Production Withdrawal modal: ~1400px to match red box, centered, full-width content */
-		#ste-modal .modal-dialog {
+		/* Shared checkout/transaction modal: ~70–80% width, content-based height, generous padding (reference). Override Bootstrap .modal-dialog max-width: 500px. */
+		#ste-modal .modal-dialog,
+		#dr-modal .modal-dialog,
+		#receive-item-modal .modal-dialog,
+		#ps-modal .modal-dialog {
+			width: min(78vw, 1400px) !important;
 			max-width: 1400px !important;
-			width: min(90vw, 1400px) !important;
-			margin: 0.5rem auto !important;
+			min-width: min(70vw, 1100px) !important;
+			max-height: calc(100vh - 2rem) !important;
+			margin: 1rem auto !important;
 		}
-		#ste-modal .modal-content {
+		#ste-modal .modal-dialog .modal-content,
+		#dr-modal .modal-dialog .modal-content,
+		#receive-item-modal .modal-dialog .modal-content,
+		#ps-modal .modal-dialog .modal-content {
+			max-height: calc(100vh - 2rem) !important;
+		}
+		#ste-modal .modal-dialog .modal-content .modal-body,
+		#dr-modal .modal-dialog .modal-content .modal-body,
+		#receive-item-modal .modal-dialog .modal-content .modal-body,
+		#ps-modal .modal-dialog .modal-content .modal-body {
+			overflow-y: auto !important;
+		}
+		@media (min-width: 576px) {
+			#ste-modal .modal-dialog,
+			#dr-modal .modal-dialog,
+			#receive-item-modal .modal-dialog,
+			#ps-modal .modal-dialog {
+				width: min(78vw, 1400px) !important;
+				max-width: 1400px !important;
+				min-width: min(70vw, 1100px) !important;
+				margin: 1.75rem auto !important;
+			}
+		}
+		#ste-modal .modal-content,
+		#dr-modal .modal-content,
+		#receive-item-modal .modal-content,
+		#ps-modal .modal-content {
 			width: 100% !important;
 			max-width: none !important;
 			min-width: 0 !important;
 			box-sizing: border-box !important;
 		}
-		#ste-modal .modal-body {
+		#ste-modal .modal-body,
+		#dr-modal .modal-body,
+		#receive-item-modal .modal-body,
+		#ps-modal .modal-body {
 			width: 100% !important;
 			max-width: none !important;
 			min-width: 0 !important;
 			box-sizing: border-box !important;
-			padding: 1rem 1.25rem !important;
+			padding: 1.25rem 1.5rem !important;
 		}
-		#ste-modal .modal-body .form-control {
+		#ste-modal .modal-body .form-control,
+		#dr-modal .modal-body .form-control,
+		#receive-item-modal .modal-body .form-control,
+		#ps-modal .modal-body .form-control {
 			width: 100% !important;
 			max-width: 100% !important;
 			box-sizing: border-box !important;
 		}
-		#ste-modal .modal-body .row {
+		#ste-modal .modal-body .row,
+		#dr-modal .modal-body .row,
+		#receive-item-modal .modal-body .row,
+		#ps-modal .modal-body .row {
 			margin-left: 0 !important;
 			margin-right: 0 !important;
 			width: 100% !important;
 			max-width: none !important;
 		}
 		#ste-modal .modal-body .ste-modal__body,
-		#ste-modal .modal-body .ste-modal__breadcrumb {
+		#ste-modal .modal-body .ste-modal__breadcrumb,
+		#dr-modal .modal-body .ste-modal__body,
+		#dr-modal .modal-body .ste-modal__breadcrumb,
+		#receive-item-modal .modal-body .ste-modal__body,
+		#receive-item-modal .modal-body .ste-modal__breadcrumb,
+		#ps-modal .modal-body .ste-modal__body,
+		#ps-modal .modal-body .ste-modal__breadcrumb {
 			width: 100% !important;
 			max-width: none !important;
 		}
 		#ste-modal .modal-header,
-		#ste-modal .modal-footer {
+		#ste-modal .modal-footer,
+		#dr-modal .modal-header,
+		#dr-modal .modal-footer,
+		#receive-item-modal .modal-header,
+		#receive-item-modal .modal-footer,
+		#ps-modal .modal-header,
+		#ps-modal .modal-footer {
 			width: 100% !important;
 			max-width: none !important;
 			box-sizing: border-box !important;
 		}
 		#ste-modal .modal-body .container,
-		#ste-modal .modal-body .container-fluid {
+		#ste-modal .modal-body .container-fluid,
+		#dr-modal .modal-body .container,
+		#dr-modal .modal-body .container-fluid,
+		#receive-item-modal .modal-body .container,
+		#receive-item-modal .modal-body .container-fluid,
+		#ps-modal .modal-body .container,
+		#ps-modal .modal-body .container-fluid {
 			max-width: none !important;
 			width: 100% !important;
 			padding-left: 0 !important;
 			padding-right: 0 !important;
 		}
 		@media (max-width: 767.98px) {
-			#ste-modal .modal-dialog {
+			#ste-modal .modal-dialog,
+			#dr-modal .modal-dialog,
+			#receive-item-modal .modal-dialog,
+			#ps-modal .modal-dialog {
 				max-width: calc(100vw - 1rem) !important;
 				width: 100% !important;
+				min-width: unset !important;
 				margin: 0.5rem auto !important;
 			}
 		}
@@ -694,19 +758,23 @@
 											</button>
 										</div>
 									</form>
+									@if (isset($searchResultsTotal) && $activePage === 'search_results')
+									<div class="px-2 pb-1 text-right">
+										<span class="text-white mr-1" style="font-size: 11pt;">TOTAL:</span>
+										<span class="badge px-2 py-1" style="font-size: 11pt; background: rgba(255,255,255,0.25); color: #fff;">
+											{{ number_format($searchResultsTotal) }}
+										</span>
+										<a href="#" class="btn btn-sm ml-1 px-2 py-1" style="background: rgba(255,255,255,0.25); color: #fff; border: none;" title="View options" aria-label="View options">
+											<i class="fas fa-list"></i>
+										</a>
+									</div>
+									@endif
 									<div id="suggesstion-box" class="mr-2 ml-2"></div>
 								</div>
 							</div>
 						</div>
 						<div class="d-none d-lg-block col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
 							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle flex-row align-items-center justify-content-end w-100">
-								@if (isset($searchResultsTotal) && $activePage === 'search_results')
-								<li class="nav-item d-flex align-items-center mr-3">
-									<span class="text-white mr-1" style="font-size: 12pt;">TOTAL:</span>
-									<span class="badge px-2 py-1" style="font-size: 12pt; background: rgba(255,255,255,0.25); color: #fff;">{{ number_format($searchResultsTotal) }}</span>
-									<a href="#" class="btn btn-sm ml-1 px-2 py-1" style="background: rgba(255,255,255,0.25); color: #fff; border: none;" title="View options" aria-label="View options"><i class="fas fa-list"></i></a>
-								</li>
-								@endif
 								<li class="nav-item dropdown col-xl-10 text-right p-0" style="margin: auto">
 									@if (Auth::check())
 										<span class="d-none brochures-icon" style="position: relative;">
@@ -812,6 +880,7 @@
 			<div class="modal-content">
 				<div class="modal-header">
 					<h4 class="modal-title responsive-modal-title">Item Inquiry</h4>
+					<span id="selected-item-code" class="d-none"></span>
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 						<span aria-hidden="true">&times;</span>
 					</button>
@@ -1190,9 +1259,42 @@
 	@yield('script')
 
 	<script>
-		document.getElementById('loader-wrapper').removeAttribute('hidden');
+		(function() {
+			var loader = document.getElementById('loader-wrapper');
+			if (loader) loader.removeAttribute('hidden');
+			// Fallback: hide loader after 5s so content shows even if jQuery/Vue fail (e.g. iPad/Safari)
+			setTimeout(function() {
+				if (loader) loader.setAttribute('hidden', '');
+			}, 5000);
+		})();
 		$(document).ready(function(){
+			var loader = document.getElementById('loader-wrapper');
+			if (loader) loader.setAttribute('hidden', '');
 			$('#loader-wrapper').attr('hidden', true);
+			// Brochure: capture-phase handlers so they run first
+			document.addEventListener('click', function(e) {
+				var link = e.target && e.target.closest ? e.target.closest('a') : null;
+				var btn = e.target && e.target.closest ? e.target.closest('button#brochure-preview-print-pdf, button.btn-ctrl') : null;
+				var modal = document.getElementById('brochure-preview-modal');
+				var modalOpen = modal && modal.classList && modal.classList.contains('show');
+				// When preview modal is open, block any link to base URL (e.g. floater "Generate Brochure") so only PDF link is used
+				if (modalOpen && link && link.href && link.href.indexOf('generate_multiple_brochures') !== -1 && link.href.indexOf('pdf=1') === -1) {
+					e.preventDefault();
+					e.stopPropagation();
+					e.stopImmediatePropagation();
+					return;
+				}
+				// Print button/link: open PDF in new tab only
+				var isPrintLink = link && link.href && link.href.indexOf('generate_multiple_brochures') !== -1 && link.href.indexOf('pdf=1') !== -1 && link.classList && link.classList.contains('btn-ctrl');
+				var previewLoop = document.getElementById('preview-loop');
+				var previewContainer = document.getElementById('brochure-preview-container');
+				var isPrintButton = btn && ((previewLoop && previewLoop.contains(btn)) || (previewContainer && previewContainer.contains(btn)));
+				if (!isPrintLink && !isPrintButton) return;
+				e.preventDefault();
+				e.stopPropagation();
+				e.stopImmediatePropagation();
+				window.open('/generate_multiple_brochures?pdf=1', '_blank', 'noopener,noreferrer');
+			}, true);
 			$(document).on('ajaxComplete', function(event, xhr, settings) {
 				if(typeof xhr.status !== 'undefined' && xhr.status == 401){
 					$('#loader-wrapper').attr('hidden', true);
@@ -1573,9 +1675,100 @@
 				e.preventDefault();
 				var item_code = $(this).data('item-code');
 				var item_classification = $(this).data('item-classification');
+
+				$('#selected-item-code').text((item_code || '').toString().trim());
 				$('#view-item-details-modal .modal-title').text(item_code + " [" + item_classification + "]");
 				$('#view-item-details-modal').modal('show');
 				view_item_details(item_code);
+			});
+
+			function view_item_details(item_code){
+				$('#item-preloader').removeClass('d-none').show();
+				$('#item-detail-content').html('');
+				$('#athena-transactions-table').html('');
+				$('#stock-ledger-table').html('');
+				$('#stock-reservation-table').html('');
+
+				$.ajax({
+					type: 'GET',
+					url: '/get_item_details/' + encodeURIComponent(item_code),
+					success: function(response){
+						if (typeof response === 'string' && response.trim().length > 0) {
+							$('#item-detail-content').html(response);
+						} else {
+							$('#item-detail-content').html('<div class="p-2 text-muted">No item details returned.</div>');
+						}
+					},
+					error: function(xhr){
+						var msg = (xhr && xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to load item details.';
+						showNotification("danger", msg, "fa fa-info");
+					},
+					complete: function(){
+						$('#item-preloader').hide();
+					}
+				});
+
+				// Load tab content (best-effort) for the modal tabs.
+				get_athena_transactions(item_code);
+				get_stock_ledger(item_code);
+				get_stock_reservations(item_code);
+			}
+
+			function get_athena_transactions(item_code, page){
+				var pageNo = page || 1;
+				$.ajax({
+					type: 'GET',
+					url: '/get_athena_transactions/' + encodeURIComponent(item_code) + '?page=' + pageNo,
+					success: function(response){
+						$('#athena-transactions-table').html(response);
+					},
+					error: function(){ }
+				});
+			}
+
+			function get_stock_ledger(item_code, page){
+				var pageNo = page || 1;
+				$.ajax({
+					type: 'GET',
+					url: '/get_stock_ledger/' + encodeURIComponent(item_code) + '?page=' + pageNo,
+					success: function(response){
+						$('#stock-ledger-table').html(response);
+					},
+					error: function(){ }
+				});
+			}
+
+			function get_stock_reservations(item_code, page){
+				var pageNo = page || 1;
+				$.ajax({
+					type: 'GET',
+					url: '/get_stock_reservation/' + encodeURIComponent(item_code) + '?page=' + pageNo,
+					success: function(response){
+						$('#stock-reservation-table').html(response);
+					},
+					error: function(){ }
+				});
+			}
+
+			$(document).on('click', '#athena-transactions-pagination a', function(event){
+				event.preventDefault();
+				var item_code = $('#selected-item-code').text().trim();
+				var page = ($(this).attr('href') || '').split('page=')[1] || 1;
+				get_athena_transactions(item_code, page);
+			});
+
+			$(document).on('click', '#stock-ledger-pagination a', function(event){
+				event.preventDefault();
+				var item_code = $('#selected-item-code').text().trim();
+				var page = ($(this).attr('href') || '').split('page=')[1] || 1;
+				get_stock_ledger(item_code, page);
+			});
+
+			$(document).on('click', '#stock-reservations-pagination-1 a, #stock-reservations-pagination-2 a, #stock-reservations-pagination-3 a', function(event){
+				event.preventDefault();
+				var item_code = $('#selected-item-code').text().trim();
+				var page = ($(this).attr('href') || '').split('page=')[1] || 1;
+				get_stock_reservations(item_code, page);
 			});
 
 			$(document).on('submit', '.cancel-modal form', function(e){

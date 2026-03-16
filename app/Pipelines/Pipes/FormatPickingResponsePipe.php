@@ -47,12 +47,19 @@ class FormatPickingResponsePipe implements Pipe
         }
 
         $passable->pickingList = $list;
-        $passable->pagination = [
-            'total' => $paginatedData->total(),
+
+        $pagination = [
             'per_page' => $paginatedData->perPage(),
             'current_page' => $paginatedData->currentPage(),
-            'last_page' => $paginatedData->lastPage(),
         ];
+        if (method_exists($paginatedData, 'total')) {
+            $pagination['total'] = $paginatedData->total();
+            $pagination['last_page'] = $paginatedData->lastPage();
+        } else {
+            $pagination['has_more_pages'] = $paginatedData->hasMorePages();
+            $pagination['next_page_url'] = $paginatedData->nextPageUrl();
+        }
+        $passable->pagination = $pagination;
 
         return $next($passable);
     }

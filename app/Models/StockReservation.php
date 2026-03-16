@@ -10,34 +10,45 @@ class StockReservation extends Model
 {
     use HasFactory;
 
+    /** @var string */
     protected $connection = 'mysql';
 
+    /** @var string */
     protected $table = 'tabStock Reservation';
 
+    /** @var string */
     protected $primaryKey = 'name';
 
     public $timestamps = false;
 
+    /** @var string */
     protected $keyType = 'string';
 
+    /** @var array<int, string> */
     protected $fillable = [
         'status', 'reserve_qty', 'consumed_qty', 'modified', 'modified_by',
     ];
 
+    /** In-house reservation type. PHP 8.3: can use `public const string TYPE_IN_HOUSE`. */
+    public const TYPE_IN_HOUSE = 'In-house';
+
+    /** Active statuses for reservations. PHP 8.3: can use `public const array ACTIVE_STATUSES`. */
+    public const ACTIVE_STATUSES = ['Active', 'Partially Issued'];
+
     /**
      * Scope for active reservations (Active or Partially Issued).
      */
-    public function scopeActive($query): Builder
+    public function scopeActive(Builder $query): Builder
     {
-        return $query->whereIn('status', ['Active', 'Partially Issued']);
+        return $query->whereIn('status', self::ACTIVE_STATUSES);
     }
 
     /**
      * Scope for In-house type.
      */
-    public function scopeInHouse($query): Builder
+    public function scopeInHouse(Builder $query): Builder
     {
-        return $query->where('type', 'In-house');
+        return $query->where('type', self::TYPE_IN_HOUSE);
     }
 
     /**
@@ -56,7 +67,7 @@ class StockReservation extends Model
         return (float) static::query()
             ->forItemAndWarehouse($itemCode, $warehouse)
             ->inHouse()
-            ->where('status', 'Active')
+            ->where('status', self::ACTIVE_STATUSES[0])
             ->sum('reserve_qty');
     }
 }

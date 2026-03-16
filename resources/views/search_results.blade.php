@@ -14,7 +14,7 @@
 							<div class="container-fluid d-block d-xl-none">
 								<div class="row mb-2">
 									<div class="col-7">
-										<p class="card-title mt-1 font-weight-bold" style="font-size: 8pt">
+										<p class="card-title mt-1 font-weight-bold" style="font-size: 8pt" data-search-summary>
 											@if(request('searchString') && request('searchString') != '') 
 												Search result(s) for "{{ request('searchString') }}"
 											@else
@@ -64,7 +64,7 @@
 												</p>
 											</button>
 
-											<p class="card-title mt-2 ml-0 ml-xl-2 d-none d-xl-inline" style="font-size: 14px;">
+											<p class="card-title mt-2 ml-0 ml-xl-2 d-none d-xl-inline" style="font-size: 14px;" data-search-summary>
 												@if(request('searchString') && request('searchString') != '') 
 													Search result(s) for "{{ request('searchString') }}"
 												@else
@@ -1120,8 +1120,22 @@
 		});
 
 		$(document).on('click', '#search-results-pagination a', function(event) {
+			// Vue-driven search results intercept pagination via delegated click + AJAX.
+			// Avoid triggering a full page reload when the Vue app is present.
+			if (document.getElementById('search-results-app')) {
+				return;
+			}
+
 			event.preventDefault();
-			var page = $(this).attr('href').split('page=')[1];
+			var href = $(this).attr('href') || '';
+			var page = null;
+			try {
+				var linkUrl = href.startsWith('http') ? new URL(href) : new URL(href, window.location.origin);
+				page = linkUrl.searchParams.get('page');
+			} catch (_) {
+				page = null;
+			}
+			if (!page) return;
 
 			// Get the current URL and parameters
 			var url = new URL(window.location.href);

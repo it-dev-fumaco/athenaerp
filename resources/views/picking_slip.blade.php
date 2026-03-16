@@ -35,7 +35,8 @@
 								<div class="col-xl-2 col-lg-3 col-md-3">
 									<div class="text-center m-1">
 										<span class="font-weight-bold">TOTAL RESULT:</span>
-										<span class="badge bg-info" style="font-size: 12pt;">@{{ ps_filtered.length }}</span>
+										<span class="badge bg-info" style="font-size: 12pt;">@{{ (searchText || fltr) ? (ps | filter:searchText | filter:fltr).length : totalResults }}</span>
+										<span class="small text-muted" ng-if="(searchText || fltr) && totalResults > 0">(of @{{ totalResults }})</span>
 									</div>
 								</div>
 							</div>
@@ -60,7 +61,7 @@
 										</tr>
 									</thead>
 									<tbody>
-										<tr ng-repeat="x in ps_filtered = (ps | filter:searchText | filter: fltr) | limitTo:limit">
+										<tr ng-repeat="x in ps_filtered = (ps | filter:searchText | filter: fltr)">
 											<td class="text-center">
 												<span class="d-block font-weight-bold">@{{ x.creation }}</span>
 												<small class="d-block mt-1">@{{ x.name }}</small>
@@ -128,14 +129,14 @@
 <div class="modal fade" id="ste-modal">
 	<form method="POST" action="/submit_transaction">
 		@csrf
-		<div class="modal-dialog modal-generic-narrow" style="min-width: 35%; max-width: 95%;"></div>
+		<div class="modal-dialog"></div>
 	</form>
 </div>
 
 <div class="modal fade" id="ps-modal">
 	<form method="POST" action="/checkout_picking_slip">
 		@csrf
-		<div class="modal-dialog modal-generic-narrow" style="min-width: 35%; max-width: 95%;"></div>
+		<div class="modal-dialog"></div>
 	</form>
 </div>
 
@@ -241,8 +242,12 @@
 					$('#ps-modal').modal('show');
 					$('#ps-modal .modal-dialog').html(response);
 				},
-				error: (error) => {
-					showNotification('danger', 'An error occured. Please try again.', 'fa fa-info')
+				error: (jqXHR) => {
+					var msg = 'An error occurred. Please try again.';
+					if (jqXHR.responseJSON) {
+						msg = jqXHR.responseJSON.modal_message || jqXHR.responseJSON.message || jqXHR.responseJSON.exc || msg;
+					}
+					showNotification('danger', msg, 'fa fa-info');
 				}
 			});
 		});
@@ -319,6 +324,11 @@
 					},
 					error: function(jqXHR, textStatus, errorThrown) {
 						$('#ste-modal form button').removeAttr('disabled');
+						var msg = 'An error occurred. Please try again.';
+						if (jqXHR.responseJSON) {
+							msg = jqXHR.responseJSON.message || jqXHR.responseJSON.modal_message || jqXHR.responseJSON.exc || msg;
+						}
+						showNotification("danger", msg, "fa fa-info");
 					}
 				});
 			}
@@ -424,7 +434,8 @@
         $scope.currentPage = 1;
         $scope.hasMore = true;
         $scope.custom_loading_spinner_1 = false;
-		$scope.fltr = "";
+        $scope.fltr = "";
+        $scope.totalResults = 0;
 
         $http.get("/get_parent_warehouses").then(function(response) {
             $scope.wh = response.data.wh;
@@ -435,10 +446,12 @@
                 $scope.ps = [];
                 $scope.currentPage = 1;
                 $scope.hasMore = true;
+                $scope.totalResults = 0;
             }
             $scope.custom_loading_spinner_1 = true;
 
-            $http.get("/view_deliveries?arr=1&page=" + $scope.currentPage + "&search=" + encodeURIComponent($scope.fltr)).then(function(response) {
+            // Use a higher per_page so Deliveries shows the full dataset by default.
+            $http.get("/view_deliveries?arr=1&page=" + $scope.currentPage + "&per_page=200&search=" + encodeURIComponent($scope.fltr)).then(function(response) {
                 if (response.data.picking.length > 0) {
                     $scope.ps = $scope.ps.concat(response.data.picking);
                     $scope.currentPage++;
@@ -446,6 +459,9 @@
                 } else {
                     $scope.hasMore = false;
                 }
+                $scope.totalResults = (response.data.pagination && typeof response.data.pagination.total === 'number')
+                    ? response.data.pagination.total
+                    : $scope.ps.length;
                 $scope.custom_loading_spinner_1 = false;
             }).catch(function() {
                 $scope.custom_loading_spinner_1 = false;

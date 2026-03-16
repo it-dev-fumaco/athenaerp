@@ -1,6 +1,6 @@
 <div id="preview-loop" class="row">
     <div id="top-btn-container" style="z-index: 10;">
-        <a href="/generate_multiple_brochures?pdf=1" target="_blank" class="btn-ctrl" style="display: block;"><i class="fas fa-print"></i></a>
+        <button type="button" class="btn-ctrl" id="brochure-preview-print-pdf" aria-label="Print brochure as PDF" style="display: block;"><i class="fas fa-print"></i></button>
     </div>
     <div class="col-3">
         <h3 style="text-align: center; font-weight: bolder; text-transform: uppercase; margin: 15px 0 8px 0 !important; letter-spacing: 0.5px; font-size: 20px;">Product Brochure</h3>
@@ -44,7 +44,8 @@
                                             if (isset($images['image'.$img]['filepath']) && $images['image'.$img]['filepath']) {
                                                 $imgActual = null;
                                                 $imgTemp = 'd-none';
-                                                $imgSrc = $images['image'.$img]['filepath'];
+                                                $filepath = $images['image'.$img]['filepath'];
+                                                $imgSrc = Str::startsWith($filepath, 'http') ? $filepath : Storage::disk('upcloud')->url($filepath);
                                                 $imgId = $images['image'.$img]['id'];
                                             }
                                         @endphp
@@ -135,7 +136,8 @@
                                     <div class="d-none">
                                         <input type="text" id="item-image-order" name="image_idx" placeholder="image_idx">
                                         <input type="text" name="project" value="{{ $project }}" placeholder="project">
-                                        <input type="text" name="item_code" value="" placeholder="item_code">
+                                        <input type="text" name="item_code" id="item-code-upload-form" value="" placeholder="item_code">
+                                        <input type="hidden" name="existing" value="0">
                                     </div>
                                     <div class="row">
                                         <div class="col-12 p-2">
@@ -398,12 +400,20 @@
 </style>
 
 <script>
+    var currentBrochureImageIdx = null;
+    var currentBrochureItemCode = null;
+
     $(document).on('click', '.upload-image-placeholder', function(e) {
         e.preventDefault();
-        $('#item-image-order').val($(this).data('idx'));
-        $('#item-image-order-1').val($(this).data('idx'));
+        var itemCode = $(this).data('item-code');
+        var imageIdx = $(this).data('idx');
+        currentBrochureImageIdx = imageIdx;
+        currentBrochureItemCode = itemCode;
+        $('#item-image-order').val(imageIdx);
+        $('#item-image-order-1').val(imageIdx);
         $('#item-image-container-id').val($(this).attr('id'));
-        $('#item-code-selected').val($(this).data('item-code'));
+        $('#item-code-selected').val(itemCode);
+        $('#item-code-upload-form').val(itemCode);
         $('#select-file-modal').modal('show');
     });
 
@@ -441,14 +451,49 @@
 
     $('#image-upload-form').submit(function (e) {
         e.preventDefault();
+        var $form = $(this);
+        var projectVal = $.trim($form.find('input[name="project"]').val());
+        if (!projectVal) {
+            showNotification("danger", "Project name is required.", "fa fa-info");
+            return;
+        }
+        var imageIdx = $.trim($form.find('input[name="image_idx"]').val() || '');
+        if (!imageIdx) {
+            // Defensive: ensure image slot is set (modal might be opened without clicking placeholder)
+            imageIdx = $.trim($('#item-image-order').val() || '');
+            $form.find('input[name="image_idx"]').val(imageIdx);
+        }
+        if (!imageIdx && currentBrochureImageIdx) {
+            imageIdx = String(currentBrochureImageIdx);
+            $form.find('input[name="image_idx"]').val(imageIdx);
+        }
+        if (!imageIdx) {
+            showNotification("danger", "Image slot (image_idx) is required. Click a placeholder image slot first.", "fa fa-info");
+            return;
+        }
+        if (!$form.find('input[name="selected-file"]')[0].files.length) {
+            showNotification("danger", "No image was provided. Please select a file to upload.", "fa fa-info");
+            return;
+        }
+
+        // Ensure the field is present in the multipart payload even if DOM state is odd.
+        var formData = new FormData(this);
+        formData.set('image_idx', imageIdx);
+        if (currentBrochureItemCode) {
+            formData.set('item_code', currentBrochureItemCode);
+        }
 
         $.ajax({
             type: 'POST',
-            url: $(this).attr('action'),
-            data:  new FormData(this),
+            url: $form.attr('action'),
+            data: formData,
             contentType: false,
             cache: false,
             processData: false,
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
             success: function(response){
                 if(response.status == 0){
                     showNotification("danger", response.message, "fa fa-info");
@@ -456,33 +501,100 @@
                     var item_image_id = $('#item-image-container-id').val();
                     $('#' + item_image_id).addClass('d-none');
                     $('#' + item_image_id + '-actual').removeClass('d-none');
-                    $('#' + item_image_id + '-image').attr('src', $('#img-preview').attr('src'));
+                    if (response.src) {
+                        $('#' + item_image_id + '-image').attr('src', response.src);
+                    } else {
+                        $('#' + item_image_id + '-image').attr('src', $('#img-preview').attr('src'));
+                    }
+                    if (response.id) {
+                        $('#' + item_image_id + '-actual').find('.remove-image-btn').attr('data-id', response.id).data('id', response.id);
+                    }
                     
                     $('#select-file-modal').modal('hide');
                 }
             },
+            error: function(jqXHR) {
+                var msg = 'Upload failed. Please try again.';
+                if (jqXHR.status === 422 && jqXHR.responseJSON) {
+                    msg = jqXHR.responseJSON.message || msg;
+                    if (jqXHR.responseJSON.errors) {
+                        var allErrors = [];
+                        $.each(jqXHR.responseJSON.errors, function(field, messages) {
+                            if (Array.isArray(messages)) { allErrors = allErrors.concat(messages); }
+                            else { allErrors.push(messages); }
+                        });
+                        if (allErrors.length) { msg = allErrors.join(' '); }
+                    }
+                }
+                showNotification("danger", msg, "fa fa-info");
+            }
         });
     });
 
     $('#image-upload-form-1').submit(function (e) {
         e.preventDefault();
+        var $form = $(this);
+        var imageIdx = $.trim($form.find('input[name="image_idx"]').val() || '');
+        if (!imageIdx) {
+            imageIdx = $.trim($('#item-image-order-1').val() || '');
+            $form.find('input[name="image_idx"]').val(imageIdx);
+        }
+        if (!imageIdx && currentBrochureImageIdx) {
+            imageIdx = String(currentBrochureImageIdx);
+            $form.find('input[name="image_idx"]').val(imageIdx);
+        }
+        if (!imageIdx) {
+            showNotification("danger", "Image slot (image_idx) is required. Click a placeholder image slot first.", "fa fa-info");
+            return;
+        }
+
+        // Ensure `image_idx` (and item_code) are included even if hidden inputs were reset.
+        var serialized = $form.serializeArray();
+        serialized.push({ name: 'image_idx', value: imageIdx });
+        if (currentBrochureItemCode) {
+            serialized.push({ name: 'item_code', value: currentBrochureItemCode });
+        }
+
         $.ajax({
             type: 'POST',
-            url: $(this).attr('action'),
-            data:  $(this).serialize(),
+            url: $form.attr('action'),
+            data: $.param(serialized),
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
             success: function(response){
                 if(response.status == 0){
                     showNotification("danger", response.message, "fa fa-info");
                 }else{
                     var item_image_id = $('#item-image-container-id').val();
-                    console.log($('#item-image-container-id').val());
                     $('#' + item_image_id).addClass('d-none');
                     $('#' + item_image_id + '-actual').removeClass('d-none');
-                    $('#' + item_image_id + '-image').attr('src', '{{ asset("") }}' + response.src);
+                    if (response.src) {
+                        $('#' + item_image_id + '-image').attr('src', response.src);
+                    }
+                    if (response.id) {
+                        $('#' + item_image_id + '-actual').find('.remove-image-btn').attr('data-id', response.id).data('id', response.id);
+                    }
                     
                     $('#select-file-modal').modal('hide');
                 }
             },
+            error: function(jqXHR) {
+                var msg = 'Upload failed. Please try again.';
+                if (jqXHR.status === 422 && jqXHR.responseJSON) {
+                    msg = jqXHR.responseJSON.message || msg;
+                    if (jqXHR.responseJSON.errors) {
+                        var allErrors = [];
+                        $.each(jqXHR.responseJSON.errors, function(field, messages) {
+                            if (Array.isArray(messages)) { allErrors = allErrors.concat(messages); }
+                            else { allErrors.push(messages); }
+                        });
+                        if (allErrors.length) { msg = allErrors.join(' '); }
+                    }
+                }
+                showNotification("danger", msg, "fa fa-info");
+            }
         });
     });
 
@@ -514,4 +626,20 @@
             }
         });
     });
+
+    // Fallback notifier for contexts where layout scripts aren't present.
+    function showNotification(color, message, icon){
+        if (typeof $ !== 'undefined' && typeof $.notify === 'function') {
+            $.notify({ icon: icon, message: message }, {
+                type: color,
+                timer: 500,
+                z_index: 1060,
+                placement: { from: 'top', align: 'center' }
+            });
+            return;
+        }
+
+        // Basic fallback so validation errors are still visible.
+        alert(message);
+    }
 </script>

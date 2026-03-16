@@ -4,7 +4,7 @@
         <div class="product-img position-relative">
             <a href="{{ $item['image'] }}" data-toggle="lightbox" data-gallery="{{ $item['item_code'] }}" data-title="{{ $item['item_code'] }}">
                 <img src="{{ $item['image'] }}" class="img-size-50" alt="Item image" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none');">
-                <span class="d-none reserved-no-image text-muted small d-flex align-items-center justify-content-center bg-light border rounded p-1 text-center" style="min-width: 50px; min-height: 50px; font-size: 0.65rem;">No image</span>
+                <img src="{{ Storage::disk('upcloud')->url('icon/no-img.png') }}" class="d-none reserved-no-image img-size-50 rounded" alt="" style="min-width: 50px; min-height: 50px; object-fit: contain; background: #f8f9fa;">
             </a>
         </div>
         <div class="product-info">

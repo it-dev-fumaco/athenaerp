@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Helpers\ApiResponse;
+use App\Models\AthenaTransaction;
 use App\Models\Bin;
 use App\Models\StockReservation;
 use App\Models\Warehouse;
@@ -144,56 +145,50 @@ class StockReservationController extends Controller
             ->orderBy('valid_until', 'desc')
             ->paginate(10, ['*'], 'tbl_2');
 
-        $stockEntryIssued = DB::table('tabStock Entry Detail as sted')
-            ->join('tabStock Entry as ste', 'ste.name', 'sted.parent')
-            ->where('sted.docstatus', 0)
-            ->where('sted.status', 'Issued')
-            ->where('sted.item_code', $itemCode)
-            ->whereNotIn('ste.purpose', ['Manufacture', 'Material Receipt'])
-            ->select('sted.parent', 'sted.s_warehouse', 'sted.qty', 'sted.uom', 'ste.owner', 'sted.session_user', 'sted.modified', 'ste.creation')
-            ->orderBy('sted.modified', 'desc')
-            ->get();
-
-        $athenaIssued = DB::table('tabAthena Transactions as at')
-            ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
-            ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-            ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
-            ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
-            ->where('dr.docstatus', 0)
-            ->where('ps.docstatus', '<', 2)
-            ->where('psi.status', 'Issued')
-            ->where('at.item_code', $itemCode)
-            ->where('psi.item_code', $itemCode)
-            ->where('at.status', 'Issued')
-            ->select('ps.name', 'at.source_warehouse', 'at.issued_qty', 'psi.stock_uom', 'ps.creation', 'ps.owner', 'psi.session_user', 'psi.modified')
-            ->orderBy('psi.modified', 'desc')
-            ->get();
-
         $pendingItems = [];
-        foreach ($stockEntryIssued as $issuedItem) {
-            $pendingItems[] = [
-                'id' => $issuedItem->parent,
-                'warehouse' => $issuedItem->s_warehouse,
-                'qty' => $issuedItem->qty * 1,
-                'uom' => $issuedItem->uom,
-                'owner' => $issuedItem->owner,
-                'issued_by' => $issuedItem->session_user,
-                'issued_at' => $issuedItem->modified,
-                'date' => $issuedItem->creation,
-            ];
-        }
+        if ($itemCode !== null && $itemCode !== '') {
+            $stockEntryIssued = DB::table('tabStock Entry Detail as sted')
+                ->join('tabStock Entry as ste', 'ste.name', 'sted.parent')
+                ->where('sted.docstatus', 0)
+                ->where('sted.status', 'Issued')
+                ->where('sted.item_code', $itemCode)
+                ->whereNotIn('ste.purpose', ['Manufacture', 'Material Receipt'])
+                ->select('sted.parent', 'sted.s_warehouse', 'sted.qty', 'sted.uom', 'ste.owner', 'sted.session_user', 'sted.modified', 'ste.creation')
+                ->orderBy('sted.modified', 'desc')
+                ->get();
 
-        foreach ($athenaIssued as $issuedItem) {
-            $pendingItems[] = [
-                'id' => $issuedItem->name,
-                'warehouse' => $issuedItem->source_warehouse,
-                'qty' => $issuedItem->issued_qty * 1,
-                'uom' => $issuedItem->stock_uom,
-                'owner' => $issuedItem->owner,
-                'issued_by' => $issuedItem->session_user,
-                'issued_at' => $issuedItem->modified,
-                'date' => $issuedItem->creation,
-            ];
+            $athenaIssued = AthenaTransaction::query()
+                ->joinPackingSlipDeliveryNote()
+                ->where('at.item_code', $itemCode)
+                ->select('ps.name', 'at.source_warehouse', 'at.issued_qty', 'psi.stock_uom', 'ps.creation', 'ps.owner', 'psi.session_user', 'psi.modified')
+                ->orderBy('psi.modified', 'desc')
+                ->get();
+
+            foreach ($stockEntryIssued as $issuedItem) {
+                $pendingItems[] = [
+                    'id' => $issuedItem->parent,
+                    'warehouse' => $issuedItem->s_warehouse,
+                    'qty' => $issuedItem->qty * 1,
+                    'uom' => $issuedItem->uom,
+                    'owner' => $issuedItem->owner,
+                    'issued_by' => $issuedItem->session_user,
+                    'issued_at' => $issuedItem->modified,
+                    'date' => $issuedItem->creation,
+                ];
+            }
+
+            foreach ($athenaIssued as $issuedItem) {
+                $pendingItems[] = [
+                    'id' => $issuedItem->name,
+                    'warehouse' => $issuedItem->source_warehouse,
+                    'qty' => $issuedItem->issued_qty * 1,
+                    'uom' => $issuedItem->stock_uom,
+                    'owner' => $issuedItem->owner,
+                    'issued_by' => $issuedItem->session_user,
+                    'issued_at' => $issuedItem->modified,
+                    'date' => $issuedItem->creation,
+                ];
+            }
         }
 
         $currentPage = LengthAwarePaginator::resolveCurrentPage();

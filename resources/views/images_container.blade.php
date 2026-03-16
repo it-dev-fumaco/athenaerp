@@ -7,13 +7,22 @@
     <div class="carousel-inner">
         @foreach ($images as $i => $image)
             <div class="carousel-item {{ $selected == $i ? 'active' : null }}" style="max-height: 860px;">
+                @php
+                    if (isset($image->image_url)) {
+                        $imageUrl = $image->image_url;
+                    } elseif (Illuminate\Support\Str::startsWith($image->image_path ?? '', ['http://', 'https://'])) {
+                        $imageUrl = $image->image_path;
+                    } else {
+                        $imageUrl = Storage::disk('upcloud')->url(str_contains($image->image_path ?? '', '/') ? $image->image_path : 'item-images/'.$image->image_path);
+                    }
+                @endphp
                 @if (!$image->original)
-                    <a href="/download_image/{{ $image->image }}" class="btn btn-primary download-img hidden-on-slide {{ $selected != $i ? 'd-none' : null }}" data-download="{{ $image->image_path }}"><i class="fa fa-download"></i> Download Image</a>
+                    <a href="{{ url('/download_image/' . rawurlencode($image->image)) }}" class="btn btn-primary download-img hidden-on-slide {{ $selected != $i ? 'd-none' : null }}" data-download="{{ $image->image_path }}"><i class="fa fa-download"></i> Download Image</a>
                 @else
-                    <a href="{{ Storage::disk('upcloud')->url('item-images/'.$image->image_path) }}" class="btn btn-primary hidden-on-slide {{ $selected != $i ? 'd-none' : null }}" download="{{ Storage::disk('upcloud')->url('item-images/'.$image->image_path) }}"><i class="fa fa-download"></i> Download Image</a>
+                    <a href="{{ $imageUrl }}" class="btn btn-primary hidden-on-slide {{ $selected != $i ? 'd-none' : null }}" download="{{ $imageUrl }}"><i class="fa fa-download"></i> Download Image</a>
                 @endif
                 <center>
-                    <img class="modal-img" src="{{ Storage::disk('upcloud')->url('item-images/'.$image->image_path) }}">
+                    <img class="modal-img" src="{{ $imageUrl }}">
                 </center>
                 <span class="font-italic hidden-on-slide" style="font-size: 8pt; font-weight: 600; position: absolute; right: 10px; bottom: 2px; z-index: 999">Uploaded By: {{ $image->modified_by ? $image->modified_by : $image->owner }} - {{ Carbon\Carbon::parse($image->creation)->format('M. d, Y h:i A') }}</span>
             </div>

@@ -36,8 +36,9 @@
 								</div>
 								<div class="col-xl-2 col-lg-3 col-md-3">
 									<div class="text-center m-1">
-									   <span class="font-weight-bold">TOTAL RESULT:</span>
-									   <span class="badge bg-info" style="font-size: 12pt;">@{{ return_filtered.length + mr_ret_filtered.length}}</span>
+										<span class="font-weight-bold">TOTAL RESULT:</span>
+										<span class="badge bg-info" style="font-size: 12pt;">@{{ (searchText || fltr) ? (mr_ret | filter:searchText | filter:fltr | orderBy: ['-transaction_date', 'status']).length : totalResults }}</span>
+										<span class="small text-muted" ng-if="(searchText || fltr) && totalResults > 0">(of @{{ totalResults }})</span>
 									</div>
 								</div>
 							</div>
@@ -127,13 +128,13 @@
 <div class="modal fade" id="ste-modal">
 	<form method="POST" id="transactions-form" action="/submit_sales_return">
 		@csrf
-		<div class="modal-dialog modal-generic-narrow" style="min-width: 35%; max-width: 95%;"></div>
+		<div class="modal-dialog"></div>
 	</form>
 </div>
 <div class="modal fade" id="dr-modal">
 	<form method="POST" action="/submit_dr_sales_return_api">
 		@csrf
-		<div class="modal-dialog modal-generic-narrow" style="min-width: 35%; max-width: 95%;"></div>
+		<div class="modal-dialog"></div>
 	</form>
 </div>
 
@@ -354,10 +355,12 @@
 			$scope.wh = response.data.wh;
         });
 		
+		$scope.totalResults = 0;
 		$scope.loadData = function(){
 			$scope.custom_loading_spinner_1 = true;
 			$http.get("/get_mr_sales_return").then(function (response) {
-				$scope.mr_ret = response.data.mr_return;
+				$scope.mr_ret = response.data.mr_return || [];
+				$scope.totalResults = $scope.mr_ret.length;
 				$scope.custom_loading_spinner_1 = false;
 			});
 		}

@@ -39,10 +39,28 @@ class DeliveryController extends Controller
             'allowedWarehouses' => $this->getAllowedWarehouseIds(),
             'search' => $request->search ?? '',
             'page' => (int) $request->input('page', 1),
+            'perPage' => (int) $request->input('per_page', config('delivery.per_page', 20)),
             'getWarehouseParentsBulk' => fn (array $warehouseNames) => $this->getWarehouseParentsBulk($warehouseNames),
         ];
 
         return $this->viewDeliveriesPipeline->run($passable);
+    }
+
+    /**
+     * Return total count of delivery list rows (same source as view_deliveries / picking list).
+     */
+    public function countDeliveries()
+    {
+        $passable = (object) [
+            'allowedWarehouses' => $this->getAllowedWarehouseIds(),
+            'search' => '',
+            'page' => 1,
+            'perPage' => 1,
+        ];
+
+        $total = $this->viewDeliveriesPipeline->getTotalCount($passable);
+
+        return response()->json($total);
     }
 
     public function viewPickingSlip()

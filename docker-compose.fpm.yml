@@ -1,0 +1,147 @@
+# AthenaERP - Nginx + PHP-FPM stack (standalone; no merge with base so port 80 goes to nginx only)
+# Use: docker compose -f docker-compose.fpm.yml up -d --build
+# App at http://localhost (port 80). If 80 in use, set FORWARD_HTTP_PORT=8080 in .env.
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.fpm
+      args:
+        COMPOSER_INSTALL_FLAGS: "--no-dev"
+        XDEBUG_ENABLED: "0"
+    image: athenaerp-app-fpm
+    container_name: athenaerp-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    env_file:
+      - .env
+    command: ["php-fpm"]
+    volumes:
+      - .:/var/www/html:delegated
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      DEBUGBAR_ENABLED: ${DEBUGBAR_ENABLED:-false}
+      APP_URL: ${APP_URL:-http://AthenaERP.local}
+      DB_CONNECTION: mysql
+      # Use .env DB_* so you can point to live DB (where tabWarehouse Users already exists). For local Docker MySQL only, set DB_HOST=mysql, DB_USERNAME=laravel, DB_PASSWORD=secret in .env.
+      DB_HOST: ${DB_HOST:-mysql}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_DATABASE: ${DB_DATABASE:-laravel}
+      DB_USERNAME: ${DB_USERNAME:-laravel}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      DB_HOST_1: ${DB_HOST_1:-mysql_mes}
+      DB_PORT_1: ${DB_PORT_1:-3306}
+      DB_DATABASE_1: ${DB_DATABASE_1:-}
+      DB_USERNAME_1: ${DB_USERNAME_1:-laravel}
+      DB_PASSWORD_1: ${DB_PASSWORD_1:-secret}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CACHE_STORE: ${CACHE_STORE:-redis}
+      SESSION_DRIVER: ${SESSION_DRIVER:-redis}
+      QUEUE_CONNECTION: ${QUEUE_CONNECTION:-sync}
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_USERNAME: null
+      MAIL_PASSWORD: null
+      MAIL_ENCRYPTION: null
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - athenaerp
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: athenaerp-nginx
+    restart: unless-stopped
+    ports:
+      - "${FORWARD_HTTP_PORT:-80}:80"
+    volumes:
+      - .:/var/www/html:ro,delegated
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    networks:
+      - athenaerp
+
+  mysql:
+    image: mysql:8.2
+    container_name: athenaerp-mysql
+    restart: unless-stopped
+    ports:
+      - "${FORWARD_DB_PORT:-3306}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_DATABASE: ${DB_DATABASE:-laravel}
+      # MySQL image forbids MYSQL_USER=root; always create a non-root app user
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+    volumes:
+      - athenaerp-mysql:/var/lib/mysql
+      - ./docker/mysql/conf.d/99-performance.cnf:/etc/mysql/conf.d/99-performance.cnf:ro
+    healthcheck:
+      test: ["CMD", "sh", "-c", "mysqladmin ping -h localhost -u root -p\"$$MYSQL_ROOT_PASSWORD\""]
+      retries: 10
+      interval: 5s
+      timeout: 5s
+      start_period: 30s
+    networks:
+      - athenaerp
+
+  mysql_mes:
+    image: mysql:8.2
+    container_name: athenaerp-mysql-mes
+    restart: unless-stopped
+    ports:
+      - "${FORWARD_DB_PORT_MES:-3307}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD_1:-secret}
+      MYSQL_DATABASE: ${DB_DATABASE_1:-mes}
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: ${DB_PASSWORD_1:-secret}
+    volumes:
+      - athenaerp-mysql-mes:/var/lib/mysql
+      - ./docker/mysql/conf.d/99-performance.cnf:/etc/mysql/conf.d/99-performance.cnf:ro
+    healthcheck:
+      test: ["CMD", "sh", "-c", "mysqladmin ping -h localhost -u root -p\"$$MYSQL_ROOT_PASSWORD\""]
+      retries: 10
+      interval: 5s
+      timeout: 5s
+      start_period: 30s
+    networks:
+      - athenaerp
+
+  redis:
+    image: redis:7-alpine
+    container_name: athenaerp-redis
+    restart: unless-stopped
+    ports:
+      - "${FORWARD_REDIS_PORT:-6379}:6379"
+    volumes:
+      - athenaerp-redis:/data
+    networks:
+      - athenaerp
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: athenaerp-mailpit
+    restart: unless-stopped
+    ports:
+      - "${FORWARD_MAILPIT_PORT:-1025}:1025"
+      - "${FORWARD_MAILPIT_DASHBOARD:-8025}:8025"
+    networks:
+      - athenaerp
+
+networks:
+  athenaerp:
+    driver: bridge
+
+volumes:
+  athenaerp-mysql:
+  athenaerp-mysql-mes:
+  athenaerp-redis:

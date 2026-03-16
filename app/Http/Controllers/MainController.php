@@ -417,27 +417,100 @@ class MainController extends Controller
                 ->join('tabDelivery Note as dr', 'dri.parent', 'dr.name')
                 ->whereRaw(('dri.item_code = pi.parent_item'))
                 ->where('ps.docstatus', '<', 2)
-                ->where('ps.item_status', 'For Checking')
+                ->whereIn('ps.item_status', ['For Checking', 'Issued'])
                 ->where('psi.name', $id)
-                ->where('dri.docstatus', 0)
+                ->whereIn('dri.docstatus', [0, 1])
                 ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'dri.item_code', 'psi.description', 'psi.qty', 'psi.name as id', 'dri.warehouse', 'psi.status', 'dri.stock_uom', 'psi.qty', 'dri.name as dri_name', 'dr.reference as sales_order', 'dri.uom', 'ps.docstatus')
                 ->first();
         } else {
+            // Use leftJoin for dri/dr so we find the row even when no Delivery Note Item exists (matches list query).
             $q = PackingSlip::query()
                 ->from('tabPacking Slip as ps')
                 ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-                ->join('tabDelivery Note Item as dri', 'dri.parent', 'ps.delivery_note')
-                ->join('tabDelivery Note as dr', 'dri.parent', 'dr.name')
-                ->whereRaw(('dri.item_code = psi.item_code'))
+                ->leftJoin('tabDelivery Note Item as dri', function ($join) {
+                    $join->on('dri.parent', '=', 'ps.delivery_note')
+                        ->on('dri.item_code', '=', 'psi.item_code');
+                })
+                ->leftJoin('tabDelivery Note as dr', 'dri.parent', '=', 'dr.name')
                 ->where('ps.docstatus', '<', 2)
-                ->where('ps.item_status', 'For Checking')
                 ->where('psi.name', $id)
-                ->where('dri.docstatus', 0)
-                ->select('psi.barcode', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.name as id', 'dri.warehouse', 'psi.status', 'dri.stock_uom', 'psi.qty', 'dri.name as dri_name', 'dr.reference as sales_order', 'dri.uom', 'ps.docstatus')
+                ->select(
+                    'psi.barcode',
+                    'psi.status',
+                    'ps.name',
+                    'ps.delivery_note',
+                    'psi.item_code',
+                    'psi.description',
+                    'psi.qty',
+                    'psi.name as id',
+                    DB::raw('COALESCE(dri.warehouse, "") as warehouse'),
+                    'psi.status',
+                    DB::raw('COALESCE(dri.stock_uom, psi.stock_uom) as stock_uom'),
+                    DB::raw('COALESCE(dri.uom, psi.stock_uom) as uom'),
+                    'dri.name as dri_name',
+                    DB::raw('COALESCE(dr.reference, ps.sales_order) as sales_order'),
+                    'ps.docstatus'
+                )
                 ->first();
+
+            // Fallback 1: find by packing slip item only (no Delivery Note)
+            if (! $q) {
+                $q = PackingSlip::query()
+                    ->from('tabPacking Slip as ps')
+                    ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                    ->where('ps.docstatus', '<', 2)
+                    ->where('psi.name', $id)
+                    ->select(
+                        'psi.barcode',
+                        'psi.status',
+                        'ps.name',
+                        'ps.delivery_note',
+                        'psi.item_code',
+                        'psi.description',
+                        'psi.qty',
+                        'psi.name as id',
+                        DB::raw('"" as warehouse'),
+                        'psi.status as status',
+                        'psi.stock_uom',
+                        'psi.stock_uom as uom',
+                        DB::raw('NULL as dri_name'),
+                        'ps.sales_order as sales_order',
+                        'ps.docstatus'
+                    )
+                    ->first();
+            }
+
+            // Fallback 2: treat id as packing slip name (ps.name) and use first item (list may show ps.name in UI)
+            if (! $q) {
+                $q = PackingSlip::query()
+                    ->from('tabPacking Slip as ps')
+                    ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                    ->where('ps.docstatus', '<', 2)
+                    ->where('ps.name', $id)
+                    ->select(
+                        'psi.barcode',
+                        'psi.status',
+                        'ps.name',
+                        'ps.delivery_note',
+                        'psi.item_code',
+                        'psi.description',
+                        'psi.qty',
+                        'psi.name as id',
+                        DB::raw('"" as warehouse'),
+                        'psi.status as status',
+                        'psi.stock_uom',
+                        'psi.stock_uom as uom',
+                        DB::raw('NULL as dri_name'),
+                        'ps.sales_order as sales_order',
+                        'ps.docstatus'
+                    )
+                    ->orderBy('psi.idx')
+                    ->first();
+            }
         }
 
         if (! $q) {
+            Log::warning('getPsDetails: item not found', ['id' => $id, 'type' => $request->type]);
             return ApiResponse::modal(false, 'Not Found', 'Item not found. Please reload the page.', 422);
         }
 
@@ -653,36 +726,74 @@ class MainController extends Controller
     {
         $userGroup = Auth::user()->user_group;
 
-        $reqWhUser = str_replace('null', '', (string) $request->wh_user);
-        $reqWhUser = $reqWhUser !== '' ? $reqWhUser : null;
-        $reqSrcWh = str_replace('null', '', (string) $request->src_wh);
-        $reqSrcWh = $reqSrcWh !== '' ? $reqSrcWh : null;
-        $reqTrgWh = str_replace('null', '', (string) $request->trg_wh);
-        $reqTrgWh = $reqTrgWh !== '' ? $reqTrgWh : null;
-        $reqAthDates = str_replace('null', '', (string) $request->ath_dates);
-        $reqAthDates = $reqAthDates !== '' ? $reqAthDates : null;
+        $normalizeFilter = function ($value, $maxLength = 255) {
+            if ($value === null || ! is_scalar($value)) {
+                return null;
+            }
+            $value = trim(str_replace('null', '', (string) $value));
+            if ($value === '' || strlen($value) > $maxLength) {
+                return null;
+            }
+            return $value;
+        };
 
-        $logs = AthenaTransaction::query()
+        $reqWhUser = $normalizeFilter($request->input('wh_user'));
+        $reqSrcWh = $normalizeFilter($request->input('src_wh'));
+        $reqTrgWh = $normalizeFilter($request->input('trg_wh'));
+        $reqWarehouse = $normalizeFilter($request->input('warehouse')) ?? $normalizeFilter($request->input('warehouse_id'));
+        $reqAthDates = $normalizeFilter($request->input('ath_dates'), 100);
+
+        $dateFrom = null;
+        $dateTo = null;
+        if ($reqAthDates !== null && str_contains($reqAthDates, ' to ')) {
+            $dates = explode(' to ', $reqAthDates, 2);
+            $dateFrom = Carbon::parse(trim($dates[0]));
+            $dateTo = isset($dates[1]) ? Carbon::parse(trim($dates[1]))->endOfDay() : $dateFrom->copy()->endOfDay();
+        }
+
+        $query = AthenaTransaction::query()
             ->where('item_code', $itemCode)
-            ->where('status', 'Issued')
-            ->when($reqWhUser, function ($query) use ($request) {
-                return $query->where('warehouse_user', $request->wh_user);
+            ->where(function ($q) {
+                $q->where('status', 'Issued')->orWhereNull('status');
             })
-            ->when($reqSrcWh, function ($query) use ($request) {
-                return $query->where('source_warehouse', $request->src_wh);
+            ->when($reqWhUser !== null, function ($query) use ($reqWhUser) {
+                return $query->where('warehouse_user', $reqWhUser);
             })
-            ->when($reqTrgWh, function ($query) use ($request) {
-                return $query->where('target_warehouse', $request->trg_wh);
+            ->when($reqSrcWh !== null, function ($query) use ($reqSrcWh) {
+                return $query->where('source_warehouse', $reqSrcWh);
             })
-            ->when($reqAthDates, function ($query) use ($request) {
-                $dates = explode(' to ', $request->ath_dates);
-                $from = Carbon::parse($dates[0]);
-                $to = Carbon::parse($dates[1])->endOfDay();
+            ->when($reqTrgWh !== null, function ($query) use ($reqTrgWh) {
+                return $query->where('target_warehouse', $reqTrgWh);
+            })
+            ->when($reqWarehouse !== null, function ($query) use ($reqWarehouse) {
+                return $query->where(function ($q) use ($reqWarehouse) {
+                    $q->where('source_warehouse', $reqWarehouse)
+                        ->orWhere('target_warehouse', $reqWarehouse);
+                });
+            })
+            ->when($dateFrom !== null && $dateTo !== null, function ($query) use ($dateFrom, $dateTo) {
+                return $query->whereBetween('transaction_date', [$dateFrom, $dateTo]);
+            })
+            ->orderByRaw('creation IS NULL, creation desc')   // latest-created row first; NULLs last
+            ->orderByRaw('transaction_date IS NULL, transaction_date desc')
+            ->orderBy('name', 'desc');
 
-                return $query->whereBetween('transaction_date', [$from, $to]);
-            })
-            ->orderBy('transaction_date', 'desc')
-            ->paginate(15);
+        if (config('app.debug')) {
+            Log::debug('Athena transactions query', [
+                'sql' => $query->toSql(),
+                'bindings' => $query->getBindings(),
+                'filters' => [
+                    'src_wh' => $reqSrcWh,
+                    'trg_wh' => $reqTrgWh,
+                    'warehouse' => $reqWarehouse,
+                    'wh_user' => $reqWhUser,
+                    'date_from' => $dateFrom?->toIso8601String(),
+                    'date_to' => $dateTo?->toIso8601String(),
+                ],
+            ]);
+        }
+
+        $logs = $query->paginate(15);
 
         $productionLogs = collect($logs->items())->groupBy('purpose');
         $productionLogs = Arr::get($productionLogs, 'Material Transfer for Manufacture', []);
@@ -716,6 +827,43 @@ class MainController extends Controller
                 ->whereIn('name', $ids)
                 ->get()
                 ->keyBy('name');
+        }
+
+        // Batch-load session_user from child rows (Packing Slip Item, Stock Entry Detail, Delivery Note Item) for "Issued By" fallback when warehouse_user is empty
+        $childTableByRefType = [
+            'Packing Slip' => 'tabPacking Slip Item',
+            'Stock Entry' => 'tabStock Entry Detail',
+            'Delivery Note' => 'tabDelivery Note Item',
+        ];
+        $pairsByRefType = [];
+        foreach ($logs as $row) {
+            $refType = in_array($row->reference_type, $psRef) ? 'Packing Slip' : $row->reference_type;
+            if (! isset($childTableByRefType[$refType])) {
+                continue;
+            }
+            $pairsByRefType[$refType][$row->reference_parent.'|'.$row->reference_name] = [$row->reference_parent, $row->reference_name];
+        }
+        $childSessionUserMap = [];
+        foreach ($pairsByRefType as $refType => $pairs) {
+            $table = $childTableByRefType[$refType];
+            $uniquePairs = collect($pairs)->unique(fn ($p) => $p[0].'|'.$p[1])->values()->all();
+            if (empty($uniquePairs)) {
+                continue;
+            }
+            $query = DB::table($table)->select('parent', 'name', 'session_user');
+            $query->where(function ($q) use ($uniquePairs) {
+                foreach ($uniquePairs as [$parent, $name]) {
+                    $q->orWhere(function ($q2) use ($parent, $name) {
+                        $q2->where('parent', $parent)->where('name', $name);
+                    });
+                }
+            });
+            foreach ($query->get() as $r) {
+                $sessionUser = trim((string) ($r->session_user ?? ''));
+                if ($sessionUser !== '') {
+                    $childSessionUserMap[$r->parent.'|'.$r->name] = $sessionUser;
+                }
+            }
         }
 
         $list = [];
@@ -757,11 +905,16 @@ class MainController extends Controller
             $requestedBy = trim((string) (data_get($existingReferenceNo, 'owner') ?? ''));
             $requestedBy = $requestedBy !== '' ? $requestedBy : AthenaTransaction::EMPTY_USER_PLACEHOLDER;
 
+            // Issued By: Athena Transaction warehouse_user (session at insert), or fallback to reference child row session_user (e.g. Packing Slip Item)
             $issuedBy = trim((string) ($row->warehouse_user ?? ''));
-            if ($issuedBy === '' && $existingReferenceNo) {
-                $issuedBy = trim((string) (data_get($existingReferenceNo, 'modified_by') ?? ''));
+            if ($issuedBy === '') {
+                $childKey = $row->reference_parent.'|'.$row->reference_name;
+                $issuedBy = $childSessionUserMap[$childKey] ?? '';
             }
             $issuedBy = $issuedBy !== '' ? $issuedBy : AthenaTransaction::EMPTY_USER_PLACEHOLDER;
+
+            $requestedAt = data_get($existingReferenceNo, 'creation');
+            $issuedAt = $row->transaction_date;
 
             $list[] = [
                 'reference_name' => $row->reference_name,
@@ -772,13 +925,61 @@ class MainController extends Controller
                 'reference_type' => $row->purpose,
                 'issued_qty' => $row->issued_qty * 1,
                 'reference_no' => $row->reference_no,
-                'transaction_date' => $row->transaction_date,
                 'production_order' => Arr::get($productionOrders, $row->reference_parent),
                 'requested_by' => $requestedBy,
+                'requested_at' => $requestedAt,
                 'issued_by' => $issuedBy,
+                'issued_at' => $issuedAt,
                 'status' => $status,
                 'remarks' => $remarks,
             ];
+        }
+
+        $issuedSteNames = DB::table('tabAthena Transactions')
+            ->where('item_code', $itemCode)
+            ->where(function ($q) {
+                $q->where('status', 'Issued')->orWhereNull('status');
+            })
+            ->pluck('reference_parent')
+            ->unique()
+            ->values()
+            ->all();
+        if ($logs->currentPage() === 1) {
+            $draftSteRows = DB::table('tabStock Entry as ste')
+                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                ->where('ste.docstatus', 0)
+                ->where('sted.item_code', $itemCode)
+                ->whereNotIn('ste.name', $issuedSteNames ?: [''])
+                ->select('ste.name as ste_name', 'ste.creation', 'ste.owner', 'ste.modified_by', 'ste.purpose', 'ste.transfer_as', 'sted.s_warehouse', 'sted.t_warehouse', 'sted.qty', 'sted.name as reference_name', 'sted.transfer_qty')
+                ->orderByRaw('ste.creation desc')
+                ->limit(30)
+                ->get();
+            $draftBySte = $draftSteRows->groupBy('ste_name');
+            $draftList = [];
+            foreach ($draftBySte as $steName => $rows) {
+                $first = $rows->first();
+                $totalQty = $rows->sum(fn ($r) => (float) ($r->transfer_qty ?? $r->qty ?? 0));
+                $transferAs = $first->transfer_as ?? null;
+                $remarks = $first->purpose === 'Material Transfer' ? $transferAs : null;
+                $draftList[] = [
+                    'reference_name' => $first->reference_name,
+                    'item_code' => $itemCode,
+                    'reference_parent' => $steName,
+                    'source_warehouse' => $first->s_warehouse,
+                    'target_warehouse' => $first->t_warehouse,
+                    'reference_type' => $first->purpose ?? 'Stock Entry',
+                    'issued_qty' => $totalQty,
+                    'reference_no' => null,
+                    'production_order' => null,
+                    'requested_by' => trim((string) ($first->owner ?? '')) ?: AthenaTransaction::EMPTY_USER_PLACEHOLDER,
+                    'requested_at' => $first->creation,
+                    'issued_by' => AthenaTransaction::EMPTY_USER_PLACEHOLDER,
+                    'issued_at' => null,
+                    'status' => 'DRAFT',
+                    'remarks' => $remarks,
+                ];
+            }
+            $list = array_merge($draftList, $list);
         }
 
         $emptyUserPlaceholder = AthenaTransaction::EMPTY_USER_PLACEHOLDER;
@@ -949,11 +1150,13 @@ class MainController extends Controller
     public function getStockLedger(Request $request, $itemCode)
     {
         $warehouseUser = [];
-        if ($request->wh_user != '' and $request->wh_user != 'null') {
-            $userQry = WarehouseUsers::query()->where('full_name', 'LIKE', '%'.$request->wh_user.'%')->orWhere('wh_user', 'LIKE', '%'.$request->wh_user.'%')->first();
-
-            $warehouseUser = $userQry ? [$userQry->wh_user, $userQry->full_name] : [];
-            $warehouseUser = $warehouseUser ? $warehouseUser : [$request->wh_user];
+        if ($request->filled('wh_user') && $request->input('wh_user') !== 'null') {
+            $whUserInput = $request->input('wh_user');
+            $userQry = WarehouseUsers::query()
+                ->where('full_name', 'LIKE', '%'.$whUserInput.'%')
+                ->orWhere('wh_user', 'LIKE', '%'.$whUserInput.'%')
+                ->first();
+            $warehouseUser = $userQry ? [$userQry->wh_user, $userQry->full_name] : [$whUserInput];
         }
 
         $logs = StockLedgerEntry::query()
@@ -980,7 +1183,7 @@ class MainController extends Controller
             ->addSelect(DB::raw('(SELECT GROUP_CONCAT(sales_order_no) FROM `tabStock Entry` where name = sle.voucher_no) as ste_sales_order'))
             ->addSelect(DB::raw('(SELECT GROUP_CONCAT(DISTINCT purchase_order) FROM `tabPurchase Receipt Item` where parent = sle.voucher_no and item_code = sle.item_code) as pr_voucher_no'))
             ->addSelect('sle.voucher_type', 'sle.voucher_no', 'sle.warehouse', 'sle.actual_qty', 'sle.qty_after_transaction', 'sle.posting_date')
-            ->when($request->wh_user != '' and $request->wh_user != 'null', function ($query) use ($warehouseUser) {
+            ->when(! empty($warehouseUser), function ($query) use ($warehouseUser) {
                 return $query->whereIn(DB::raw('
                     (CASE
                         WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT IFNULL(session_user, modified_by) FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
@@ -989,10 +1192,10 @@ class MainController extends Controller
                         sle.modified_by
                     END)'), $warehouseUser);
             })
-            ->when($request->erp_wh != '' and $request->erp_wh != 'null', function ($query) use ($request) {
-                return $query->where('sle.warehouse', $request->erp_wh);
+            ->when($request->filled('erp_wh') && $request->input('erp_wh') !== 'null', function ($query) use ($request) {
+                return $query->where('sle.warehouse', $request->input('erp_wh'));
             })
-            ->when($request->erp_d != '' and $request->erp_d != 'null', function ($query) use ($request) {
+            ->when($request->filled('erp_d') && $request->input('erp_d') !== 'null', function ($query) use ($request) {
                 $dates = explode(' to ', $request->erp_d);
 
                 return $query->whereBetween(DB::raw('
@@ -2639,30 +2842,58 @@ class MainController extends Controller
         }
     }
 
-    public function downloadImage($webp)
+    public function downloadImage($file)
     {
-        if (SafePath::pathContainsTraversal($webp) || ! SafePath::pathUnderPrefix($webp, 'img')) {
-            return ApiResponse::failure('File not found', 404);
+        $path = is_string($file) ? rawurldecode(trim($file)) : '';
+        if ($path === '' || str_contains($path, '://')) {
+            abort(404, 'File not found');
+        }
+        $allowedPrefixes = ['img', 'item-images', 'items'];
+        if (SafePath::pathContainsTraversal($path) || ! collect($allowedPrefixes)->contains(fn ($prefix) => SafePath::pathUnderPrefix($path, $prefix))) {
+            abort(404, 'File not found');
         }
 
-        if (! Storage::disk('upcloud')->exists($webp)) {
-            return ApiResponse::failure('File not found', 404);
+        $disk = Storage::disk('upcloud');
+
+        // Prefer original JPEG/PNG when requesting a WebP so the user gets a standard image file
+        if (str_ends_with(strtolower($path), '.webp')) {
+            $basePath = substr($path, 0, -5);
+            foreach (['.jpg', '.jpeg', '.png'] as $ext) {
+                $candidatePath = $basePath.$ext;
+                if (SafePath::pathContainsTraversal($candidatePath)) {
+                    continue;
+                }
+                if (collect($allowedPrefixes)->contains(fn ($prefix) => SafePath::pathUnderPrefix($candidatePath, $prefix)) && $disk->exists($candidatePath)) {
+                    $contents = $disk->get($candidatePath);
+                    $safeName = SafePath::sanitizeSegment(basename($basePath));
+                    $downloadExt = in_array(strtolower($ext), ['.jpg', '.jpeg'], true) ? 'jpg' : 'png';
+                    $mime = $downloadExt === 'jpg' ? 'image/jpeg' : 'image/png';
+
+                    return Response::make($contents, 200, [
+                        'Content-Type' => $mime,
+                        'Content-Disposition' => 'attachment; filename="'.str_replace('"', '\\"', $safeName).'.'.$downloadExt.'"',
+                    ]);
+                }
+            }
         }
 
-        $contents = Storage::disk('upcloud')->get($webp);
+        if (! $disk->exists($path)) {
+            abort(404, 'File not found');
+        }
+
+        // Serve WebP as converted JPEG for download
+        $contents = $disk->get($path);
         $image = @imagecreatefromstring($contents);
-
         if (! $image) {
-            return ApiResponse::failure('Failed to convert the image', 500);
+            abort(500, 'WebP could not be converted to JPEG. The server may not support WebP, or the file may be invalid.');
         }
-
         ob_start();
         imagejpeg($image);
         $jpgData = ob_get_contents();
         ob_end_clean();
+        imagedestroy($image);
 
-        $name = explode('.', $webp)[0];
-        $safeName = SafePath::sanitizeSegment(basename($name));
+        $safeName = SafePath::sanitizeSegment(basename(pathinfo($path, PATHINFO_FILENAME)));
 
         return Response::make($jpgData, 200, [
             'Content-Type' => 'image/jpeg',

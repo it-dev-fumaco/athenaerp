@@ -30,10 +30,16 @@
                                             $img1Actual = $img1Temp = null;
                                             $img1Src = $img2Src = $img3Src = '#';
                                             $img1Id = $img2Id = $img3Id = null;
+                                            $imgSrcFor = function ($key) use ($images) {
+                                                if (empty($images[$key]['filepath'])) {
+                                                    return null;
+                                                }
+                                                return $images[$key]['url'] ?? Storage::disk('upcloud')->url($images[$key]['filepath']);
+                                            };
                                             if (isset($images['image1']['filepath']) && $images['image1']['filepath']) {
                                                 $img1Actual = null;
                                                 $img1Temp = 'd-none';
-                                                $img1Src = Storage::disk('upcloud')->url($images['image1']['filepath']);
+                                                $img1Src = $imgSrcFor('image1');
                                                 $img1Id = $images['image1']['id'];
                                             } else {
                                                 $img1Actual = 'd-none';
@@ -44,7 +50,7 @@
                                             if (isset($images['image2']['filepath']) && $images['image2']['filepath']) {
                                                 $img2Actual = null;
                                                 $img2Temp = 'd-none';
-                                                $img2Src = Storage::disk('upcloud')->url($images['image2']['filepath']);
+                                                $img2Src = $imgSrcFor('image2');
                                                 $img2Id = $images['image2']['id'];
                                             } else {
                                                 $img2Actual = 'd-none';
@@ -55,7 +61,7 @@
                                             if (isset($images['image3']['filepath']) && $images['image3']['filepath']) {
                                                 $img3Actual = null;
                                                 $img3Temp = 'd-none';
-                                                $img3Src = Storage::disk('upcloud')->url($images['image3']['filepath']);
+                                                $img3Src = $imgSrcFor('image3');
                                                 $img3Id = $images['image3']['id'];
                                             } else {
                                                 $img3Actual = 'd-none';
@@ -131,8 +137,15 @@
                                         @endif
                                         <table border="0" style="border-collapse: collapse; width: 100%; font-size: 11.5px; margin-top: 30px !important;">
                                             @foreach ($attributes as $val)
+                                            @php
+                                                $attributeCode = isset($val->attribute) ? trim((string) $val->attribute) : '';
+                                                $attributeLabel = isset($val->attr_name) ? trim((string) $val->attr_name) : '';
+                                                $normalizedLabel = ($attributeCode === 'Wattage' && strtoupper($attributeLabel) === 'BATTERY')
+                                                    ? 'Wattage'
+                                                    : (($attributeLabel !== '' ? $attributeLabel : $attributeCode));
+                                            @endphp
                                             <tr>
-                                                <td style="padding: 5px 0 5px 0 !important;width: 40%;">{{ $val->attr_name ? $val->attr_name : $val->attribute }}</td>
+                                                <td style="padding: 5px 0 5px 0 !important;width: 40%;">{{ $normalizedLabel }}</td>
                                                 <td style="padding: 5px 0 5px 0 !important;width: 60%;"><strong>{{ $val->attribute_value }}</strong></td>
                                             </tr>
                                             @endforeach
@@ -259,6 +272,7 @@
                                     <input type="hidden" id="item-image-order" name="image_idx">
                                     <input type="hidden" name="project" value="{{ $data['project'] }}">
                                     <input type="hidden" name="item_code" value="{{ $data['item_code'] }}">
+                                    <input type="hidden" name="existing" value="0">
                                     <div class="row">
                                         <div class="col-12 p-2">
                                             <small class="d-block text-center text-muted" style="font-size: 10pt;">Files Supported: JPEG, JPG, PNG</small>
@@ -570,7 +584,26 @@
     }
 </style>
 <script>
+    // Ensure notifier exists even if layout scripts/plugins differ on this page.
+    if (typeof window.showNotification !== 'function') {
+        window.showNotification = function(color, message, icon){
+            if (typeof $ !== 'undefined' && typeof $.notify === 'function') {
+                $.notify({ icon: icon, message: message }, {
+                    type: color,
+                    timer: 500,
+                    z_index: 1060,
+                    placement: { from: 'top', align: 'center' }
+                });
+                return;
+            }
+
+            alert(message);
+        };
+    }
+
     $(document).ready(function (){
+        var currentStandardBrochureImageIdx = null;
+
         $.ajaxSetup({
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -579,8 +612,10 @@
         
         $(document).on('click', '.upload-image-placeholder', function(e) {
             e.preventDefault();
-            $('#item-image-order').val($(this).data('idx'));
-            $('#item-image-order-1').val($(this).data('idx'));
+            var imageIdx = $(this).data('idx');
+            currentStandardBrochureImageIdx = imageIdx;
+            $('#item-image-order').val(imageIdx);
+            $('#item-image-order-1').val(imageIdx);
             $('#item-image-container-id').val($(this).attr('id'));
 
             $('#select-file-modal').modal('show');
@@ -625,21 +660,49 @@
 
         $('#image-upload-form').submit(function (e) {
             e.preventDefault();
+            var $form = $(this);
 
-            var projectVal = $('#brochure-project-name').length ? $('#brochure-project-name').val() : $(this).find('input[name="project"]').val();
-            $(this).find('input[name="project"]').val(projectVal || '');
-            if (!projectVal || !$.trim(projectVal)) {
-                showNotification("danger", "Please enter Project Name in the Input Details section first.", "fa fa-info");
+            var projectFromPage = $('#brochure-project-name').length ? $.trim($('#brochure-project-name').val()) : '';
+            var projectInForm = $form.find('input[name="project"]').val() || '';
+            var projectVal = projectFromPage || projectInForm;
+            $form.find('input[name="project"]').val(projectVal);
+            if (!projectVal) {
+                showNotification("danger", "Project name is required. Enter it in the Input Details section or ensure the form has a project value.", "fa fa-info");
+                return;
+            }
+
+            var imageIdx = $.trim($form.find('input[name="image_idx"]').val() || '');
+            if (!imageIdx) {
+                imageIdx = $.trim($('#item-image-order').val() || '');
+                $form.find('input[name="image_idx"]').val(imageIdx);
+            }
+            if (!imageIdx && currentStandardBrochureImageIdx) {
+                imageIdx = String(currentStandardBrochureImageIdx);
+                $form.find('input[name="image_idx"]').val(imageIdx);
+            }
+            if (!imageIdx) {
+                showNotification("danger", "Image slot (image_idx) is required. Click a placeholder image slot first.", "fa fa-info");
+                return;
+            }
+
+            var formData = new FormData(this);
+            formData.set('image_idx', imageIdx);
+            if (!$form.find('input[name="selected-file"]')[0].files.length) {
+                showNotification("danger", "No image was provided. Please select a file to upload.", "fa fa-info");
                 return;
             }
 
             $.ajax({
                 type: 'POST',
-                url: $(this).attr('action'),
-                data:  new FormData(this),
+                url: $form.attr('action'),
+                data: formData,
                 contentType: false,
                 cache: false,
                 processData: false,
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
                 success: function(response){
                     if(response.status == 0){
                         showNotification("danger", response.message, "fa fa-info");
@@ -647,15 +710,32 @@
                         var item_image_id = $('#item-image-container-id').val();
                         $('#' + item_image_id).addClass('d-none');
                         $('#' + item_image_id + '-actual').removeClass('d-none');
-                        $('#' + item_image_id + '-image').attr('src', $('#img-preview').attr('src'));
-                        
+                        if (response.src) {
+                            $('#' + item_image_id + '-image').attr('src', response.src);
+                        } else {
+                            $('#' + item_image_id + '-image').attr('src', $('#img-preview').attr('src'));
+                        }
+                        if (response.id) {
+                            $('#' + item_image_id + '-actual').find('.remove-image-btn').attr('data-id', response.id).data('id', response.id);
+                        }
+                        if (response.filename) {
+                            $('#' + item_image_id + '-actual').find('.remove-image-btn').attr('data-image-filename', response.filename);
+                        }
                         $('#select-file-modal').modal('hide');
                     }
                 },
                 error: function(jqXHR) {
                     var msg = 'Upload failed. Please try again.';
                     if (jqXHR.status === 422 && jqXHR.responseJSON) {
-                        msg = jqXHR.responseJSON.message || (jqXHR.responseJSON.errors && Object.values(jqXHR.responseJSON.errors).flat().shift()) || msg;
+                        msg = jqXHR.responseJSON.message || msg;
+                        if (jqXHR.responseJSON.errors) {
+                            var allErrors = [];
+                            $.each(jqXHR.responseJSON.errors, function(field, messages) {
+                                if (Array.isArray(messages)) { allErrors = allErrors.concat(messages); }
+                                else { allErrors.push(messages); }
+                            });
+                            if (allErrors.length) { msg = allErrors.join(' '); }
+                        }
                     }
                     showNotification("danger", msg, "fa fa-info");
                 }
@@ -664,18 +744,43 @@
 
         $('#image-upload-form-1').submit(function (e) {
             e.preventDefault();
+            var $form = $(this);
 
-            var projectVal = $('#brochure-project-name').length ? $('#brochure-project-name').val() : $(this).find('input[name="project"]').val();
-            $(this).find('input[name="project"]').val(projectVal || '');
-            if (!projectVal || !$.trim(projectVal)) {
-                showNotification("danger", "Please enter Project Name in the Input Details section first.", "fa fa-info");
+            var projectFromPage = $('#brochure-project-name').length ? $.trim($('#brochure-project-name').val()) : '';
+            var projectInForm = $form.find('input[name="project"]').val() || '';
+            var projectVal = projectFromPage || projectInForm;
+            $form.find('input[name="project"]').val(projectVal);
+            if (!projectVal) {
+                showNotification("danger", "Project name is required.", "fa fa-info");
                 return;
             }
 
+            var imageIdx = $.trim($form.find('input[name="image_idx"]').val() || '');
+            if (!imageIdx) {
+                imageIdx = $.trim($('#item-image-order-1').val() || '');
+                $form.find('input[name="image_idx"]').val(imageIdx);
+            }
+            if (!imageIdx && currentStandardBrochureImageIdx) {
+                imageIdx = String(currentStandardBrochureImageIdx);
+                $form.find('input[name="image_idx"]').val(imageIdx);
+            }
+            if (!imageIdx) {
+                showNotification("danger", "Image slot (image_idx) is required. Click a placeholder image slot first.", "fa fa-info");
+                return;
+            }
+
+            // Ensure `image_idx` is always present in payload.
+            var serialized = $form.serializeArray();
+            serialized.push({ name: 'image_idx', value: imageIdx });
+
             $.ajax({
                 type: 'POST',
-                url: $(this).attr('action'),
-                data:  $(this).serialize(),
+                url: $form.attr('action'),
+                data: $.param(serialized),
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
                 success: function(response){
                     if(response.status == 0){
                         showNotification("danger", response.message, "fa fa-info");
@@ -683,15 +788,30 @@
                         var item_image_id = $('#item-image-container-id').val();
                         $('#' + item_image_id).addClass('d-none');
                         $('#' + item_image_id + '-actual').removeClass('d-none');
-                        $('#' + item_image_id + '-image').attr('src', '{{ asset("") }}' + response.src);
-                        
+                        if (response.src) {
+                            $('#' + item_image_id + '-image').attr('src', response.src);
+                        }
+                        if (response.id) {
+                            $('#' + item_image_id + '-actual').find('.remove-image-btn').attr('data-id', response.id).data('id', response.id);
+                        }
+                        if (response.filename) {
+                            $('#' + item_image_id + '-actual').find('.remove-image-btn').attr('data-image-filename', response.filename);
+                        }
                         $('#select-file-modal').modal('hide');
                     }
                 },
                 error: function(jqXHR) {
                     var msg = 'Upload failed. Please try again.';
                     if (jqXHR.status === 422 && jqXHR.responseJSON) {
-                        msg = jqXHR.responseJSON.message || (jqXHR.responseJSON.errors && Object.values(jqXHR.responseJSON.errors).flat().shift()) || msg;
+                        msg = jqXHR.responseJSON.message || msg;
+                        if (jqXHR.responseJSON.errors) {
+                            var allErrors = [];
+                            $.each(jqXHR.responseJSON.errors, function(field, messages) {
+                                if (Array.isArray(messages)) { allErrors = allErrors.concat(messages); }
+                                else { allErrors.push(messages); }
+                            });
+                            if (allErrors.length) { msg = allErrors.join(' '); }
+                        }
                     }
                     showNotification("danger", msg, "fa fa-info");
                 }
@@ -728,20 +848,5 @@
                 }
             });
         });
-
-        function showNotification(color, message, icon){
-            $.notify({
-                icon: icon,
-                message: message
-            },{
-                type: color,
-                timer: 500,
-                z_index: 1060,
-                placement: {
-                    from: 'top',
-                    align: 'center'
-                }
-            });
-        }
     });
 </script>

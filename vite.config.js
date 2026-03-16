@@ -10,6 +10,11 @@ export default defineConfig({
     server: {
         cors: true,
     },
+    build: {
+        // Support Safari 12+ / iOS 12+ (e.g. iPad Air). es2019 avoids ?. and ?? which need Safari 13.1+
+        target: ['es2019', 'safari12'],
+        cssTarget: 'safari12',
+    },
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/brochure.js', 'resources/js/login.js'],

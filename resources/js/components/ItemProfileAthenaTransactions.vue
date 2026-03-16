@@ -8,7 +8,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
 
 const props = defineProps({
@@ -74,6 +74,11 @@ function onContainerClick(event) {
 function onRefresh() {
   load();
 }
+
+// When item changes, always load page 1 so recent transactions are shown (fix: avoid showing stale page from previous item)
+watch(() => props.itemCode, () => {
+  load();
+}, { immediate: false });
 
 onMounted(() => {
   load();

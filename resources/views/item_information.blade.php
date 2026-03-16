@@ -5,7 +5,7 @@
     $packageHeight = $itemDetails->package_height && $itemDetails->package_height > 0 ? trim($itemDetails->package_height).' '.$itemDetails->package_dimension_uom : '-';
     $weightPerUnit = $itemDetails->weight_per_unit && $itemDetails->weight_per_unit > 0 ? trim((float)$itemDetails->weight_per_unit).' '.$itemDetails->weight_uom : '-';
 @endphp
-<dl class="ml-3 {{ $packageWeight == '-' && $packageLength == '-' && $packageWidth == '-' && $packageHeight == '-' && $weightPerUnit == '-' ? 'd-none' : null }}">
+<dl class="ml-3">
     <dt style="font-size: 9pt;">Package Dimension</dt>
     <dd style="font-size: 8pt;" class="text-justify mb-2 pt-1">
         <p class="mb-1">

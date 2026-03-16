@@ -141,16 +141,95 @@ function invBadgeClass(inv) {
   return 'badge-success';
 }
 
+/**
+ * If the server or proxy returns the raw HTTP response as a string (e.g. "HTTP/1.0 200 OK ...\n\n{...}"),
+ * try to extract and parse the JSON body.
+ */
+function parseJsonFromResponse(value) {
+  if (value && typeof value === 'object') {
+    return value;
+  }
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const trimmed = value.trim();
+  const firstBrace = trimmed.indexOf('{');
+  if (firstBrace === -1) {
+    return null;
+  }
+  try {
+    return JSON.parse(trimmed.slice(firstBrace));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Keep the "Search result(s) for ..."" summary text in sync with the
+ * current searchString query parameter.
+ */
+function syncSearchSummaryFromUrl(url) {
+  if (typeof window === 'undefined') return;
+  const parsed = url.startsWith('http') ? new URL(url) : new URL(url, window.location.origin);
+  const searchString = parsed.searchParams.get('searchString') || '';
+  const summaryEls = document.querySelectorAll('[data-search-summary]');
+  const label = searchString
+    ? `Search result(s) for "${searchString}"`
+    : 'Item List';
+  summaryEls.forEach(el => {
+    el.textContent = label;
+  });
+}
+
+/**
+ * Update the search form fields to match the given search results URL so that
+ * subsequent pagination (buildSearchUrl) uses the same params.
+ */
+function syncFormFromUrl(url) {
+  const form = document.getElementById('search-form');
+  if (!form) return;
+  const parsed = url.startsWith('http') ? new URL(url) : new URL(url, window.location.origin);
+  parsed.searchParams.forEach((value, key) => {
+    const field = form.querySelector(`[name="${key}"]`);
+    if (!field) return;
+    if (field.type === 'checkbox') {
+      field.checked = value !== '' && value !== 'off' && value !== '0';
+    } else {
+      field.value = value;
+    }
+  });
+
+  // Keep the visible "Hide out of stock" toggle (cb-2 / iCheck) in sync with
+  // the hidden check_qty field so users don't need to manually uncheck it
+  // before seeing updated search results.
+  const checkQty = parsed.searchParams.get('check_qty');
+  const hideOutOfStockCheckbox = form.querySelector('#cb-2');
+  if (hideOutOfStockCheckbox && typeof window !== 'undefined' && window.$ && typeof window.$(hideOutOfStockCheckbox).iCheck === 'function') {
+    const shouldHideOutOfStock = !checkQty || checkQty === 'on';
+    const $cb2 = window.$(hideOutOfStockCheckbox);
+    if (shouldHideOutOfStock) {
+      $cb2.iCheck('check');
+    } else {
+      $cb2.iCheck('uncheck');
+    }
+  }
+
+  syncSearchSummaryFromUrl(url);
+}
+
 async function loadUrl(url) {
   if (!url) return;
   loading.value = true;
   currentFetchUrl.value = url;
   try {
     const { data } = await axios.get(url, { headers: { Accept: 'application/json' } });
-    if (data && Array.isArray(data.data) && data.meta) {
-      apiData.value = data;
+    const parsed = parseJsonFromResponse(data);
+    if (parsed && Array.isArray(parsed.data) && parsed.meta) {
+      apiData.value = parsed;
+      syncFormFromUrl(url);
     } else {
-      initialHtml.value = typeof data === 'string' ? data : '';
+      // Only show initial HTML fallback; never show raw response text (headers + body)
+      initialHtml.value = typeof window !== 'undefined' && window.__SEARCH_RESULTS_INITIAL_HTML__ ? window.__SEARCH_RESULTS_INITIAL_HTML__ : '';
       apiData.value = null;
     }
   } catch (_) {
@@ -160,24 +239,35 @@ async function loadUrl(url) {
   }
 }
 
+/**
+ * Build search results URL from the current search form so pagination always uses
+ * the current search/filter state (avoids stale currentFetchUrl after a new search).
+ */
+function buildSearchUrl(page = 1) {
+  const form = document.getElementById('search-form');
+  if (!form) {
+    const base = currentFetchUrl.value || window.location.href;
+    const url = base.startsWith('http') ? new URL(base) : new URL(base, window.location.origin);
+    url.searchParams.set('page', String(page));
+    return url.toString();
+  }
+  const action = form.getAttribute('action') || '/search_results';
+  const formData = new FormData(form);
+  const params = new URLSearchParams(formData);
+  params.set('page', String(page));
+  return action + (action.includes('?') ? '&' : '?') + params.toString();
+}
+
 function goToPage(page) {
   const p = Math.max(1, Math.min(page, apiData.value?.meta?.last_page || 1));
-  const base = currentFetchUrl.value || window.location.href;
-  const url = base.startsWith('http') ? new URL(base) : new URL(base, window.location.origin);
-  url.searchParams.set('page', String(p));
-  loadUrl(url.toString());
+  loadUrl(buildSearchUrl(p));
 }
 
 function handleFormSubmit(event) {
   const form = event.target;
   if (!form || form.id !== 'search-form') return;
   event.preventDefault();
-  const action = form.getAttribute('action') || '/search_results';
-  const formData = new FormData(form);
-  const params = new URLSearchParams(formData);
-  params.set('page', '1');
-  const url = action + (action.includes('?') ? '&' : '?') + params.toString();
-  loadUrl(url);
+  loadUrl(buildSearchUrl(1));
 }
 
 function handleDocumentClick(event) {
@@ -192,6 +282,9 @@ function handleDocumentClick(event) {
 }
 
 onMounted(() => {
+  if (!currentFetchUrl.value && typeof window !== 'undefined' && window.location.pathname.indexOf('search_results') !== -1) {
+    currentFetchUrl.value = window.location.href;
+  }
   const form = document.getElementById('search-form');
   if (form) form.addEventListener('submit', handleFormSubmit);
   document.addEventListener('click', handleDocumentClick, true);

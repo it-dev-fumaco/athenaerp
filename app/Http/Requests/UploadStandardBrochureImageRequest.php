@@ -9,6 +9,15 @@ class UploadStandardBrochureImageRequest extends ApiFormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        // Normalize "existing" so validation rules work when form omits it (e.g. upload-new-image form)
+        $input = $this->all();
+        if (! array_key_exists('existing', $input)) {
+            $this->merge(['existing' => 0]);
+        }
+    }
+
     public function rules(): array
     {
         $allowed = implode(',', ['jpg', 'jpeg', 'png', 'webp']);
@@ -26,7 +35,10 @@ class UploadStandardBrochureImageRequest extends ApiFormRequest
     public function messages(): array
     {
         return [
-            'selected-file.required_unless' => 'No image was provided.',
+            'project.required' => 'Project name is required.',
+            'item_code.required' => 'Item code is required.',
+            'image_idx.required' => 'Image slot (image_idx) is required.',
+            'selected-file.required_unless' => 'No image was provided. Please select a file to upload.',
             'selected-file.mimes' => 'Sorry, only .jpeg, .jpg, .png and .webp files are allowed.',
             'selected-file.max' => 'The image may not be greater than 10 MB.',
         ];

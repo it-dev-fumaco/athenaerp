@@ -4,6 +4,11 @@ FROM php:8.3-cli-bookworm
 ARG WWWGROUP=1000
 ARG WWWUSER=1000
 ARG NODE_VERSION=20
+# Set to 0 for production-like performance (disables Xdebug and avoids extension load)
+ARG XDEBUG_ENABLED=1
+# OPcache revalidate_freq: 0=always (production), 2=every 2s (dev). validate_timestamps: 0=off in production
+ARG OPCACHE_REVALIDATE_FREQ=2
+ARG OPCACHE_VALIDATE_TIMESTAMPS=1
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
@@ -17,11 +22,12 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     libgd-dev \
+    libwebp-dev \
     libldap2-dev \
     libicu-dev \
     unzip \
     zip \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu \
     && docker-php-ext-install -j$(nproc) \
         pdo_mysql \
@@ -32,8 +38,9 @@ RUN apt-get update && apt-get install -y \
         intl \
         opcache \
         ldap \
-    && pecl install redis xdebug \
-    && docker-php-ext-enable redis xdebug \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && ( [ "$XDEBUG_ENABLED" = "0" ] || ( pecl install xdebug && docker-php-ext-enable xdebug ) ) \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Composer
@@ -45,19 +52,26 @@ RUN echo "memory_limit=256M" >> /usr/local/etc/php/conf.d/app.ini \
     && echo "post_max_size=100M" >> /usr/local/etc/php/conf.d/app.ini \
     && echo "variables_order=EGPCS" >> /usr/local/etc/php/conf.d/app.ini
 
-# Xdebug: connect back to host (Cursor/VS Code on port 9003)
-RUN echo "xdebug.mode=debug" > /usr/local/etc/php/conf.d/xdebug.ini \
+# Xdebug: only when XDEBUG_ENABLED=1 (Cursor/VS Code on port 9003). Disable for performance.
+ARG XDEBUG_ENABLED
+RUN if [ "$XDEBUG_ENABLED" = "1" ]; then \
+    echo "xdebug.mode=debug" > /usr/local/etc/php/conf.d/xdebug.ini \
     && echo "xdebug.client_host=host.docker.internal" >> /usr/local/etc/php/conf.d/xdebug.ini \
     && echo "xdebug.client_port=9003" >> /usr/local/etc/php/conf.d/xdebug.ini \
     && echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/xdebug.ini \
-    && echo "xdebug.log_level=0" >> /usr/local/etc/php/conf.d/xdebug.ini
+    && echo "xdebug.log_level=0" >> /usr/local/etc/php/conf.d/xdebug.ini; \
+    fi
 
-# OPcache: cache compiled PHP (faster page loads with volume mount)
+# OPcache: cache compiled PHP. Tune via build-args for production (revalidate_freq=0, validate_timestamps=0).
+ARG OPCACHE_REVALIDATE_FREQ
+ARG OPCACHE_VALIDATE_TIMESTAMPS
 RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini \
     && echo "opcache.memory_consumption=128" >> /usr/local/etc/php/conf.d/opcache.ini \
-    && echo "opcache.interned_strings_buffer=8" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.interned_strings_buffer=16" >> /usr/local/etc/php/conf.d/opcache.ini \
     && echo "opcache.max_accelerated_files=10000" >> /usr/local/etc/php/conf.d/opcache.ini \
-    && echo "opcache.revalidate_freq=2" >> /usr/local/etc/php/conf.d/opcache.ini
+    && echo "opcache.revalidate_freq=${OPCACHE_REVALIDATE_FREQ}" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.validate_timestamps=${OPCACHE_VALIDATE_TIMESTAMPS}" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.fast_shutdown=1" >> /usr/local/etc/php/conf.d/opcache.ini
 
 WORKDIR /var/www/html
 

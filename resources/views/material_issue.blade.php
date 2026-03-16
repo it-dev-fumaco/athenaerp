@@ -34,8 +34,9 @@
 								</div>
 								<div class="col-xl-2 col-lg-3 col-md-3">
 									<div class="text-center m-1">
-									   <span class="font-weight-bold">TOTAL RESULT:</span>
-									   <span class="badge bg-info" style="font-size: 12pt;">@{{ mi_filtered.length }}</span>
+										<span class="font-weight-bold">TOTAL RESULT:</span>
+										<span class="badge bg-info" style="font-size: 12pt;">@{{ (searchText || fltr) ? mi_filtered.length : totalResults }}</span>
+										<span class="small text-muted" ng-if="(searchText || fltr) && totalResults > 0">(of @{{ totalResults }})</span>
 									</div>
 								</div>
 							</div>
@@ -138,7 +139,7 @@
 <div class="modal fade" id="ste-modal">
 	<form method="POST" action="/submit_transaction">
 		@csrf
-		<div class="modal-dialog modal-generic-narrow" style="min-width: 35%; max-width: 95%;"></div>
+		<div class="modal-dialog"></div>
 	</form>
 </div>
 <div class="modal fade" id="cancel-ste-modal">
@@ -307,10 +308,12 @@
 			$scope.wh = response.data.wh;
 		});
 		
+		$scope.totalResults = 0;
 		$scope.loadData = function(){
 			$scope.custom_loading_spinner = true;
 			$http.get("/material_issue?arr=1").then(function (response) {
-				$scope.mi = response.data.records;
+				$scope.mi = response.data.records || [];
+				$scope.totalResults = $scope.mi.length;
 				$scope.custom_loading_spinner = false;
 			});
 		}

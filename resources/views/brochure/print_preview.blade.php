@@ -795,7 +795,7 @@
                         }
                     },
                     error: function(xhr) {
-                        if (xhr && xhr.status === 401) {
+                        if (xhr && (xhr.status === 401 || xhr.status === 404)) {
                             var fallbackLink = document.createElement('a');
                             fallbackLink.href = '{{ Storage::disk('upcloud')->url('brochures') }}/' + projectEncoded + '/' + fileEncoded;
                             fallbackLink.download = file;
