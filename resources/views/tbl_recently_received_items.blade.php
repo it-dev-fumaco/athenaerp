@@ -13,17 +13,39 @@
     </tr>
     @forelse ($list as $item)
         @php
-            if($item->image){
+            if ($item->image) {
                 $file = $item->image;
-            }else if(isset($itemImage[$item->item_code])){
+            } elseif (isset($itemImage[$item->item_code])) {
                 $file = $itemImage[$item->item_code][0]->image_path;
-            }else{
-                $file = 'icon/no-img.png';
+            } else {
+                $file = null;
             }
 
-            $isNoImg = ($file === 'icon/no-img.png');
-            $img = $isNoImg ? $file : "/img/".$file;
-            $imgWebp = $isNoImg ? null : "/img/".explode('.', $file)[0].'.webp';
+            $disk = Storage::disk('upcloud');
+            $resolvedKey = null;
+
+            if ($file) {
+                $base = pathinfo($file, PATHINFO_FILENAME);
+
+                // Prefer WebP where available, then original jpeg/png in common folders.
+                $candidates = [
+                    "items/{$base}.webp",
+                    "item-images/{$base}.webp",
+                    "img/{$base}.webp",
+                    "items/{$file}",
+                    "item-images/{$file}",
+                    "img/{$file}",
+                ];
+
+                foreach ($candidates as $candidate) {
+                    if ($disk->exists($candidate)) {
+                        $resolvedKey = $candidate;
+                        break;
+                    }
+                }
+            }
+
+            $finalImgUrl = $resolvedKey ? $disk->url($resolvedKey) : $noImgUrl;
         @endphp
         <tr>
             <td>
@@ -38,19 +60,7 @@
             <td>
                 <div class="row">
                     <div class="col-2" style="display: flex; justify-content: center; align-items: center;">
-                        @if($isNoImg)
-                            <img src="{{ $noImgUrl }}" class="img w-100" alt="" style="object-fit: contain;">
-                        @elseif(!Storage::disk('public')->exists('/img/'.$imgWebp))
-                            <img src="{{ Storage::disk('upcloud')->url($img) }}" class="img w-100" alt="" onerror="this.onerror=null; this.src='{{ $noImgUrl }}';">
-                        @elseif(!Storage::disk('public')->exists('/img/'.$img))
-                            <img src="{{ Storage::disk('upcloud')->url($imgWebp) }}" class="img w-100" alt="" onerror="this.onerror=null; this.src='{{ $noImgUrl }}';">
-                        @else
-                            <picture>
-                                <source srcset="{{ Storage::disk('upcloud')->url($imgWebp) }}" type="image/webp">
-                                <source srcset="{{ Storage::disk('upcloud')->url($img) }}" type="image/jpeg">
-                                <img src="{{ Storage::disk('upcloud')->url($img) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $img)[0], '-') }}" class="img-responsive hover" style="width: 100% !important;" onerror="this.onerror=null; this.src='{{ $noImgUrl }}';">
-                            </picture>
-                        @endif
+                        <img src="{{ $finalImgUrl }}" class="img w-100" alt="" style="object-fit: contain;" onerror="this.onerror=null; this.src='{{ $noImgUrl }}';">
                     </div>
                     <div class="col-10">
                         <b>{{ $item->item_code }}</b><br>

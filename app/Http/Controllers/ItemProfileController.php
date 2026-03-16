@@ -26,6 +26,7 @@ use Buglinjo\LaravelWebp\Facades\Webp;
 use ErrorException;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -103,7 +104,7 @@ class ItemProfileController extends Controller
         $userGroup = Auth::user()->user_group;
         $allowedDepartment = DepartmentWithPriceAccess::query()->pluck('department')->toArray();
 
-        $priceData = $this->itemProfileService->getItemPrices($itemCode, $itemDetails);
+        $priceData = $this->itemProfileService->getItemPrices($itemCode, $itemDetails, $allowedDepartment);
         $itemRate = $priceData['itemRate'];
         $minimumSellingPrice = $priceData['minimumSellingPrice'];
         $defaultPrice = $priceData['defaultPrice'];
@@ -116,7 +117,7 @@ class ItemProfileController extends Controller
         $minimumPriceComputation = $priceData['minimumPriceComputation'];
         $standardPriceComputation = $priceData['standardPriceComputation'];
 
-        $itemStockLevels = $this->getItemStockLevels($itemCode, $request);
+        $itemStockLevels = $this->getItemStockLevels($itemCode, $request, $itemDetails);
 
         $consignmentWarehouses = $itemStockLevels['consignment_warehouses'];
         $siteWarehouses = $itemStockLevels['site_warehouses'];
@@ -126,48 +127,32 @@ class ItemProfileController extends Controller
             $itemStockAvailable = collect($siteWarehouses)->sum('available_qty');
         }
 
-        $itemImages = ItemImages::query()
+        $itemImagesRaw = ItemImages::query()
             ->where('parent', $itemCode)
             ->orderBy('idx', 'asc')
             ->pluck('image_path');
 
-        $itemImages = collect($itemImages)->map(function ($imagePath) {
-            $imagePath = $imagePath ? trim((string) $imagePath) : null;
+        $disk = Storage::disk('upcloud');
+        $itemImages = collect($itemImagesRaw)->map(function ($imagePath) use ($disk) {
+            $path = $imagePath ? trim((string) $imagePath) : null;
+            $fullUrl = $this->itemImageUrlFast($path);
 
-            if (! $imagePath) {
-                return $this->base64Image('icon/no-img.png');
-            }
-
-            // If a full URL was stored (legacy/backfilled data), just return it.
-            if (Str::startsWith($imagePath, ['http://', 'https://'])) {
-                return $imagePath;
-            }
-
-            // If the column already contains a directory (e.g. "items/foo.webp",
-            // "img/foo.webp", "item-images/foo.webp"), treat it as the storage key.
-            if (str_contains($imagePath, '/')) {
-                return $this->base64Image(ltrim($imagePath, '/'));
-            }
-
-            // Filename-only rows: prefer the new "items/" prefix, then fall back to legacy
-            // "img/" and "item-images/" prefixes for older data.
-            $disk = Storage::disk('upcloud');
-            $candidates = [
-                "items/{$imagePath}",
-                "img/{$imagePath}",
-                "item-images/{$imagePath}",
-            ];
-
-            foreach ($candidates as $candidate) {
-                if ($disk->exists($candidate)) {
-                    return $this->base64Image($candidate);
+            $thumbUrl = $fullUrl;
+            if ($path && ! Str::startsWith($path, ['http://', 'https://'])) {
+                $baseName = basename($path);
+                $thumbKey = 'items/thumbs/'.$baseName;
+                if ($disk->exists($thumbKey)) {
+                    $thumbUrl = $disk->url($thumbKey);
                 }
             }
 
-            return $this->base64Image('icon/no-img.png');
+            return [
+                'full' => $fullUrl,
+                'thumb' => $thumbUrl,
+            ];
         });
 
-        $noImg = $this->base64Image('/icon/no-img.png');
+        $noImg = $this->itemImageUrlFast(null);
 
         $itemAlternatives = [];
         $productionItemAlternatives = DB::table('tabWork Order Item as p')
@@ -190,8 +175,8 @@ class ItemProfileController extends Controller
             ->toArray();
         foreach ($productionItemAlternatives as $productionAltRow) {
             $productionAltRow = (object) $productionAltRow;
-            $itemAlternativeImage = Arr::exists($itemAlternativeImages, $productionAltRow->item_code) ? '/item-images/'.$itemAlternativeImages[$productionAltRow->item_code] : '/icon/no-img.png';
-            $itemAlternativeImage = $this->base64Image($itemAlternativeImage);
+            $path = Arr::exists($itemAlternativeImages, $productionAltRow->item_code) ? $itemAlternativeImages[$productionAltRow->item_code] : null;
+            $itemAlternativeImage = $this->itemImageUrlFast($path);
 
             $actualStocks = Arr::get($productionItemAltActualStock, $productionAltRow->item_code, 0);
 
@@ -222,17 +207,8 @@ class ItemProfileController extends Controller
             $alternativesIssuedSte = collect($steIssuedQuery)->groupBy('item_code');
 
             $atIssuedQuery = AthenaTransaction::query()
-                ->from('tabAthena Transactions as at')
-                ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
-                ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-                ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
-                ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
-                ->where('dr.docstatus', 0)
-                ->where('ps.docstatus', '<', 2)
-                ->where('psi.status', 'Issued')
-                ->where('at.status', 'Issued')
+                ->joinPackingSlipDeliveryNote()
                 ->whereIn('at.item_code', $alternativeItemCodes)
-                ->whereRaw('psi.item_code = at.item_code')
                 ->selectRaw('SUM(at.issued_qty) as qty, at.item_code')
                 ->groupBy('at.item_code')
                 ->get();
@@ -241,8 +217,8 @@ class ItemProfileController extends Controller
             $itemAlternativeImages = ItemImages::query()->whereIn('parent', $variantItems->pluck('name'))->orderBy('idx', 'asc')->pluck('image_path', 'parent')->toArray();
 
             foreach ($variantItems as $variantItem) {
-                $itemAlternativeImage = Arr::exists($itemAlternativeImages, $variantItem->name) ? '/item-images/'.$itemAlternativeImages[$variantItem->name] : '/icon/no-img.png';
-                $itemAlternativeImage = $this->base64Image($itemAlternativeImage);
+                $path = Arr::exists($itemAlternativeImages, $variantItem->name) ? $itemAlternativeImages[$variantItem->name] : null;
+                $itemAlternativeImage = $this->itemImageUrlFast($path);
 
                 $totalReserved = $totalConsumed = 0;
                 if (Arr::exists($alternativeReserves, $variantItem->name)) {
@@ -278,14 +254,14 @@ class ItemProfileController extends Controller
                 $classificationItems = Item::query()
                     ->where('item_classification', $itemDetails->item_classification)
                     ->where('name', '!=', $itemDetails->name)
-                    ->limit(100)
+                    ->limit(15)
                     ->orderBy('modified', 'desc')
                     ->get();
                 $itemAlternativeImages = ItemImages::query()->whereIn('parent', $classificationItems->pluck('name'))->orderBy('idx', 'asc')->pluck('image_path', 'parent')->toArray();
 
                 foreach ($classificationItems as $altItem) {
-                    $itemAlternativeImage = Arr::exists($itemAlternativeImages, $altItem->name) ? '/item-images/'.$itemAlternativeImages[$altItem->name] : '/icon/no-img.png';
-                    $itemAlternativeImage = $this->base64Image($itemAlternativeImage);
+                    $path = Arr::exists($itemAlternativeImages, $altItem->name) ? $itemAlternativeImages[$altItem->name] : null;
+                    $itemAlternativeImage = $this->itemImageUrlFast($path);
 
                     $totalReserved = $totalConsumed = 0;
                     if (Arr::exists($alternativeReserves, $altItem->name)) {
@@ -320,8 +296,13 @@ class ItemProfileController extends Controller
 
             $itemAlternatives = collect($itemAlternatives)->sortByDesc('actual_stocks')->toArray();
 
-            $coVariants = Item::query()->variantSiblings($itemDetails->variant_of, $itemDetails->name)->enabled()->select('name', 'item_name', 'custom_item_cost')->paginate(10);
-            $variantItemCodes = array_column($coVariants->items(), 'name');
+            $enabledVariantItems = $variantItems->where('disabled', 0)->values();
+            $coVariantsPage = LengthAwarePaginator::resolveCurrentPage();
+            $coVariantsPerPage = 10;
+            $coVariantsTotal = $enabledVariantItems->count();
+            $coVariantsSlice = $enabledVariantItems->slice(($coVariantsPage - 1) * $coVariantsPerPage, $coVariantsPerPage)->values();
+            $coVariants = new LengthAwarePaginator($coVariantsSlice, $coVariantsTotal, $coVariantsPerPage, $coVariantsPage, ['path' => LengthAwarePaginator::resolveCurrentPath(), 'query' => request()->query()]);
+            $variantItemCodes = $coVariantsSlice->pluck('name')->toArray();
 
             if (in_array($userDepartment, $allowedDepartment) || in_array(Auth::user()->user_group, ['Manager', 'Director'])) {
                 $itemCustomCost = [];
@@ -488,6 +469,7 @@ class ItemProfileController extends Controller
 
                 $storageKey = null;
                 $tempPath = null;
+                $thumbTempPath = null;
 
                 // Prefer WebP when supported; otherwise fall back to original file bytes.
                 try {
@@ -502,6 +484,23 @@ class ItemProfileController extends Controller
                         }
                         $webp->save($tempPath);
                         Storage::disk('upcloud')->put($storageKey, file_get_contents($tempPath));
+
+                        // Generate a smaller thumbnail (~600px wide) under items/thumbs/ for LCP.
+                        $thumbFilename = $filename;
+                        $thumbKey = "items/thumbs/{$thumbFilename}";
+                        $thumbTempPath = storage_path("app/temp/thumb-{$filename}");
+                        $thumbImage = Webp::make($file);
+                        if (method_exists($thumbImage, 'resize')) {
+                            $thumbImage->resize(600, null, function ($constraint) {
+                                $constraint->aspectRatio();
+                                $constraint->upsize();
+                            });
+                        }
+                        if (! File::exists(dirname($thumbTempPath))) {
+                            File::makeDirectory(dirname($thumbTempPath), 0755, true);
+                        }
+                        $thumbImage->save($thumbTempPath);
+                        Storage::disk('upcloud')->put($thumbKey, file_get_contents($thumbTempPath));
                     } else {
                         $ext = strtolower((string) $file->getClientOriginalExtension()) ?: 'jpg';
                         $filename = $randomBase.'.'.$ext;
@@ -517,6 +516,9 @@ class ItemProfileController extends Controller
                 } finally {
                     if ($tempPath && is_file($tempPath)) {
                         @unlink($tempPath);
+                    }
+                    if ($thumbTempPath && is_file($thumbTempPath)) {
+                        @unlink($thumbTempPath);
                     }
                 }
 
@@ -544,6 +546,37 @@ class ItemProfileController extends Controller
         return response()->json([
             'message' => 'Item image for '.$request->item_code.' has been updated.',
         ]);
+    }
+
+    /**
+     * Return image URL for item profile. Minimizes exists() calls: path with "/" is used as storage key (no exists).
+     * Filename-only: try items/, item-images/, img/ with one exists() each and return first found so legacy paths work.
+     */
+    private function itemImageUrlFast(?string $imagePath): string
+    {
+        if (! $imagePath || ! trim((string) $imagePath)) {
+            return Storage::disk('upcloud')->url('icon/no-img.png');
+        }
+        $imagePath = trim((string) $imagePath);
+        if (Str::startsWith($imagePath, ['http://', 'https://'])) {
+            return $imagePath;
+        }
+        $disk = Storage::disk('upcloud');
+        if (str_contains($imagePath, '/')) {
+            $key = ltrim($imagePath, '/');
+            return $disk->url($key);
+        }
+        $candidates = [
+            "items/{$imagePath}",
+            "item-images/{$imagePath}",
+            "img/{$imagePath}",
+        ];
+        foreach ($candidates as $key) {
+            if ($disk->exists($key)) {
+                return $disk->url($key);
+            }
+        }
+        return $disk->url('icon/no-img.png');
     }
 
     /**
@@ -718,9 +751,9 @@ class ItemProfileController extends Controller
         return response()->json(0);
     }
 
-    public function getItemStockLevels($itemCode, Request $request)
+    public function getItemStockLevels($itemCode, Request $request, ?Item $itemDetails = null)
     {
-        $itemDetails = Item::query()->where('name', $itemCode)->first();
+        $itemDetails = $itemDetails ?? Item::query()->where('name', $itemCode)->first();
         $allowWarehouse = [];
         $isPromodiser = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
         if ($isPromodiser) {
@@ -785,17 +818,8 @@ class ItemProfileController extends Controller
                 ->toArray();
 
             $atIssued = AthenaTransaction::query()
-                ->from('tabAthena Transactions as at')
-                ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
-                ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
-                ->join('tabDelivery Note as dr', 'ps.delivery_note', 'dr.name')
-                ->whereIn('at.reference_type', ['Packing Slip', 'Picking Slip'])
-                ->where('dr.docstatus', 0)
-                ->where('ps.docstatus', '<', 2)
-                ->where('at.status', 'Issued')
-                ->where('psi.status', 'Issued')
+                ->joinPackingSlipDeliveryNote()
                 ->where('at.item_code', $itemCode)
-                ->where('psi.item_code', $itemCode)
                 ->whereIn('at.source_warehouse', $stockWarehouses)
                 ->selectRaw('SUM(at.issued_qty) as qty, at.source_warehouse')
                 ->groupBy('at.source_warehouse')
@@ -864,24 +888,26 @@ class ItemProfileController extends Controller
             ->select('p.name as bundle_id', 'p.*', 'c.*')
             ->get();
 
-        $items = collect($productBundle)->pluck('item_code');
+        $itemCodes = collect($productBundle)->pluck('item_code')->unique()->values();
         $grouped = collect($productBundle)->groupBy('item_code');
 
+        $itemsById = Item::query()->whereIn('name', $itemCodes)->get()->keyBy('name');
+
         $stocks = [];
-        foreach ($items as $item) {
-            $bundleItem = $grouped[$item][0] ?? null;
+        foreach ($itemCodes as $itemCode) {
+            $bundleItem = $grouped[$itemCode][0] ?? null;
             if (is_array($bundleItem)) {
                 $bundleItem = (object) $bundleItem;
             }
             $description = $bundleItem->description ?? null;
-            $details = $this->getItemStockLevels($item, $request);
+            $details = $this->getItemStockLevels($itemCode, $request, $itemsById->get($itemCode));
 
             unset($details['consignment_warehouses']);
 
             $details['site_warehouses'] = collect($details['site_warehouses'])->where('actual_qty', '>', 0);
             $details['description'] = $description;
 
-            $stocks[$item] = $details;
+            $stocks[$itemCode] = $details;
         }
 
         return view('item_stock_level_bundled', compact('stocks'));

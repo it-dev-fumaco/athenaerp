@@ -55,6 +55,23 @@ class BrochureController extends Controller
         protected BrochureExcelService $brochureExcelService
     ) {}
 
+    /**
+     * Return a working URL for an upcloud storage key (prefer temporary URL for private buckets).
+     */
+    private function brochureImageUrl(string $key): string
+    {
+        $disk = Storage::disk('upcloud');
+        try {
+            if (method_exists($disk, 'temporaryUrl')) {
+                return $disk->temporaryUrl($key, now()->addHours(1));
+            }
+        } catch (\Throwable $e) {
+            Log::debug('Brochure image temporaryUrl failed, using url()', ['key' => $key, 'error' => $e->getMessage()]);
+        }
+
+        return $disk->url($key);
+    }
+
     public function viewForm(Request $request)
     {
         if ($request->ajax()) {
@@ -841,9 +858,11 @@ class BrochureController extends Controller
                 $storageKey = null;
                 if (isset($brochureImages[$i])) {
                     $pathPrefix = $brochureImages[$i]->image_path;
-                    if ($pathPrefix === null || trim((string) $pathPrefix) === '' || ! Str::startsWith(trim((string) $pathPrefix), 'item-brochures')) {
+                    if ($pathPrefix === null || trim((string) $pathPrefix) === '') {
+                        // Default to item-brochures/ when path is missing to keep legacy behaviour.
                         $pathPrefix = 'item-brochures/';
                     } else {
+                        // Respect stored path (e.g. item-brochures/, item-images/, or other valid prefixes).
                         $pathPrefix = rtrim($pathPrefix, '/').'/';
                     }
                     $storageKey = $pathPrefix.$brochureImages[$i]->image_filename;
@@ -851,6 +870,7 @@ class BrochureController extends Controller
                 $images['image'.$row] = [
                     'id' => $brochureImages[$i]->name ?? null,
                     'filepath' => $storageKey,
+                    'url' => $storageKey ? $this->brochureImageUrl($storageKey) : null,
                 ];
             }
 
@@ -1021,17 +1041,19 @@ class BrochureController extends Controller
 
             DB::commit();
 
-            $dataSrc = Storage::disk('upcloud')->url($imagePath.$storedFilename);
+            $storageKey = $imagePath.$storedFilename;
+            $dataSrc = $this->brochureImageUrl($storageKey);
 
             Log::info('uploadImageForStandard success', [
                 'item_code' => $itemCode,
                 'image_idx' => $request->image_idx,
-                'image_path' => $dataSrc,
+                'storage_key' => $storageKey,
             ]);
 
             return ApiResponse::successWith('Image uploaded.', [
                 'src' => $dataSrc,
                 'id' => $imageRecordId,
+                'filename' => $storedFilename,
                 'item_code' => $itemCode,
                 'image_idx' => (string) $request->image_idx,
             ]);

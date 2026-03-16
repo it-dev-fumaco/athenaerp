@@ -30,10 +30,16 @@
                                             $img1Actual = $img1Temp = null;
                                             $img1Src = $img2Src = $img3Src = '#';
                                             $img1Id = $img2Id = $img3Id = null;
+                                            $imgSrcFor = function ($key) use ($images) {
+                                                if (empty($images[$key]['filepath'])) {
+                                                    return null;
+                                                }
+                                                return $images[$key]['url'] ?? Storage::disk('upcloud')->url($images[$key]['filepath']);
+                                            };
                                             if (isset($images['image1']['filepath']) && $images['image1']['filepath']) {
                                                 $img1Actual = null;
                                                 $img1Temp = 'd-none';
-                                                $img1Src = Storage::disk('upcloud')->url($images['image1']['filepath']);
+                                                $img1Src = $imgSrcFor('image1');
                                                 $img1Id = $images['image1']['id'];
                                             } else {
                                                 $img1Actual = 'd-none';
@@ -44,7 +50,7 @@
                                             if (isset($images['image2']['filepath']) && $images['image2']['filepath']) {
                                                 $img2Actual = null;
                                                 $img2Temp = 'd-none';
-                                                $img2Src = Storage::disk('upcloud')->url($images['image2']['filepath']);
+                                                $img2Src = $imgSrcFor('image2');
                                                 $img2Id = $images['image2']['id'];
                                             } else {
                                                 $img2Actual = 'd-none';
@@ -55,7 +61,7 @@
                                             if (isset($images['image3']['filepath']) && $images['image3']['filepath']) {
                                                 $img3Actual = null;
                                                 $img3Temp = 'd-none';
-                                                $img3Src = Storage::disk('upcloud')->url($images['image3']['filepath']);
+                                                $img3Src = $imgSrcFor('image3');
                                                 $img3Id = $images['image3']['id'];
                                             } else {
                                                 $img3Actual = 'd-none';
@@ -712,7 +718,9 @@
                         if (response.id) {
                             $('#' + item_image_id + '-actual').find('.remove-image-btn').attr('data-id', response.id).data('id', response.id);
                         }
-                        
+                        if (response.filename) {
+                            $('#' + item_image_id + '-actual').find('.remove-image-btn').attr('data-image-filename', response.filename);
+                        }
                         $('#select-file-modal').modal('hide');
                     }
                 },
@@ -786,7 +794,9 @@
                         if (response.id) {
                             $('#' + item_image_id + '-actual').find('.remove-image-btn').attr('data-id', response.id).data('id', response.id);
                         }
-                        
+                        if (response.filename) {
+                            $('#' + item_image_id + '-actual').find('.remove-image-btn').attr('data-image-filename', response.filename);
+                        }
                         $('#select-file-modal').modal('hide');
                     }
                 },

@@ -237,7 +237,14 @@ trait GeneralTrait
         return $availableMap;
     }
 
-    public function base64Image($file, $original = 0)
+    /**
+     * Return public URL for an image. Avoids Storage::exists() when $skipExistsCheck is true (faster; use for lists/thumbnails).
+     *
+     * @param  mixed  $file  Storage key or path (leading slash stripped). Filename-only is treated as item-images/ prefix.
+     * @param  int  $original  If 0 and path is item-images/, prefer webp URL when file exists (unless $skipExistsCheck).
+     * @param  bool  $skipExistsCheck  If true, return URL for given key without checking webp existence (no remote HEAD requests).
+     */
+    public function base64Image($file, $original = 0, bool $skipExistsCheck = false)
     {
         if (! $file) {
             return Storage::disk('upcloud')->url('icon/no-img.png');
@@ -249,8 +256,8 @@ trait GeneralTrait
         if (! str_contains($key, '/')) {
             $key = 'item-images/'.$key;
         }
-        // Prefer webp when it exists, otherwise use original (jpg, png, etc.)
-        if (! $original && str_starts_with($key, 'item-images/')) {
+        // Prefer webp when it exists, otherwise use original (skip existence check when optimizing for speed)
+        if (! $original && ! $skipExistsCheck && str_starts_with($key, 'item-images/')) {
             $baseName = pathinfo($key, PATHINFO_FILENAME);
             $dir = dirname($key);
             $webpKey = $dir === '.' ? 'item-images/'.$baseName.'.webp' : $dir.'/'.$baseName.'.webp';

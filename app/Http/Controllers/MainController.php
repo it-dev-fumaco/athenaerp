@@ -1150,11 +1150,13 @@ class MainController extends Controller
     public function getStockLedger(Request $request, $itemCode)
     {
         $warehouseUser = [];
-        if ($request->wh_user != '' and $request->wh_user != 'null') {
-            $userQry = WarehouseUsers::query()->where('full_name', 'LIKE', '%'.$request->wh_user.'%')->orWhere('wh_user', 'LIKE', '%'.$request->wh_user.'%')->first();
-
-            $warehouseUser = $userQry ? [$userQry->wh_user, $userQry->full_name] : [];
-            $warehouseUser = $warehouseUser ? $warehouseUser : [$request->wh_user];
+        if ($request->filled('wh_user') && $request->input('wh_user') !== 'null') {
+            $whUserInput = $request->input('wh_user');
+            $userQry = WarehouseUsers::query()
+                ->where('full_name', 'LIKE', '%'.$whUserInput.'%')
+                ->orWhere('wh_user', 'LIKE', '%'.$whUserInput.'%')
+                ->first();
+            $warehouseUser = $userQry ? [$userQry->wh_user, $userQry->full_name] : [$whUserInput];
         }
 
         $logs = StockLedgerEntry::query()
@@ -1181,7 +1183,7 @@ class MainController extends Controller
             ->addSelect(DB::raw('(SELECT GROUP_CONCAT(sales_order_no) FROM `tabStock Entry` where name = sle.voucher_no) as ste_sales_order'))
             ->addSelect(DB::raw('(SELECT GROUP_CONCAT(DISTINCT purchase_order) FROM `tabPurchase Receipt Item` where parent = sle.voucher_no and item_code = sle.item_code) as pr_voucher_no'))
             ->addSelect('sle.voucher_type', 'sle.voucher_no', 'sle.warehouse', 'sle.actual_qty', 'sle.qty_after_transaction', 'sle.posting_date')
-            ->when($request->wh_user != '' and $request->wh_user != 'null', function ($query) use ($warehouseUser) {
+            ->when(! empty($warehouseUser), function ($query) use ($warehouseUser) {
                 return $query->whereIn(DB::raw('
                     (CASE
                         WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT IFNULL(session_user, modified_by) FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
@@ -1193,7 +1195,7 @@ class MainController extends Controller
             ->when($request->filled('erp_wh') && $request->input('erp_wh') !== 'null', function ($query) use ($request) {
                 return $query->where('sle.warehouse', $request->input('erp_wh'));
             })
-            ->when($request->erp_d != '' and $request->erp_d != 'null', function ($query) use ($request) {
+            ->when($request->filled('erp_d') && $request->input('erp_d') !== 'null', function ($query) use ($request) {
                 $dates = explode(' to ', $request->erp_d);
 
                 return $query->whereBetween(DB::raw('

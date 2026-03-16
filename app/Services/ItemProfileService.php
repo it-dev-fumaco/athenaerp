@@ -11,6 +11,7 @@ use App\Models\Singles;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class ItemProfileService
@@ -18,15 +19,19 @@ class ItemProfileService
     /**
      * Get price-related data for an item (last purchase, landed cost, website price, etc.).
      *
+     * @param  array<string>|null  $allowedDepartment  Optional; when provided (e.g. from controller), avoids duplicate DepartmentWithPriceAccess query.
      * @return array{itemRate: float, minimumSellingPrice: float, defaultPrice: float, lastPurchaseRate: float, manualRate: int, lastPurchaseDate: string|null, websitePrice: array|object|null, avgPurchaseRate: string, isTaxIncludedInRate: float, minimumPriceComputation: float, standardPriceComputation: float}
      */
-    public function getItemPrices(string $itemCode, ?Item $itemDetails = null): array
+    public function getItemPrices(string $itemCode, ?Item $itemDetails = null, ?array $allowedDepartment = null): array
     {
         $itemDetails = $itemDetails ?? Item::query()->where('name', $itemCode)->first();
 
         $userDepartment = Auth::user()->department;
         $userGroup = Auth::user()->user_group;
-        $allowedDepartment = DepartmentWithPriceAccess::query()->pluck('department')->toArray();
+        $cacheTtl = config('item_profile.cache_ttl', 300);
+        $allowedDepartment = $allowedDepartment ?? Cache::remember('item_profile.allowed_departments', $cacheTtl, function () {
+            return DepartmentWithPriceAccess::query()->pluck('department')->toArray();
+        });
 
         $itemRate = $minimumSellingPrice = $defaultPrice = $lastPurchaseRate = $manualRate = $isTaxIncludedInRate = 0;
         $lastPurchaseDate = null;
@@ -72,8 +77,12 @@ class ItemProfileService
             }
         }
 
-        $priceSettings = Singles::query()->where('doctype', 'Price Settings')
-            ->whereIn('field', ['minimum_price_computation', 'standard_price_computation', 'is_tax_included_in_rate'])->pluck('value', 'field')->toArray();
+        $priceSettings = Cache::remember('item_profile.price_settings', $cacheTtl, function () {
+            return Singles::query()->where('doctype', 'Price Settings')
+                ->whereIn('field', ['minimum_price_computation', 'standard_price_computation', 'is_tax_included_in_rate'])
+                ->pluck('value', 'field')
+                ->toArray();
+        });
 
         $minimumPriceComputation = Arr::get($priceSettings, 'minimum_price_computation', 0);
         $standardPriceComputation = Arr::get($priceSettings, 'standard_price_computation', 0);

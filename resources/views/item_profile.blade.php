@@ -4,11 +4,50 @@
 ])
 
 @section('content')
+    <style>
+        /* Reserve space for images to reduce CLS and improve LCP */
+        .ip-back-btn-img {
+            max-width: 40px;
+            height: auto;
+        }
+
+        .ip-main-image-wrapper {
+            aspect-ratio: 4 / 3;
+            max-height: 320px;
+        }
+
+        .ip-main-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .ip-thumb-image {
+            width: 100%;
+            height: 75px;
+            object-fit: cover;
+        }
+
+        /* Simple blur-up effect for main image */
+        .blur-up {
+            filter: blur(12px);
+            transform: scale(1.03);
+            transition: filter 0.4s ease-out, transform 0.4s ease-out;
+        }
+    </style>
     <div class="container-fluid p-1 p-md-3">
         <div class="row">
             <div class="col-md-12">
                 <div class="back-btn">
-                    <img src="{{ Storage::disk('upcloud')->url('/icon/arrow.png') }}" id="back-btn" class="w-100">
+                    <img
+                        src="{{ Storage::disk('upcloud')->url('/icon/arrow.png') }}"
+                        id="back-btn"
+                        class="ip-back-btn-img"
+                        width="40"
+                        height="40"
+                        loading="lazy"
+                        decoding="async"
+                    >
                 </div>
                 <ul class="nav nav-tabs" id="ip-navs" role="tablist" style="font-size: 10pt;">
                     <li class="nav-item">
@@ -167,13 +206,38 @@
                                                     @for($i = 0; $i <= 3; $i++)
                                                         @isset($itemImages[$i])
                                                             @php
-                                                                $image = $itemImages[$i];
+                                                                $imageData = $itemImages[$i];
+                                                                $thumb = data_get($imageData, 'thumb', data_get($imageData, 'full'));
+                                                                $full = data_get($imageData, 'full');
                                                                 $alt = Illuminate\Support\Str::slug($itemBrochureDescription, '-');
                                                             @endphp
-                                                            <div class="{{ $i == 0 ? 'col-12' : 'col-4 mt-2 p-2 border' }}" style="{{ $i > 0 ? 'height: 75px;' : null }}">
-                                                                <a href="{{ $image }}" class="view-images" data-item-code="{{ $itemDetails->name }}" data-idx="{{ $i }}">
+                                                            <div class="{{ $i == 0 ? 'col-12' : 'col-4 mt-2 p-2 border' }} {{ $i == 0 ? 'ip-main-image-wrapper' : null }}">
+                                                                <a href="{{ $full }}" class="view-images" data-item-code="{{ $itemDetails->name }}" data-idx="{{ $i }}">
                                                                     <picture>
-                                                                        <img src="{{ $image }}" alt="{{ $alt }}" class="img-responsive hover" style="width: 100%; height: 100%;">
+                                                                        @if ($i === 0)
+                            <img
+                                                                                src="{{ $thumb }}"
+                                                                                srcset="{{ $thumb }} 640w, {{ $full }} 1024w"
+                                sizes="(min-width: 992px) 320px, 100vw"
+                                alt="{{ $alt }}"
+                                class="img-responsive hover ip-main-image blur-up"
+                                width="640"
+                                height="480"
+                                decoding="async"
+                                fetchpriority="high"
+                                onload="this.classList.remove('blur-up')"
+                            >
+                                                                        @else
+                                                                            <img
+                                                                                src="{{ $thumb }}"
+                                                                                alt="{{ $alt }}"
+                                                                                class="img-responsive hover ip-thumb-image"
+                                                                                width="120"
+                                                                                height="75"
+                                                                                loading="lazy"
+                                                                                decoding="async"
+                                                                            >
+                                                                        @endif
                                                                     </picture>
                                                                     @if($i == 3 && count($itemImages) > 4)
                                                                         <div class="card-img-overlay text-center">
@@ -185,8 +249,16 @@
                                                         @endisset
                                                     @endfor
                                                 @else
-                                                    <div class="col-12">
-                                                        <img src="{{ $noImg }}" class="img-responsive hover" style="width: 100%; height: 100%;">
+                                                    <div class="col-12 ip-main-image-wrapper">
+                                                        <img
+                                                            src="{{ $noImg }}"
+                                                            alt="no-image"
+                                                            class="img-responsive hover ip-main-image"
+                                                            width="640"
+                                                            height="480"
+                                                            loading="lazy"
+                                                            decoding="async"
+                                                        >
                                                     </div>
                                                 @endif
                                             </div>
@@ -552,7 +624,14 @@
                                                             <div class="d-flex flex-row">
                                                                 <div class="pt-2 pb-2 pr-1 pl-1">
                                                                     <a href="{{ $a['item_alternative_image'] }}" data-toggle="lightbox" data-gallery="{{ $a['item_code'] }}" data-title="{{ $a['item_code'] }}">
-                                                                        <img src="{{ $a['item_alternative_image'] }}" class="rounded" width="80" height="80">
+                                                                        <img
+                                                                            src="{{ $a['item_alternative_image'] }}"
+                                                                            class="rounded"
+                                                                            width="80"
+                                                                            height="80"
+                                                                            loading="lazy"
+                                                                            decoding="async"
+                                                                        >
                                                                     </a>
                                                                 </div>
                                                                 <a href="/get_item_details/{{ $a['item_code'] }}" class="text-dark" style="font-size: 9pt;">
@@ -966,7 +1045,20 @@
 @section('script')
     <script>
         const bundled = parseInt('{{ $bundled ? 1 : 0 }}')
-        get_item_stock_levels('{{ $itemDetails->name }}');
+
+        // Defer initial data fetches slightly so first paint is not competing with AJAX work.
+        document.addEventListener('DOMContentLoaded', function () {
+            var itemCode = '{{ $itemDetails->name }}';
+            var startDataFetch = function () {
+                get_item_stock_levels(itemCode);
+                load_item_information();
+            };
+            if ('requestIdleCallback' in window) {
+                window.requestIdleCallback(startDataFetch, { timeout: 1000 });
+            } else {
+                setTimeout(startDataFetch, 0);
+            }
+        });
         $(document).on('submit', '#edit-warehouse-location-form', function (e) {
             e.preventDefault();
             $.ajax({
@@ -1100,7 +1192,6 @@
             });
         });
         
-        load_item_information();
         function load_item_information(){
             $.ajax({
                 type: 'GET',
