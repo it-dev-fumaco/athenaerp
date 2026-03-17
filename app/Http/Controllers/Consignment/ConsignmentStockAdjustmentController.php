@@ -179,7 +179,7 @@ class ConsignmentStockAdjustmentController extends Controller
                 $item->reason = $item->remarks;
 
                 $item->image = Arr::exists($itemImages, $itemCode) ? '/img/'.$itemImages[$itemCode] : '/icon/no-img.png';
-                if (Storage::disk('upcloud')->exists(explode('.', $item->image)[0].'.webp')) {
+                if (Storage::disk('upcloud')->exists(ltrim(explode('.', $item->image)[0], '/').'.webp')) {
                     $item->image = explode('.', $item->image)[0].'.webp';
                 }
 

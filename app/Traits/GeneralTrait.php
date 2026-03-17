@@ -240,8 +240,8 @@ trait GeneralTrait
     /**
      * Return public URL for an image. Avoids Storage::exists() when $skipExistsCheck is true (faster; use for lists/thumbnails).
      *
-     * @param  mixed  $file  Storage key or path (leading slash stripped). Filename-only is treated as item-images/ prefix.
-     * @param  int  $original  If 0 and path is item-images/, prefer webp URL when file exists (unless $skipExistsCheck).
+     * @param  mixed  $file  Storage key or path (leading slash stripped). Filename-only is treated as img/ prefix.
+     * @param  int  $original  If 0 and path is img/, prefer webp URL when file exists (unless $skipExistsCheck).
      * @param  bool  $skipExistsCheck  If true, return URL for given key without checking webp existence (no remote HEAD requests).
      */
     public function base64Image($file, $original = 0, bool $skipExistsCheck = false)
@@ -252,15 +252,15 @@ trait GeneralTrait
         $disk = Storage::disk('upcloud');
         // Storage keys must not have leading slash (S3/compat)
         $key = ltrim((string) $file, '/');
-        // If path is filename-only, use item-images/ prefix for item images
+        // If path is filename-only, use img/ prefix for item images
         if (! str_contains($key, '/')) {
-            $key = 'item-images/'.$key;
+            $key = 'img/'.$key;
         }
         // Prefer webp when it exists, otherwise use original (skip existence check when optimizing for speed)
-        if (! $original && ! $skipExistsCheck && str_starts_with($key, 'item-images/')) {
+        if (! $original && ! $skipExistsCheck && str_starts_with($key, 'img/')) {
             $baseName = pathinfo($key, PATHINFO_FILENAME);
             $dir = dirname($key);
-            $webpKey = $dir === '.' ? 'item-images/'.$baseName.'.webp' : $dir.'/'.$baseName.'.webp';
+            $webpKey = $dir === '.' ? 'img/'.$baseName.'.webp' : $dir.'/'.$baseName.'.webp';
             if ($disk->exists($webpKey)) {
                 return $disk->url($webpKey);
             }
