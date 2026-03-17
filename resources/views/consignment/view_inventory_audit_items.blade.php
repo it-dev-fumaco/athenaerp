@@ -44,8 +44,8 @@
                                         <td class="text-justify p-1 align-middle" style="border-bottom: 0 !important;">
                                             <div class="d-flex flex-row justify-content-start align-items-center">
                                                 <div class="p-0 text-left">
-                                                    <a href="{{ Storage::disk('upcloud')->url('item-images/'.$row['img']) }}" class="view-images" data-item-code="{{ $row['item_code'] }}">
-                                                        <img src="{{ Storage::disk('upcloud')->url('item-images/'.$row['img']) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $row['img'])[0], '-') }}" width="40" height="40">
+                                                    <a href="{{ Storage::disk('upcloud')->url('img/'.$row['img']) }}" class="view-images" data-item-code="{{ $row['item_code'] }}">
+                                                        <img src="{{ Storage::disk('upcloud')->url('img/'.$row['img']) }}" alt="{{ Illuminate\Support\Str::slug(explode('.', $row['img'])[0], '-') }}" width="40" height="40">
                                                     </a>
                                                 </div>
                                                 <div class="p-1 m-0">

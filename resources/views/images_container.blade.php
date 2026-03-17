@@ -13,7 +13,7 @@
                     } elseif (Illuminate\Support\Str::startsWith($image->image_path ?? '', ['http://', 'https://'])) {
                         $imageUrl = $image->image_path;
                     } else {
-                        $imageUrl = Storage::disk('upcloud')->url(str_contains($image->image_path ?? '', '/') ? $image->image_path : 'item-images/'.$image->image_path);
+                        $imageUrl = Storage::disk('upcloud')->url(str_contains($image->image_path ?? '', '/') ? $image->image_path : 'img/'.$image->image_path);
                     }
                 @endphp
                 @if (!$image->original)

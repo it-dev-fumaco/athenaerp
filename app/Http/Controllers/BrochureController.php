@@ -645,12 +645,12 @@ class BrochureController extends Controller
                         continue;
                     }
                     $filename = $e->image_path;
-                    if ($filename && ! $pdf && ! $upcloudDisk->exists('item-images/'.$filename)) {
+                    if ($filename && ! $pdf && ! $upcloudDisk->exists('img/'.$filename)) {
                         $filename = explode('.', $filename)[0].'.webp';
                     }
                     $currentImages[] = [
                         'filename' => $filename,
-                        'filepath' => $filename ? 'item-images/'.$filename : null,
+                        'filepath' => $filename ? 'img/'.$filename : null,
                     ];
                 }
 
@@ -837,12 +837,12 @@ class BrochureController extends Controller
             $currentImages = [];
             foreach ($currentItemImages as $e) {
                 $filename = $e->image_path;
-                if ($filename && ! $upcloudDisk->exists('item-images/'.$filename)) {
+                if ($filename && ! $upcloudDisk->exists('img/'.$filename)) {
                     $filename = explode('.', $filename)[0].'.webp';
                 }
                 $currentImages[] = [
                     'filename' => $filename,
-                    'filepath' => $filename ? 'item-images/'.$filename : null,
+                    'filepath' => $filename ? 'img/'.$filename : null,
                 ];
             }
 
@@ -862,7 +862,7 @@ class BrochureController extends Controller
                         // Default to item-brochures/ when path is missing to keep legacy behaviour.
                         $pathPrefix = 'item-brochures/';
                     } else {
-                        // Respect stored path (e.g. item-brochures/, item-images/, or other valid prefixes).
+                        // Respect stored path (e.g. item-brochures/, img/, or other valid prefixes).
                         $pathPrefix = rtrim($pathPrefix, '/').'/';
                     }
                     $storageKey = $pathPrefix.$brochureImages[$i]->image_filename;
@@ -961,8 +961,8 @@ class BrochureController extends Controller
 
             if ($request->existing) {
                 $filename = $request->selected_image;
-                $storedFilename = $this->brochureImageService->getExistingImageStoredFilename($filename, 'item-images/');
-                $imagePath = 'item-images/';
+                $storedFilename = $this->brochureImageService->getExistingImageStoredFilename($filename, 'img/');
+                $imagePath = 'img/';
             }
 
             if ($request->hasFile('selected-file')) {

@@ -30,10 +30,10 @@
                 // Prefer WebP where available, then original jpeg/png in common folders.
                 $candidates = [
                     "items/{$base}.webp",
-                    "item-images/{$base}.webp",
+                    "img/{$base}.webp",
                     "img/{$base}.webp",
                     "items/{$file}",
-                    "item-images/{$file}",
+                    "img/{$file}",
                     "img/{$file}",
                 ];
 

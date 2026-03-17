@@ -44,10 +44,10 @@
                         <div class="col-12">
                             <div class="row">
                                 <div class="col-12">
-                                    <a href="{{ Storage::disk('upcloud')->url($img1) }}" data-toggle="lightbox"
+                                    <a href="{{ Storage::disk('upcloud')->url(ltrim($img1, '/')) }}" data-toggle="lightbox"
                                         data-gallery="{{ $itemDetails->name }}" data-title="{{ $itemDetails->name }}">
 
-                                        <img src="{{ Storage::disk('upcloud')->url($img1) }}" alt="{{ $img1Alt }}"
+                                        <img src="{{ Storage::disk('upcloud')->url(ltrim($img1, '/')) }}" alt="{{ $img1Alt }}"
                                             class="img-responsive {{ data_get($itemImages, 0) ? null : '' }}"
                                             style="width: 100% !important; {{ data_get($itemImages, 0) ? null : 'min-height: 200px' }}">
                                     </a>
@@ -55,7 +55,7 @@
                             </div>
                         </div>
                         <div class="col-4 mt-2">
-                            <a href="{{ Storage::disk('upcloud')->url($img2) }}" data-toggle="lightbox"
+                            <a href="{{ Storage::disk('upcloud')->url(ltrim($img2, '/')) }}" data-toggle="lightbox"
                                 data-gallery="{{ $itemDetails->name }}" data-title="{{ $itemDetails->name }}">
 
                                 @php
@@ -63,17 +63,17 @@
                                 @endphp
 
                                 @if (!Storage::disk('upcloud')->exists($webpPath))
-                                    <img src="{{ Storage::disk('upcloud')->url($img2) }}" alt="{{ $img2Alt }}"
+                                    <img src="{{ Storage::disk('upcloud')->url(ltrim($img2, '/')) }}" alt="{{ $img2Alt }}"
                                         class="img-responsive hover" style="width: 100% !important;">
                                 @else
                                     <picture>
                                         <source srcset="{{ Storage::disk('upcloud')->url($webpPath) }}"
                                             type="image/webp" class="img-responsive hover">
 
-                                        <source srcset="{{ Storage::disk('upcloud')->url($img2) }}" type="image/jpeg"
+                                        <source srcset="{{ Storage::disk('upcloud')->url(ltrim($img2, '/')) }}" type="image/jpeg"
                                             class="img-responsive hover">
 
-                                        <img src="{{ Storage::disk('upcloud')->url($img2) }}"
+                                        <img src="{{ Storage::disk('upcloud')->url(ltrim($img2, '/')) }}"
                                             alt="{{ $img2Alt }}" class="img-responsive hover"
                                             style="width: 100% !important;">
                                     </picture>
@@ -82,7 +82,7 @@
 
                         </div>
                         <div class="col-4 mt-2">
-                            <a href="{{ Storage::disk('upcloud')->url($img3) }}" data-toggle="lightbox"
+                            <a href="{{ Storage::disk('upcloud')->url(ltrim($img3, '/')) }}" data-toggle="lightbox"
                                 data-gallery="{{ $itemDetails->name }}" data-title="{{ $itemDetails->name }}">
 
                                 @php
@@ -90,17 +90,17 @@
                                 @endphp
 
                                 @if (!Storage::disk('upcloud')->exists($webpPath))
-                                    <img src="{{ Storage::disk('upcloud')->url($img3) }}" alt="{{ $img3Alt }}"
+                                    <img src="{{ Storage::disk('upcloud')->url(ltrim($img3, '/')) }}" alt="{{ $img3Alt }}"
                                         class="img-responsive hover" style="width: 100% !important;">
                                 @else
                                     <picture>
                                         <source srcset="{{ Storage::disk('upcloud')->url($webpPath) }}"
                                             type="image/webp" class="img-responsive hover">
 
-                                        <source srcset="{{ Storage::disk('upcloud')->url($img3) }}" type="image/jpeg"
+                                        <source srcset="{{ Storage::disk('upcloud')->url(ltrim($img3, '/')) }}" type="image/jpeg"
                                             class="img-responsive hover">
 
-                                        <img src="{{ Storage::disk('upcloud')->url($img3) }}"
+                                        <img src="{{ Storage::disk('upcloud')->url(ltrim($img3, '/')) }}"
                                             alt="{{ $img3Alt }}" class="img-responsive hover"
                                             style="width: 100% !important;">
                                     </picture>
@@ -109,22 +109,22 @@
 
                         </div>
                         <div class="col-4 mt-2">
-                            <a href="{{ Storage::disk('upcloud')->url($img4) }}" data-toggle="lightbox"
+                            <a href="{{ Storage::disk('upcloud')->url(ltrim($img4, '/')) }}" data-toggle="lightbox"
                                 data-gallery="{{ $itemDetails->name }}" data-title="{{ $itemDetails->name }}">
                                 <div class="text-white">
                                     @if (!Storage::disk('upcloud')->exists('/img/' . explode('.', $img4Name)[0] . '.webp'))
-                                        <img src="{{ Storage::disk('upcloud')->url($img4Webp) }}" alt="{{ $img4Alt }}"
+                                        <img src="{{ Storage::disk('upcloud')->url(ltrim($img4Webp, '/')) }}" alt="{{ $img4Alt }}"
                                             class="img-responsive hover" style="width: 100% !important;">
                                     @elseif(!Storage::disk('upcloud')->exists('/img/' . $img4Name))
-                                        <img src="{{ Storage::disk('upcloud')->url($img4) }}" alt="{{ $img4Alt }}"
+                                        <img src="{{ Storage::disk('upcloud')->url(ltrim($img4, '/')) }}" alt="{{ $img4Alt }}"
                                             class="img-responsive hover" style="width: 100% !important;">
                                     @else
                                         <picture>
-                                            <source srcset="{{ Storage::disk('upcloud')->url($img4Webp) }}" type="image/webp"
+                                            <source srcset="{{ Storage::disk('upcloud')->url(ltrim($img4Webp, '/')) }}" type="image/webp"
                                                 class="img-responsive hover" style="width: 100% !important;">
-                                            <source srcset="{{ Storage::disk('upcloud')->url($img4) }}" type="image/jpeg"
+                                            <source srcset="{{ Storage::disk('upcloud')->url(ltrim($img4, '/')) }}" type="image/jpeg"
                                                 class="img-responsive hover" style="width: 100% !important;">
-                                            <img src="{{ Storage::disk('upcloud')->url($img4) }}" alt="{{ $img4Alt }}"
+                                            <img src="{{ Storage::disk('upcloud')->url(ltrim($img4, '/')) }}" alt="{{ $img4Alt }}"
                                                 class="img-responsive hover" style="width: 100% !important;">
                                         </picture>
                                     @endif
