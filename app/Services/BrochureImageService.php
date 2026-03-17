@@ -48,7 +48,7 @@ class BrochureImageService
     /**
      * Get stored filename for an existing item image (prefer WebP if present).
      */
-    public function getExistingImageStoredFilename(?string $filename, string $imagePath = 'item-images/'): ?string
+    public function getExistingImageStoredFilename(?string $filename, string $imagePath = 'img/'): ?string
     {
         if (! $filename) {
             return null;

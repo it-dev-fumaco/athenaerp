@@ -213,7 +213,7 @@ class ConsignmentStockTransferController extends Controller
                         $item->image = isset($consignmentDetails->defaultImage->image_path)
                             ? '/img/'.$consignmentDetails->defaultImage->image_path
                             : '/icon/no-img.png';
-                        if (Storage::disk('upcloud')->exists(explode('.', $item->image)[0].'.webp')) {
+                        if (Storage::disk('upcloud')->exists(ltrim(explode('.', $item->image)[0], '/').'.webp')) {
                             $item->image = explode('.', $item->image)[0].'.webp';
                         }
                     }
@@ -524,7 +524,7 @@ class ConsignmentStockTransferController extends Controller
 
             $itemImages = ItemImages::whereIn('parent', $itemCodes)->pluck('image_path', 'parent');
             $itemImages = collect($itemImages)->map(function ($image) {
-                return $this->base64Image("/item-images/$image");
+                return $this->base64Image("/img/$image");
             });
 
             $noImg = $this->base64Image('/icon/no-img.png');

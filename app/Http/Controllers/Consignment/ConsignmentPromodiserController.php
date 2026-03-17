@@ -76,7 +76,7 @@ class ConsignmentPromodiserController extends Controller
 
                 $item->transfer_qty = (int) $item->transfer_qty;
                 $item->image = isset($item->defaultImage->image_path) ? '/img/'.$item->defaultImage->image_path : '/icon/no-img.png';
-                if (Storage::disk('upcloud')->exists(explode('.', $item->image)[0].'.webp')) {
+                if (Storage::disk('upcloud')->exists(ltrim(explode('.', $item->image)[0], '/').'.webp')) {
                     $item->image = explode('.', $item->image)[0].'.webp';
                 }
                 $item->price = $price;
@@ -121,7 +121,7 @@ class ConsignmentPromodiserController extends Controller
                 ->get();
 
             $itemImages = ItemImages::whereIn('parent', collect($deliveryReport)->pluck('item_code'))->pluck('image_path', 'parent');
-            $itemImages = collect($itemImages)->map(fn ($image) => $this->base64Image("/item-images/$image"));
+            $itemImages = collect($itemImages)->map(fn ($image) => $this->base64Image("/img/$image"));
             $itemImages['no_img'] = $this->base64Image('icon/no-img.png');
 
             return view('consignment.promodiser_delivery_inquire_tbl', compact('deliveryReport', 'itemImages'));
@@ -490,8 +490,8 @@ class ConsignmentPromodiserController extends Controller
 
             $result = collect($list->items())->map(function ($stockEntry) use ($itemDetails) {
                 $stockEntry->items = collect($stockEntry->items)->map(function ($item) use ($itemDetails) {
-                    $item->image = $item->defaultImage ? '/img/'.$item->defaultImage->image_path : 'icon/no-img.png';
-                    if (Storage::disk('upcloud')->exists(explode('.', $item->image)[0].'.webp')) {
+                    $item->image = $item->defaultImage ? '/img/'.$item->defaultImage->image_path : '/icon/no-img.png';
+                    if (Storage::disk('upcloud')->exists(ltrim(explode('.', $item->image)[0], '/').'.webp')) {
                         $item->image = explode('.', $item->image)[0].'.webp';
                     }
                     $item->price = isset($itemDetails[$item->t_warehouse][$item->item_code]) ? (float) $itemDetails[$item->t_warehouse][$item->item_code][0]->consignment_price : 0;
@@ -620,7 +620,7 @@ class ConsignmentPromodiserController extends Controller
 
         $itemCodes = collect($damagedItems->items())->pluck('item_code');
         $itemImages = ItemImages::whereIn('parent', $itemCodes)->pluck('image_path', 'parent');
-        $itemImages = collect($itemImages)->map(fn ($image) => $this->base64Image("/item-images/$image"));
+        $itemImages = collect($itemImages)->map(fn ($image) => $this->base64Image("/img/$image"));
         $noImg = $this->base64Image('/icon/no-img.png');
 
         $damagedArr = [];
@@ -655,7 +655,7 @@ class ConsignmentPromodiserController extends Controller
 
         $itemCodes = collect($list->items())->pluck('item_code');
         $itemImages = ItemImages::whereIn('parent', $itemCodes)->pluck('image_path', 'parent');
-        $itemImages = collect($itemImages)->map(fn ($image) => $this->base64Image("/item-images/$image"));
+        $itemImages = collect($itemImages)->map(fn ($image) => $this->base64Image("/img/$image"));
         $noImg = $this->base64Image('icon/no-img.png');
 
         $result = [];
