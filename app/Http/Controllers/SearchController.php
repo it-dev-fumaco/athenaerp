@@ -187,7 +187,7 @@ class SearchController extends Controller
 
         $itemImages = ItemImages::whereIn('parent', $itemCodes)->orderBy('idx', 'asc')->pluck('image_path', 'parent');
         $itemImages = collect($itemImages)->map(function ($image) {
-            return $this->base64Image("/item-images/$image");
+            return $this->base64Image("/img/$image");
         });
         $noImgPlaceholder = $this->base64Image('/icon/no-img.png');
 
@@ -518,9 +518,9 @@ class SearchController extends Controller
             $imgPath = Arr::exists($itemImages, $request->img_key) ? $itemImages[$request->img_key]->image_path : $itemImages[$dir]->image_path;
             $currentKey = Arr::exists($itemImages, $request->img_key) ? $request->img_key : $dir;
 
-            $storageKey = str_contains($imgPath, '/') ? ltrim($imgPath, '/') : 'item-images/'.$imgPath;
+            $storageKey = str_contains($imgPath, '/') ? ltrim($imgPath, '/') : 'img/'.$imgPath;
             $imgWebpBasename = explode('.', basename($imgPath))[0].'.webp';
-            $webpStorageKey = str_contains($imgPath, '/') ? dirname($storageKey).'/'.$imgWebpBasename : 'item-images/'.$imgWebpBasename;
+            $webpStorageKey = str_contains($imgPath, '/') ? dirname($storageKey).'/'.$imgWebpBasename : 'img/'.$imgWebpBasename;
 
             $imgArr = [
                 'item_code' => $request->item_code,
@@ -552,7 +552,7 @@ class SearchController extends Controller
 
         $imageCollection = ItemImages::whereIn('parent', $itemCodes)->orderBy('idx', 'asc')->pluck('image_path', 'parent');
         $imageCollection = collect($imageCollection)->map(function ($image) {
-            return $this->base64Image("/item-images/$image");
+            return $this->base64Image("/img/$image");
         });
 
         $noImg = $this->base64Image('/icon/no-img.png');

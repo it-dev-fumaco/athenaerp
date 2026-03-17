@@ -295,7 +295,7 @@
                                                                                 @forelse ($inv->items as $i => $item)
                                                                                     @php
                                                                                         $target = $inv->name.'-'.$item->item_code;
-                                                                                        $img = Storage::disk('upcloud')->url('item-images/'.$item->image);
+                                                                                        $img = Storage::disk('upcloud')->url('img/'.$item->image);
                                                                                     @endphp
                                                                                     <tr id="row-{{ $target }}" class="{{ $item->item_code }}">
                                                                                         <td class="text-center p-1 align-middle">

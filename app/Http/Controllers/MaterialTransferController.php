@@ -744,7 +744,7 @@ class MaterialTransferController extends Controller
         $owner = ucwords(str_replace('.', ' ', explode('@', $q->owner)[0]));
 
         $img = ItemImages::query()->where('parent', $q->item_code)->orderBy('idx', 'asc')->pluck('image_path')->first();
-        $img = $img ? "/item-images/$img" : '/icon/no-img.png';
+        $img = $img ? "/img/$img" : '/icon/no-img.png';
         $img = $this->base64Image($img);
 
         $sWarehouse = $q->purpose == 'Manufacture' ? 'Goods In Transit - FI' : $q->s_warehouse;

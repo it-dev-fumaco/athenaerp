@@ -135,24 +135,24 @@ class ItemProfileController extends Controller
         $disk = Storage::disk('upcloud');
         $itemImages = collect($itemImagesRaw)->map(function ($imagePath) use ($disk) {
             $path = $imagePath ? trim((string) $imagePath) : null;
-            $fullUrl = $this->itemImageUrlFast($path);
+            $url = $this->itemImageUrlWebpOrNoImg($path);
 
-            $thumbUrl = $fullUrl;
+            $thumbUrl = $url;
             if ($path && ! Str::startsWith($path, ['http://', 'https://'])) {
-                $baseName = basename($path);
-                $thumbKey = 'items/thumbs/'.$baseName;
+                $baseName = pathinfo($path, PATHINFO_FILENAME);
+                $thumbKey = 'items/thumbs/'.$baseName.'.webp';
                 if ($disk->exists($thumbKey)) {
                     $thumbUrl = $disk->url($thumbKey);
                 }
             }
 
             return [
-                'full' => $fullUrl,
+                'full' => $url,
                 'thumb' => $thumbUrl,
             ];
         });
 
-        $noImg = $this->itemImageUrlFast(null);
+        $noImg = $this->itemImageUrlWebpOrNoImg(null);
 
         $itemAlternatives = [];
         $productionItemAlternatives = DB::table('tabWork Order Item as p')
@@ -176,7 +176,7 @@ class ItemProfileController extends Controller
         foreach ($productionItemAlternatives as $productionAltRow) {
             $productionAltRow = (object) $productionAltRow;
             $path = Arr::exists($itemAlternativeImages, $productionAltRow->item_code) ? $itemAlternativeImages[$productionAltRow->item_code] : null;
-            $itemAlternativeImage = $this->itemImageUrlFast($path);
+            $itemAlternativeImage = $this->itemImageUrlWebpOrNoImg($path);
 
             $actualStocks = Arr::get($productionItemAltActualStock, $productionAltRow->item_code, 0);
 
@@ -218,7 +218,7 @@ class ItemProfileController extends Controller
 
             foreach ($variantItems as $variantItem) {
                 $path = Arr::exists($itemAlternativeImages, $variantItem->name) ? $itemAlternativeImages[$variantItem->name] : null;
-                $itemAlternativeImage = $this->itemImageUrlFast($path);
+                $itemAlternativeImage = $this->itemImageUrlWebpOrNoImg($path);
 
                 $totalReserved = $totalConsumed = 0;
                 if (Arr::exists($alternativeReserves, $variantItem->name)) {
@@ -261,7 +261,7 @@ class ItemProfileController extends Controller
 
                 foreach ($classificationItems as $altItem) {
                     $path = Arr::exists($itemAlternativeImages, $altItem->name) ? $itemAlternativeImages[$altItem->name] : null;
-                    $itemAlternativeImage = $this->itemImageUrlFast($path);
+                    $itemAlternativeImage = $this->itemImageUrlWebpOrNoImg($path);
 
                     $totalReserved = $totalConsumed = 0;
                     if (Arr::exists($alternativeReserves, $altItem->name)) {
@@ -475,7 +475,7 @@ class ItemProfileController extends Controller
                 try {
                     if (function_exists('imagewebp')) {
                         $filename = $randomBase.'.webp';
-                        $storageKey = "items/{$filename}";
+                        $storageKey = "img/{$filename}";
 
                         $webp = Webp::make($file);
                         $tempPath = storage_path("app/temp/{$filename}");
@@ -485,9 +485,9 @@ class ItemProfileController extends Controller
                         $webp->save($tempPath);
                         Storage::disk('upcloud')->put($storageKey, file_get_contents($tempPath));
 
-                        // Generate a smaller thumbnail (~600px wide) under items/thumbs/ for LCP.
+                        // Generate a smaller thumbnail (~600px wide) under img/thumbs/ for LCP.
                         $thumbFilename = $filename;
-                        $thumbKey = "items/thumbs/{$thumbFilename}";
+                        $thumbKey = "img/thumbs/{$thumbFilename}";
                         $thumbTempPath = storage_path("app/temp/thumb-{$filename}");
                         $thumbImage = Webp::make($file);
                         if (method_exists($thumbImage, 'resize')) {
@@ -504,14 +504,14 @@ class ItemProfileController extends Controller
                     } else {
                         $ext = strtolower((string) $file->getClientOriginalExtension()) ?: 'jpg';
                         $filename = $randomBase.'.'.$ext;
-                        $storageKey = "items/{$filename}";
+                        $storageKey = "img/{$filename}";
                         Storage::disk('upcloud')->put($storageKey, file_get_contents($file->getRealPath()));
                     }
                 } catch (\Throwable $e) {
                     // Last-resort fallback: store original bytes so upload never 500s.
                     $ext = strtolower((string) $file->getClientOriginalExtension()) ?: 'jpg';
                     $filename = $randomBase.'.'.$ext;
-                    $storageKey = "items/{$filename}";
+                    $storageKey = "img/{$filename}";
                     Storage::disk('upcloud')->put($storageKey, file_get_contents($file->getRealPath()));
                 } finally {
                     if ($tempPath && is_file($tempPath)) {
@@ -549,8 +549,45 @@ class ItemProfileController extends Controller
     }
 
     /**
+     * Item profile image rule: show .webp if it exists, otherwise no-img.png.
+     * Used for main item images and item alternatives. Does not fall back to jpeg/png.
+     */
+    private function itemImageUrlWebpOrNoImg(?string $imagePath): string
+    {
+        $noImgUrl = Storage::disk('upcloud')->url('icon/no-img.png');
+        if (! $imagePath || ! trim((string) $imagePath)) {
+            return $noImgUrl;
+        }
+        $imagePath = trim((string) $imagePath);
+        if (Str::startsWith($imagePath, ['http://', 'https://'])) {
+            return $imagePath;
+        }
+        $disk = Storage::disk('upcloud');
+        $baseName = pathinfo($imagePath, PATHINFO_FILENAME);
+
+        $webpCandidates = [
+            "items/{$baseName}.webp",
+            "item-images/{$baseName}.webp",
+            "img/{$baseName}.webp",
+        ];
+        if (str_contains($imagePath, '/')) {
+            $key = ltrim($imagePath, '/');
+            $dir = dirname($key);
+            $webpCandidates[] = $dir.'/'.$baseName.'.webp';
+        }
+
+        foreach ($webpCandidates as $key) {
+            if ($disk->exists($key)) {
+                return $disk->url($key);
+            }
+        }
+
+        return $noImgUrl;
+    }
+
+    /**
      * Return image URL for item profile. Minimizes exists() calls: path with "/" is used as storage key (no exists).
-     * Filename-only: try items/, item-images/, img/ with one exists() each and return first found so legacy paths work.
+     * Filename-only: try img/ first, then legacy items/ and item-images/ so existing paths still work.
      */
     private function itemImageUrlFast(?string $imagePath): string
     {
@@ -567,9 +604,9 @@ class ItemProfileController extends Controller
             return $disk->url($key);
         }
         $candidates = [
+            "img/{$imagePath}",
             "items/{$imagePath}",
             "item-images/{$imagePath}",
-            "img/{$imagePath}",
         ];
         foreach ($candidates as $key) {
             if ($disk->exists($key)) {
@@ -580,7 +617,7 @@ class ItemProfileController extends Controller
     }
 
     /**
-     * Build public URL for an item image. If path is already a full URL (or contains one, e.g. malformed "item-images/https://..."), return that URL.
+     * Build public URL for an item image. If path is already a full URL (or contains one, e.g. malformed "img/https://..."), return that URL.
      * Otherwise build URL using the upcloud disk. Prefers webp when it exists, otherwise returns original (jpg, png, etc.).
      */
     private function buildItemImageUrl(?string $path): string
@@ -591,7 +628,7 @@ class ItemProfileController extends Controller
         if (Str::startsWith($path, ['http://', 'https://'])) {
             return $path;
         }
-        // Malformed path can be stored as "item-images/https://..." — use the URL part for display/download.
+        // Malformed path can be stored with URL — use the URL part for display/download.
         if (Str::contains($path, '://')) {
             $scheme = Str::contains($path, 'https://') ? 'https://' : 'http://';
             $after = Str::after($path, $scheme);
@@ -599,13 +636,13 @@ class ItemProfileController extends Controller
             return $scheme.$after;
         }
         $disk = Storage::disk('upcloud');
-        $storageKey = str_contains($path, '/') ? ltrim($path, '/') : 'item-images/'.$path;
+        $storageKey = str_contains($path, '/') ? ltrim($path, '/') : 'img/'.$path;
 
         // Prefer webp when it exists, otherwise use original (jpg, png, etc.)
-        if (str_starts_with($storageKey, 'item-images/')) {
+        if (str_starts_with($storageKey, 'img/')) {
             $baseName = pathinfo($storageKey, PATHINFO_FILENAME);
             $dir = dirname($storageKey);
-            $webpKey = ($dir === '.' || $dir === 'item-images') ? 'item-images/'.$baseName.'.webp' : $dir.'/'.$baseName.'.webp';
+            $webpKey = ($dir === '.' || $dir === 'img') ? 'img/'.$baseName.'.webp' : $dir.'/'.$baseName.'.webp';
             if ($disk->exists($webpKey)) {
                 return $disk->url($webpKey);
             }
@@ -616,18 +653,18 @@ class ItemProfileController extends Controller
 
     /**
      * Resolve storage key for the webp version of an image (same directory as original).
-     * Paths that contain a URL (e.g. "item-images/https://...") are not valid storage keys; use filename-only key.
+     * Paths that contain a URL are not valid storage keys; use filename-only key under img/.
      */
     private function itemImageStorageKey(string $originalPath, string $webpFilename): string
     {
         if (Str::contains($originalPath, '://')) {
-            return 'item-images/'.basename($webpFilename);
+            return 'img/'.basename($webpFilename);
         }
         if (str_contains($originalPath, '/')) {
             return dirname($originalPath).'/'.basename($webpFilename);
         }
 
-        return 'item-images/'.$webpFilename;
+        return 'img/'.$webpFilename;
     }
 
     public function loadItemImages($itemCode, Request $request)
@@ -692,10 +729,10 @@ class ItemProfileController extends Controller
                 return $url ?? $disk->url($storageKey);
             }
 
-            // Filename-only rows: try items/, img/, item-images/.
+            // Filename-only rows: try img/ first, then legacy items/ and item-images/.
             $candidates = [
-                "items/{$imagePath}",
                 "img/{$imagePath}",
+                "items/{$imagePath}",
                 "item-images/{$imagePath}",
             ];
 
@@ -718,7 +755,7 @@ class ItemProfileController extends Controller
     {
         $baseName = pathinfo($storageKey, PATHINFO_FILENAME);
         $dir = dirname($storageKey);
-        $webpKey = ($dir === '.' ? 'item-images/' : $dir.'/').$baseName.'.webp';
+        $webpKey = ($dir === '.' ? 'img/' : $dir.'/').$baseName.'.webp';
         if ($disk->exists($webpKey)) {
             return $disk->url($webpKey);
         }

@@ -46,7 +46,7 @@
                                         $img = explode('.', $item->image)[0].'.webp';
                                     }
 
-                                    $img = Storage::disk('upcloud')->url('item-images/'.$img);
+                                    $img = Storage::disk('upcloud')->url(ltrim($img, '/'));
                                 @endphp
                                 <tbody>
                                     <tr>
