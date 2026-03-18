@@ -13,15 +13,51 @@
       <div class="dashboard-tabs-card">
         <div class="dashboard-tabs-header">
           <ul class="dashboard-tabs">
-            <li><a href="#tab_1-1" :class="{ active: activeTab === 'stock-alert' }" @click.prevent="activeTab = 'stock-alert'">
-              <i class="fas fa-exclamation-triangle"></i> ▲ Stock Level Alert
-            </a></li>
-            <li><a href="#tab_2-1" :class="{ active: activeTab === 'movement' }" @click.prevent="activeTab = 'movement'">
-              <i class="fas fa-list-alt"></i> Stock Movement
-            </a></li>
-            <li><a href="#tab_3-1" :class="{ active: activeTab === 'recent' }" @click.prevent="activeTab = 'recent'">
-              <i class="fas fa-list-alt"></i> Recently Received Item(s)*
-            </a></li>
+            <li>
+              <a
+                href="#tab_1-1"
+                :class="{ active: activeTab === 'stock-alert' }"
+                @click.prevent="activeTab = 'stock-alert'"
+              >
+                <i class="fas fa-exclamation-triangle"></i> ▲ Stock Level Alert
+              </a>
+            </li>
+            <li>
+              <a
+                href="#tab_2-1"
+                :class="{ active: activeTab === 'movement' }"
+                @click.prevent="activeTab = 'movement'"
+              >
+                <i class="fas fa-list-alt"></i> Stock Movement
+              </a>
+            </li>
+            <li>
+              <a
+                href="#tab_3-1"
+                :class="{ active: activeTab === 'recent' }"
+                @click.prevent="activeTab = 'recent'"
+              >
+                <i class="fas fa-list-alt"></i> Recently Received Item(s)*
+              </a>
+            </li>
+            <li>
+              <a
+                href="#tab_4-1"
+                :class="{ active: activeTab === 'inventory-accuracy' }"
+                @click.prevent="activeTab = 'inventory-accuracy'"
+              >
+                <i class="fas fa-chart-line"></i> Inventory Accuracy
+              </a>
+            </li>
+            <li>
+              <a
+                href="#tab_5-1"
+                :class="{ active: activeTab === 'reserved-items' }"
+                @click.prevent="activeTab = 'reserved-items'"
+              >
+                <i class="fas fa-clipboard-list"></i> Reserved Items
+              </a>
+            </li>
           </ul>
           <a v-if="showItemCostLink" href="/search_item_cost" class="btn-register-cost">Register Item Cost</a>
         </div>
@@ -35,23 +71,25 @@
           <div v-show="activeTab === 'recent'" class="tab-pane overflow-auto">
             <DashboardRecentlyReceived />
           </div>
-        </div>
-      </div>
-      <div class="dashboard-sidebar">
-        <div class="dashboard-widget card-glass">
-          <div class="dashboard-widget-header">
-            <h3 class="dashboard-widget-title">Inventory Accuracy</h3>
+          <div v-show="activeTab === 'inventory-accuracy'" class="tab-pane">
+            <div class="card-glass">
+              <div class="dashboard-widget-header">
+                <h3 class="dashboard-widget-title">Inventory Accuracy</h3>
+              </div>
+              <div class="dashboard-widget-body">
+                <DashboardInventoryAccuracy :initial-month="initialMonth" :initial-year="initialYear" />
+              </div>
+            </div>
           </div>
-          <div class="dashboard-widget-body">
-            <DashboardInventoryAccuracy :initial-month="initialMonth" :initial-year="initialYear" />
-          </div>
-        </div>
-        <div class="dashboard-widget card-glass">
-          <div class="dashboard-widget-header">
-            <h3 class="dashboard-widget-title">Reserved Items</h3>
-          </div>
-          <div class="dashboard-widget-body">
-            <DashboardReservedItems />
+          <div v-show="activeTab === 'reserved-items'" class="tab-pane">
+            <div class="card-glass">
+              <div class="dashboard-widget-header">
+                <h3 class="dashboard-widget-title">Reserved Items</h3>
+              </div>
+              <div class="dashboard-widget-body">
+                <DashboardReservedItems />
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -117,16 +155,8 @@ const showItemCostLink = computed(() => ['Manager', 'Director'].includes(props.u
   padding: 0.75rem 1rem 1rem 1rem;
 }
 .dashboard-main {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 1.25rem;
-  align-items: start;
+  display: block;
   min-width: 0;
-}
-@media (max-width: 1200px) {
-  .dashboard-main {
-    grid-template-columns: 1fr;
-  }
 }
 .dashboard-tabs-card {
   min-width: 0;
@@ -201,7 +231,21 @@ const showItemCostLink = computed(() => ['Manager', 'Director'].includes(props.u
   padding: 0.5rem;
   min-width: 0;
 }
-.dashboard-sidebar {
+.dashboard-recent-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 1.25rem;
+  align-items: start;
+}
+@media (max-width: 1200px) {
+  .dashboard-recent-layout {
+    grid-template-columns: 1fr;
+  }
+}
+.dashboard-recent-main {
+  min-width: 0;
+}
+.dashboard-recent-sidebar {
   display: flex;
   flex-direction: column;
   gap: 1rem;

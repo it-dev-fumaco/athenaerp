@@ -1509,11 +1509,30 @@ class MainController extends Controller
 
         $q = DB::table('tabStock Reservation as sr')
             ->join('tabItem as ti', 'sr.item_code', 'ti.name')
-            ->groupby('sr.item_code', 'sr.warehouse', 'sr.description', 'sr.stock_uom', 'ti.item_classification')
+            ->groupby(
+                'sr.item_code',
+                'sr.warehouse',
+                'sr.description',
+                'sr.stock_uom',
+                'ti.item_classification',
+                'sr.type',
+                'sr.sales_person',
+                'sr.project'
+            )
             ->whereIn('sr.warehouse', $allowedWarehouses)
             ->whereNotIn('sr.status', ['Cancelled', 'Expired'])
             ->orderBy('sr.creation', 'desc')
-            ->select('sr.item_code', DB::raw('sum(sr.reserve_qty) as qty'), 'sr.warehouse', 'sr.description', 'sr.stock_uom', 'ti.item_classification')
+            ->select(
+                'sr.item_code',
+                DB::raw('sum(sr.reserve_qty) as qty'),
+                'sr.warehouse',
+                'sr.description',
+                'sr.stock_uom',
+                'ti.item_classification',
+                'sr.type as reservation_type',
+                'sr.sales_person as sales_person_name',
+                'sr.project as project_name'
+            )
             ->get();
 
         $itemImages = ItemImages::query()->whereIn('parent', collect($q)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent');
@@ -1532,6 +1551,9 @@ class MainController extends Controller
                 'warehouse' => $row->warehouse,
                 'stock_uom' => $row->stock_uom,
                 'image' => $image,
+                'reservation_type' => $row->reservation_type,
+                'sales_person' => $row->sales_person_name,
+                'project' => $row->project_name,
             ];
         }
 
