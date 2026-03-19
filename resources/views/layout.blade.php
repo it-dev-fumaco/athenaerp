@@ -1771,6 +1771,35 @@
 				get_stock_reservations(item_code, page);
 			});
 
+			// Keep the legacy stock-reservation Blade table in sync with Vue actions
+			// (create/edit/cancel) without requiring a manual page reload.
+			window.addEventListener('item-profile-stock-reservation-refresh', function(ev){
+				try{
+					if (!$('#stock-reservation-table').length) return;
+
+					var detail = ev && ev.detail ? ev.detail : {};
+					var item_code = (detail.itemCode || '').toString().trim() || $('#selected-item-code').text().trim();
+					if (!item_code) return;
+
+					// Best-effort: preserve the currently active pagination page (falls back to 1).
+					var activePageEl = $('#stock-reservations-pagination-1 .page-item.active a, #stock-reservations-pagination-2 .page-item.active a, #stock-reservations-pagination-3 .page-item.active a').first();
+					var pageNo = 1;
+					if (activePageEl && activePageEl.length) {
+						var parsed = parseInt((activePageEl.text() || '').toString().trim(), 10);
+						if (!isNaN(parsed) && parsed > 0) pageNo = parsed;
+					}
+
+					$.ajax({
+						type: 'GET',
+						url: '/get_stock_reservation/' + encodeURIComponent(item_code) + '?page=' + pageNo,
+						success: function(response){
+							$('#stock-reservation-table').html(response);
+						},
+						error: function(){ /* keep UI stable */ }
+					});
+				}catch(_){}
+			});
+
 			$(document).on('submit', '.cancel-modal form', function(e){
 				e.preventDefault();
 				$.ajax({

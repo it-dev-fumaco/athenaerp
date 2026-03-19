@@ -28,7 +28,9 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -83,7 +85,37 @@ class ItemProfileController extends Controller
 
     public function getItemDetails(Request $request, $itemCode)
     {
-        $itemDetails = Item::query()->where('name', $itemCode)->first();
+        $debugQueries = $request->boolean('debug_queries', false);
+        if ($debugQueries) {
+            DB::enableQueryLog();
+        }
+
+        $cacheTtl = (int) config('item_profile.cache_ttl', 300);
+
+        // Fetch only fields needed by this controller + `resources/views/item_profile.blade.php`.
+        // Also eager-load images to avoid an extra `ItemImages` query.
+        $itemDetails = Item::query()
+            ->where('name', $itemCode)
+            ->select([
+                'name',
+                'brand',
+                'description',
+                'item_name',
+                'item_brochure_name',
+                'item_brochure_description',
+                'stock_uom',
+                'custom_item_cost',
+                'item_classification',
+                'variant_of',
+                'has_variants',
+                'disabled',
+            ])
+            ->with([
+                'images' => fn ($q) => $q
+                    ->select('parent', 'image_path', 'idx')
+                    ->orderBy('idx', 'asc'),
+            ])
+            ->first();
 
         if (! $itemDetails) {
             abort(404);
@@ -102,9 +134,16 @@ class ItemProfileController extends Controller
 
         $userDepartment = Auth::user()->department;
         $userGroup = Auth::user()->user_group;
-        $allowedDepartment = DepartmentWithPriceAccess::query()->pluck('department')->toArray();
+        $allowedDepartment = Cache::remember('item_profile.allowed_departments', $cacheTtl, function () {
+            return DepartmentWithPriceAccess::query()->pluck('department')->toArray();
+        });
 
-        $priceData = $this->itemProfileService->getItemPrices($itemCode, $itemDetails, $allowedDepartment);
+        // Price queries can be expensive (purchase orders, landed costs, website prices).
+        // Cache per item + permission context so unauthorized users still get zeros.
+        $priceCacheKey = sprintf('item_profile.item_prices:%s:%s:%s', $itemCode, $userDepartment ?? 'null', $userGroup ?? 'null');
+        $priceData = Cache::remember($priceCacheKey, $cacheTtl, function () use ($itemCode, $itemDetails, $allowedDepartment) {
+            return $this->itemProfileService->getItemPrices($itemCode, $itemDetails, $allowedDepartment);
+        });
         $itemRate = $priceData['itemRate'];
         $minimumSellingPrice = $priceData['minimumSellingPrice'];
         $defaultPrice = $priceData['defaultPrice'];
@@ -127,15 +166,13 @@ class ItemProfileController extends Controller
             $itemStockAvailable = collect($siteWarehouses)->sum('available_qty');
         }
 
-        $itemImagesRaw = ItemImages::query()
-            ->where('parent', $itemCode)
-            ->orderBy('idx', 'asc')
-            ->pluck('image_path');
+        // images are eager-loaded on the main item query above.
+        $itemImagesRaw = $itemDetails->images?->pluck('image_path') ?? collect();
 
         $disk = Storage::disk('upcloud');
         $itemImages = collect($itemImagesRaw)->map(function ($imagePath) use ($disk) {
             $path = $imagePath ? trim((string) $imagePath) : null;
-            $url = $this->itemImageUrlWebpOrNoImg($path);
+            $url = $this->itemImageUrlFast($path);
 
             $thumbUrl = $url;
             if ($path && ! Str::startsWith($path, ['http://', 'https://'])) {
@@ -176,7 +213,7 @@ class ItemProfileController extends Controller
         foreach ($productionItemAlternatives as $productionAltRow) {
             $productionAltRow = (object) $productionAltRow;
             $path = Arr::exists($itemAlternativeImages, $productionAltRow->item_code) ? $itemAlternativeImages[$productionAltRow->item_code] : null;
-            $itemAlternativeImage = $this->itemImageUrlWebpOrNoImg($path);
+            $itemAlternativeImage = $this->itemImageUrlFast($path);
 
             $actualStocks = Arr::get($productionItemAltActualStock, $productionAltRow->item_code, 0);
 
@@ -194,7 +231,11 @@ class ItemProfileController extends Controller
 
         if (! $bundled) {
             $itemAttributes = ItemVariantAttribute::query()->where('parent', $itemCode)->orderBy('idx', 'asc')->pluck('attribute_value', 'attribute')->toArray();
-            $variantItems = Item::query()->variantSiblings($itemDetails->variant_of, $itemDetails->name)->orderBy('modified', 'desc')->get();
+            $variantItems = Item::query()
+                ->variantSiblings($itemDetails->variant_of, $itemDetails->name)
+                ->orderBy('modified', 'desc')
+                ->select(['name', 'description', 'disabled', 'custom_item_cost', 'variant_of'])
+                ->get();
             $alternativeItemCodes = $variantItems->pluck('name');
 
             $actualStocksQuery = Bin::query()->whereIn('item_code', $alternativeItemCodes)->selectRaw('item_code, SUM(actual_qty) as actual_qty')->groupBy('item_code')->get();
@@ -218,7 +259,7 @@ class ItemProfileController extends Controller
 
             foreach ($variantItems as $variantItem) {
                 $path = Arr::exists($itemAlternativeImages, $variantItem->name) ? $itemAlternativeImages[$variantItem->name] : null;
-                $itemAlternativeImage = $this->itemImageUrlWebpOrNoImg($path);
+                $itemAlternativeImage = $this->itemImageUrlFast($path);
 
                 $totalReserved = $totalConsumed = 0;
                 if (Arr::exists($alternativeReserves, $variantItem->name)) {
@@ -256,12 +297,13 @@ class ItemProfileController extends Controller
                     ->where('name', '!=', $itemDetails->name)
                     ->limit(15)
                     ->orderBy('modified', 'desc')
+                    ->select(['name', 'description'])
                     ->get();
                 $itemAlternativeImages = ItemImages::query()->whereIn('parent', $classificationItems->pluck('name'))->orderBy('idx', 'asc')->pluck('image_path', 'parent')->toArray();
 
                 foreach ($classificationItems as $altItem) {
                     $path = Arr::exists($itemAlternativeImages, $altItem->name) ? $itemAlternativeImages[$altItem->name] : null;
-                    $itemAlternativeImage = $this->itemImageUrlWebpOrNoImg($path);
+                    $itemAlternativeImage = $this->itemImageUrlFast($path);
 
                     $totalReserved = $totalConsumed = 0;
                     if (Arr::exists($alternativeReserves, $altItem->name)) {
@@ -373,15 +415,24 @@ class ItemProfileController extends Controller
             }
 
             $actualVariantStocks = Bin::query()->whereIn('item_code', $variantItemCodes)->selectRaw('SUM(actual_qty) as actual_qty, item_code')->groupBy('item_code')->pluck('actual_qty', 'item_code')->toArray();
+            // Eager-load all variant attributes for the current page slice (plus the main item)
+            // so these attributes are fetched in a single query (no relation N+1 risk).
+            $itemsForAttributes = $coVariantsSlice->concat(collect([$itemDetails]));
+            $itemsForAttributes->load([
+                'variantAttributes' => fn ($q) => $q
+                    ->select('parent', 'attribute', 'attribute_value', 'idx')
+                    ->orderBy('idx', 'asc'),
+            ]);
 
-            array_push($variantItemCodes, $itemDetails->name);
+            $allAttrRows = $itemsForAttributes
+                ->flatMap(fn ($item) => $item->variantAttributes)
+                ->sortBy('idx')
+                ->values();
 
-            $attributesQuery = ItemVariantAttribute::query()->whereIn('parent', $variantItemCodes)->select('parent', 'attribute', 'attribute_value')->orderBy('idx', 'asc')->get();
-
-            $attributeNames = collect($attributesQuery)->pluck('attribute')->unique();
+            $attributeNames = $allAttrRows->pluck('attribute')->unique()->values();
 
             $attributes = [];
-            foreach ($attributesQuery as $row) {
+            foreach ($allAttrRows as $row) {
                 $attributes[$row->parent][$row->attribute] = $row->attribute_value;
             }
         }
@@ -389,6 +440,14 @@ class ItemProfileController extends Controller
         $consignmentBranches = [];
         if (Auth::user()->user_group == 'Promodiser') {
             $consignmentBranches = AssignedWarehouses::where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
+        }
+
+        if ($debugQueries) {
+            $queries = DB::getQueryLog();
+            Log::info('item_profile.getItemDetails query count', [
+                'item_code' => $itemCode,
+                'count' => is_array($queries) ? count($queries) : 0,
+            ]);
         }
 
         return view('item_profile', compact('isTaxIncludedInRate', 'itemDetails', 'itemAttributes', 'siteWarehouses', 'itemImages', 'itemAlternatives', 'consignmentWarehouses', 'userGroup', 'minimumSellingPrice', 'defaultPrice', 'attributeNames', 'coVariants', 'attributes', 'variantsPriceArr', 'itemRate', 'lastPurchaseDate', 'allowedDepartment', 'userDepartment', 'avgPurchaseRate', 'lastPurchaseRate', 'variantsCostArr', 'variantsMinPriceArr', 'actualVariantStocks', 'itemStockAvailable', 'manualRate', 'manualPriceInput', 'consignmentBranches', 'bundled', 'noImg'));
