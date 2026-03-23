@@ -353,11 +353,11 @@
                                                 <div class="box box-solid p-0 ml-3">
                                                     <div class="box-header with-border">
                                                         <div class="box-body item-stock-level-div">
-                                                            <div class="container border p-4 d-flex justify-content-center align-items-center">
-                                                                <div class="spinner-border" role="status">
-                                                                    <span class="sr-only">Loading...</span>
-                                                                </div>
-                                                            </div>
+                                                            @if ($bundled)
+                                                                @include('item_stock_level_bundled', ['stocks' => $bundledStocks])
+                                                            @else
+                                                                @include('item_stock_level', compact('consignmentWarehouses', 'siteWarehouses', 'itemDetails'))
+                                                            @endif
                                                         </div>
                                                     </div>
                                                 </div>
@@ -369,7 +369,13 @@
                                             </div>
                                             <div class="box box-solid p-0 ml-3 overflow-auto">
                                                 <div class="box-header with-border">
-                                                    <div class="box-body item-stock-level-div"></div>
+                                                    <div class="box-body item-stock-level-div">
+                                                        @if ($bundled)
+                                                            @include('item_stock_level_bundled', ['stocks' => $bundledStocks])
+                                                        @else
+                                                            @include('item_stock_level', compact('consignmentWarehouses', 'siteWarehouses', 'itemDetails'))
+                                                        @endif
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1048,9 +1054,7 @@
 
         // Defer initial data fetches slightly so first paint is not competing with AJAX work.
         document.addEventListener('DOMContentLoaded', function () {
-            var itemCode = '{{ $itemDetails->name }}';
             var startDataFetch = function () {
-                get_item_stock_levels(itemCode);
                 load_item_information();
             };
             if ('requestIdleCallback' in window) {
@@ -1163,15 +1167,20 @@
         }) 
 
         function get_item_stock_levels(item_code) {
-            $.ajax({
-                type: 'GET',
-                url: '/get_item_stock_levels/{{ $bundled ? "bundled/" : null }}' + item_code,
-                success: function(response){
-                    $('.item-stock-level-div').html(response);
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                    showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
-                }
+            var path = '/get_item_stock_levels/{{ $bundled ? "bundled/" : null }}' + encodeURIComponent(item_code);
+            fetch(path, {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+                credentials: 'same-origin'
+            }).then(function (res) {
+                if (!res.ok) throw new Error('Request failed');
+                return res.text();
+            }).then(function (html) {
+                document.querySelectorAll('.item-stock-level-div').forEach(function (el) {
+                    el.innerHTML = html;
+                });
+            }).catch(function () {
+                showNotification("danger", 'Something went wrong. Please contact your system administrator.', "fa fa-info");
             });
         }
         
@@ -1193,15 +1202,18 @@
         });
         
         function load_item_information(){
-            $.ajax({
-                type: 'GET',
-                url: '/get_item_details/{{ $itemDetails->name }}',
-                success: function(response){
-                    $('#item-information-container').html(response);
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                    showNotification("danger", 'Error in getting product information.', "fa fa-info");
-                }
+            fetch('/get_item_details/' + encodeURIComponent('{{ $itemDetails->name }}'), {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+                credentials: 'same-origin'
+            }).then(function (res) {
+                if (!res.ok) throw new Error('Request failed');
+                return res.text();
+            }).then(function (html) {
+                var el = document.getElementById('item-information-container');
+                if (el) el.innerHTML = html;
+            }).catch(function () {
+                showNotification("danger", 'Error in getting product information.', "fa fa-info");
             });
         }
 

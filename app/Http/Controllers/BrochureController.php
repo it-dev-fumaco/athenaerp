@@ -34,6 +34,31 @@ class BrochureController extends Controller
 {
     use GeneralTrait;
 
+    /**
+     * PDFs are binary responses; any extra output (e.g. Debugbar, BOM/whitespace, buffered echos)
+     * will corrupt the resulting file. Ensure we don't append anything to the stream.
+     */
+    private function prepareBinaryResponse(): void
+    {
+        // Disable Laravel Debugbar if present.
+        try {
+            if (app()->bound('debugbar')) {
+                app('debugbar')->disable();
+            }
+        } catch (\Throwable $e) {
+            // Best-effort; never block brochure generation.
+        }
+
+        // Clear any output buffers that could prepend/append bytes.
+        try {
+            while (ob_get_level() > 0) {
+                @ob_end_clean();
+            }
+        } catch (\Throwable $e) {
+            // Best-effort; never block brochure generation.
+        }
+    }
+
     private function normalizeBrochureAttributeName(?string $attributeCode, ?string $attributeLabel): string
     {
         $attributeCode = $attributeCode !== null ? trim((string) $attributeCode) : '';
@@ -216,6 +241,7 @@ class BrochureController extends Controller
                 $content = $this->brochurePdfService->resolveBrochureImagePathsForPdf($content, $project, false);
                 $pdf = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename', 'isStandard'));
 
+                $this->prepareBinaryResponse();
                 return $pdf->stream($newFilename.'.pdf');
             }
 
@@ -799,6 +825,7 @@ class BrochureController extends Controller
                 $pdfDoc = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename', 'isStandard', 'remarks', 'fumacoLogoDataUri'));
                 $pdfDoc->setOption('isRemoteEnabled', false);
 
+                $this->prepareBinaryResponse();
                 return $pdfDoc->stream($newFilename.'.pdf');
             }
 
@@ -923,6 +950,7 @@ class BrochureController extends Controller
 
                 $pdfDoc = Pdf::loadView('brochure.pdf', compact('content', 'project', 'filename', 'isStandard', 'remarks', 'fumacoLogo'));
 
+                $this->prepareBinaryResponse();
                 return $pdfDoc->stream($newFilename.'.pdf');
             }
 

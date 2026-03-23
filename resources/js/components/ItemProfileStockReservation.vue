@@ -21,7 +21,11 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in apiData.web.data" :key="row.name">
+            <tr
+              v-for="row in apiData.web.data"
+              :key="row.name"
+              :class="{ 'stock-reservation-row-updated': row.name === highlightReservationId }"
+            >
               <td class="text-center align-middle p-1">
                 <span class="d-block font-weight-bold">{{ formatDate(row.creation) }}</span>
                 <small>{{ row.name }}</small>
@@ -96,7 +100,11 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in apiData.consignment.data" :key="row.name">
+            <tr
+              v-for="row in apiData.consignment.data"
+              :key="row.name"
+              :class="{ 'stock-reservation-row-updated': row.name === highlightReservationId }"
+            >
               <td class="text-center align-middle p-1">
                 <span class="d-block font-weight-bold">{{ formatDate(row.creation) }}</span>
                 <small>{{ row.name }}</small>
@@ -174,7 +182,11 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in apiData.inhouse.data" :key="row.name">
+            <tr
+              v-for="row in apiData.inhouse.data"
+              :key="row.name"
+              :class="{ 'stock-reservation-row-updated': row.name === highlightReservationId }"
+            >
               <td class="text-center align-middle p-1">
                 <span class="d-block font-weight-bold">{{ formatDate(row.creation) }}</span>
                 <small>{{ row.name }}</small>
@@ -297,6 +309,9 @@ const effectiveItemCode = ref(props.itemCode);
 const apiData = ref(null);
 const loading = ref(true);
 const error = ref(false);
+const highlightReservationId = ref(null);
+let highlightTimeout = null;
+let loadSeq = 0;
 const pageWeb = ref(1);
 const pageConsignment = ref(1);
 const pageInhouse = ref(1);
@@ -358,6 +373,7 @@ function formatDateTime(value) {
 }
 
 async function load() {
+  const seq = ++loadSeq;
   loading.value = true;
   error.value = false;
   try {
@@ -365,6 +381,7 @@ async function load() {
       headers: { Accept: 'application/json' },
       params: { tbl_1: pageWeb.value, tbl_2: pageConsignment.value, tbl_3: pageInhouse.value, page: pagePending.value },
     });
+    if (seq !== loadSeq) return; // prevent outdated responses from overwriting fresh data
     if (data && data.web && data.consignment && data.inhouse && data.pending) {
       apiData.value = data;
     } else {
@@ -373,7 +390,7 @@ async function load() {
   } catch (_) {
     error.value = true;
   } finally {
-    loading.value = false;
+    if (seq === loadSeq) loading.value = false;
   }
 }
 
@@ -401,11 +418,21 @@ function onContainerClick(event) {
   }
 }
 
-function onRefresh() {
+function setHighlight(reservationId) {
+  highlightReservationId.value = reservationId;
+  if (highlightTimeout) clearTimeout(highlightTimeout);
+  highlightTimeout = setTimeout(() => {
+    highlightReservationId.value = null;
+  }, 2500);
+}
+
+function onRefresh(event) {
   pageWeb.value = 1;
   pageConsignment.value = 1;
   pageInhouse.value = 1;
   pagePending.value = 1;
+  const reservationId = event?.detail?.reservationId;
+  if (reservationId) setHighlight(String(reservationId));
   load();
 }
 
@@ -424,3 +451,22 @@ onUnmounted(() => {
   window.removeEventListener('item-profile-stock-reservation-refresh', onRefresh);
 });
 </script>
+
+<style scoped>
+.stock-reservation-row-updated {
+  animation: stockReservationUpdatedFlash 2s ease-out;
+  background-color: rgba(255, 193, 7, 0.35) !important;
+}
+
+@keyframes stockReservationUpdatedFlash {
+  0% {
+    background-color: rgba(255, 193, 7, 0.55) !important;
+  }
+  70% {
+    background-color: rgba(255, 193, 7, 0.18) !important;
+  }
+  100% {
+    background-color: transparent !important;
+  }
+}
+</style>
