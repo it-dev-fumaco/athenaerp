@@ -679,17 +679,6 @@
 		}
 	</style>
 	@yield('style')
-	<!-- Google tag (gtag.js) -->
-	@if (config('app.env') !== 'local')
-	<script async src="https://www.googletagmanager.com/gtag/js?id=G-M1ZN4YBE16"></script>
-	<script>
-	window.dataLayer = window.dataLayer || [];
-	function gtag(){dataLayer.push(arguments);}
-	gtag('js', new Date());
-
-	gtag('config', 'G-M1ZN4YBE16');
-	</script>
-	@endif
 </head>
 <body class="hold-transition layout-top-nav">
 	<div id="loader-wrapper">
@@ -1689,23 +1678,35 @@
 				$('#stock-ledger-table').html('');
 				$('#stock-reservation-table').html('');
 
-				$.ajax({
-					type: 'GET',
-					url: '/get_item_details/' + encodeURIComponent(item_code),
-					success: function(response){
+				fetch('/get_item_details/' + encodeURIComponent(item_code), {
+					method: 'GET',
+					headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+					credentials: 'same-origin'
+				}).then(function(res){
+					if (!res.ok) throw res;
+					return res.text();
+				}).then(function(response){
+					var el = document.getElementById('item-detail-content');
+					if (el) {
 						if (typeof response === 'string' && response.trim().length > 0) {
-							$('#item-detail-content').html(response);
+							el.innerHTML = response;
 						} else {
-							$('#item-detail-content').html('<div class="p-2 text-muted">No item details returned.</div>');
+							el.innerHTML = '<div class="p-2 text-muted">No item details returned.</div>';
 						}
-					},
-					error: function(xhr){
-						var msg = (xhr && xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to load item details.';
-						showNotification("danger", msg, "fa fa-info");
-					},
-					complete: function(){
-						$('#item-preloader').hide();
 					}
+				}).catch(function(res){
+					var msg = 'Failed to load item details.';
+					if (res && typeof res.json === 'function') {
+						res.json().then(function(j){
+							showNotification("danger", (j && j.message) ? j.message : msg, "fa fa-info");
+						}).catch(function(){
+							showNotification("danger", msg, "fa fa-info");
+						});
+					} else {
+						showNotification("danger", msg, "fa fa-info");
+					}
+				}).finally(function(){
+					$('#item-preloader').hide();
 				});
 
 				// Load tab content (best-effort) for the modal tabs.
@@ -1716,38 +1717,38 @@
 
 			function get_athena_transactions(item_code, page){
 				var pageNo = page || 1;
-				$.ajax({
-					type: 'GET',
-					url: '/get_athena_transactions/' + encodeURIComponent(item_code) + '?page=' + pageNo,
-					success: function(response){
-						$('#athena-transactions-table').html(response);
-					},
-					error: function(){ }
-				});
+				fetch('/get_athena_transactions/' + encodeURIComponent(item_code) + '?page=' + pageNo, {
+					method: 'GET',
+					headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+					credentials: 'same-origin'
+				}).then(function(res){ return res.text(); }).then(function(html){
+					var el = document.getElementById('athena-transactions-table');
+					if (el) el.innerHTML = html;
+				}).catch(function(){ });
 			}
 
 			function get_stock_ledger(item_code, page){
 				var pageNo = page || 1;
-				$.ajax({
-					type: 'GET',
-					url: '/get_stock_ledger/' + encodeURIComponent(item_code) + '?page=' + pageNo,
-					success: function(response){
-						$('#stock-ledger-table').html(response);
-					},
-					error: function(){ }
-				});
+				fetch('/get_stock_ledger/' + encodeURIComponent(item_code) + '?page=' + pageNo, {
+					method: 'GET',
+					headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+					credentials: 'same-origin'
+				}).then(function(res){ return res.text(); }).then(function(html){
+					var el = document.getElementById('stock-ledger-table');
+					if (el) el.innerHTML = html;
+				}).catch(function(){ });
 			}
 
 			function get_stock_reservations(item_code, page){
 				var pageNo = page || 1;
-				$.ajax({
-					type: 'GET',
-					url: '/get_stock_reservation/' + encodeURIComponent(item_code) + '?page=' + pageNo,
-					success: function(response){
-						$('#stock-reservation-table').html(response);
-					},
-					error: function(){ }
-				});
+				fetch('/get_stock_reservation/' + encodeURIComponent(item_code) + '?page=' + pageNo, {
+					method: 'GET',
+					headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+					credentials: 'same-origin'
+				}).then(function(res){ return res.text(); }).then(function(html){
+					var el = document.getElementById('stock-reservation-table');
+					if (el) el.innerHTML = html;
+				}).catch(function(){ });
 			}
 
 			$(document).on('click', '#athena-transactions-pagination a', function(event){
@@ -1789,14 +1790,14 @@
 						if (!isNaN(parsed) && parsed > 0) pageNo = parsed;
 					}
 
-					$.ajax({
-						type: 'GET',
-						url: '/get_stock_reservation/' + encodeURIComponent(item_code) + '?page=' + pageNo,
-						success: function(response){
-							$('#stock-reservation-table').html(response);
-						},
-						error: function(){ /* keep UI stable */ }
-					});
+					fetch('/get_stock_reservation/' + encodeURIComponent(item_code) + '?page=' + pageNo, {
+						method: 'GET',
+						headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+						credentials: 'same-origin'
+					}).then(function(res){ return res.text(); }).then(function(html){
+						var el = document.getElementById('stock-reservation-table');
+						if (el) el.innerHTML = html;
+					}).catch(function(){ /* keep UI stable */ });
 				}catch(_){}
 			});
 

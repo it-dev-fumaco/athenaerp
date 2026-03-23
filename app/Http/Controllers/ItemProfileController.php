@@ -28,6 +28,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -161,6 +162,11 @@ class ItemProfileController extends Controller
         $consignmentWarehouses = $itemStockLevels['consignment_warehouses'];
         $siteWarehouses = $itemStockLevels['site_warehouses'];
 
+        $bundledStocks = [];
+        if ($bundled) {
+            $bundledStocks = $this->buildBundledStockLevels($request, $itemCode);
+        }
+
         $itemStockAvailable = collect($consignmentWarehouses)->sum('available_qty');
         if ($itemStockAvailable <= 0) {
             $itemStockAvailable = collect($siteWarehouses)->sum('available_qty');
@@ -239,7 +245,7 @@ class ItemProfileController extends Controller
             $alternativeItemCodes = $variantItems->pluck('name');
 
             $actualStocksQuery = Bin::query()->whereIn('item_code', $alternativeItemCodes)->selectRaw('item_code, SUM(actual_qty) as actual_qty')->groupBy('item_code')->get();
-            $actualStocks = collect($actualStocksQuery)->groupBy('item_code');
+            $actualQtyByItemCode = $actualStocksQuery->pluck('actual_qty', 'item_code')->map(fn ($q) => (float) $q)->all();
 
             $stockReservesQuery = StockReservation::whereIn('item_code', $alternativeItemCodes)->whereIn('status', ['Active', 'Partially Issued'])->selectRaw('SUM(reserve_qty) as reserved_qty, SUM(consumed_qty) as consumed_qty, item_code')->groupBy('item_code')->get();
             $alternativeReserves = collect($stockReservesQuery)->groupBy('item_code');
@@ -273,11 +279,7 @@ class ItemProfileController extends Controller
                 $totalIssued = $totalIssuedSte + $totalIssetAt;
                 $remainingReserved = $totalReserved - $totalConsumed;
 
-                $actualStock = $actualStocks[$variantItem->name][0] ?? null;
-                if (is_array($actualStock)) {
-                    $actualStock = (object) $actualStock;
-                }
-                $actualQty = $actualStock->actual_qty ?? 0;
+                $actualQty = $actualQtyByItemCode[$variantItem->name] ?? 0.0;
                 $availableQty = $actualQty - ($totalIssued + $remainingReserved);
                 $availableQty = $availableQty > 0 ? $availableQty : 0;
 
@@ -317,11 +319,7 @@ class ItemProfileController extends Controller
                     $totalIssued = $totalIssuedSte + $totalIssetAt;
                     $remainingReserved = $totalReserved - $totalConsumed;
 
-                    $actualStock = $actualStocks[$altItem->name][0] ?? null;
-                    if (is_array($actualStock)) {
-                        $actualStock = (object) $actualStock;
-                    }
-                    $actualQty = $actualStock->actual_qty ?? 0;
+                    $actualQty = $actualQtyByItemCode[$altItem->name] ?? 0.0;
                     $availableQty = $actualQty - ($totalIssued + $remainingReserved);
                     $availableQty = $availableQty > 0 ? $availableQty : 0;
 
@@ -414,7 +412,9 @@ class ItemProfileController extends Controller
                 }
             }
 
-            $actualVariantStocks = Bin::query()->whereIn('item_code', $variantItemCodes)->selectRaw('SUM(actual_qty) as actual_qty, item_code')->groupBy('item_code')->pluck('actual_qty', 'item_code')->toArray();
+            $actualVariantStocks = collect($variantItemCodes)->mapWithKeys(fn ($code) => [
+                $code => $actualQtyByItemCode[$code] ?? 0.0,
+            ])->all();
             // Eager-load all variant attributes for the current page slice (plus the main item)
             // so these attributes are fetched in a single query (no relation N+1 risk).
             $itemsForAttributes = $coVariantsSlice->concat(collect([$itemDetails]));
@@ -450,7 +450,7 @@ class ItemProfileController extends Controller
             ]);
         }
 
-        return view('item_profile', compact('isTaxIncludedInRate', 'itemDetails', 'itemAttributes', 'siteWarehouses', 'itemImages', 'itemAlternatives', 'consignmentWarehouses', 'userGroup', 'minimumSellingPrice', 'defaultPrice', 'attributeNames', 'coVariants', 'attributes', 'variantsPriceArr', 'itemRate', 'lastPurchaseDate', 'allowedDepartment', 'userDepartment', 'avgPurchaseRate', 'lastPurchaseRate', 'variantsCostArr', 'variantsMinPriceArr', 'actualVariantStocks', 'itemStockAvailable', 'manualRate', 'manualPriceInput', 'consignmentBranches', 'bundled', 'noImg'));
+        return view('item_profile', compact('isTaxIncludedInRate', 'itemDetails', 'itemAttributes', 'siteWarehouses', 'itemImages', 'itemAlternatives', 'consignmentWarehouses', 'userGroup', 'minimumSellingPrice', 'defaultPrice', 'attributeNames', 'coVariants', 'attributes', 'variantsPriceArr', 'itemRate', 'lastPurchaseDate', 'allowedDepartment', 'userDepartment', 'avgPurchaseRate', 'lastPurchaseRate', 'variantsCostArr', 'variantsMinPriceArr', 'actualVariantStocks', 'itemStockAvailable', 'manualRate', 'manualPriceInput', 'consignmentBranches', 'bundled', 'noImg', 'bundledStocks'));
     }
 
     public function saveItemInformation(Request $request, $itemCode)
@@ -849,9 +849,120 @@ class ItemProfileController extends Controller
 
     public function getItemStockLevels($itemCode, Request $request, ?Item $itemDetails = null)
     {
-        $itemDetails = $itemDetails ?? Item::query()->where('name', $itemCode)->first();
-        $allowWarehouse = [];
+        $levels = $this->getItemStockLevelsForMany([$itemCode], $request);
+        $row = $levels[$itemCode] ?? ['consignment_warehouses' => [], 'site_warehouses' => []];
+        $consignmentWarehouses = $row['consignment_warehouses'];
+        $siteWarehouses = $row['site_warehouses'];
+
+        if ($request->ajax()) {
+            $itemDetails = $itemDetails ?? Item::query()->where('name', $itemCode)->first();
+
+            return view('item_stock_level', compact('consignmentWarehouses', 'siteWarehouses', 'itemDetails'));
+        }
+
+        return [
+            'consignment_warehouses' => $consignmentWarehouses,
+            'site_warehouses' => $siteWarehouses,
+        ];
+    }
+
+    /**
+     * Batch stock-level computation for many item codes (single Bin + batched reservation / issued queries).
+     *
+     * @param  array<int, string>  $itemCodes
+     * @return array<string, array{consignment_warehouses: array<int, array<string, mixed>>, site_warehouses: array<int, array<string, mixed>>}>
+     */
+    private function getItemStockLevelsForMany(array $itemCodes, Request $request): array
+    {
+        $itemCodes = array_values(array_unique(array_filter($itemCodes)));
+        if ($itemCodes === []) {
+            return [];
+        }
+
+        [$isPromodiser, $allowWarehouse] = $this->resolvePromodiserBinContext();
+
+        $itemInventory = Bin::query()
+            ->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')
+            ->whereIn('item_code', $itemCodes)
+            ->when($isPromodiser, function ($query) use ($allowWarehouse) {
+                return $query->whereIn('warehouse', $allowWarehouse);
+            })
+            ->where('stock_warehouse', 1)
+            ->where('tabWarehouse.disabled', 0)
+            ->select('item_code', 'warehouse', 'location', 'actual_qty', 'consigned_qty', 'tabBin.stock_uom', 'parent_warehouse')
+            ->get();
+
+        $inventoryByItem = $itemInventory->groupBy('item_code');
+        $allWarehouses = $itemInventory->pluck('warehouse')->unique()->filter()->values()->all();
+
+        $reservesByItemAndWarehouse = [];
+        $steByItemAndWarehouse = [];
+        $atByItemAndWarehouse = [];
+
+        if (count($allWarehouses) > 0) {
+            $reserveRows = StockReservation::query()
+                ->whereIn('item_code', $itemCodes)
+                ->whereIn('warehouse', $allWarehouses)
+                ->whereIn('status', ['Active', 'Partially Issued'])
+                ->selectRaw('item_code, warehouse, SUM(reserve_qty) as reserved_qty, SUM(consumed_qty) as consumed_qty')
+                ->groupBy('item_code', 'warehouse')
+                ->get();
+
+            foreach ($reserveRows as $r) {
+                $reservesByItemAndWarehouse[$r->item_code][$r->warehouse] = [
+                    'reserved_qty' => $r->reserved_qty,
+                    'consumed_qty' => $r->consumed_qty,
+                ];
+            }
+
+            $steRows = StockEntryDetail::query()
+                ->where('docstatus', 0)
+                ->where('status', 'Issued')
+                ->whereIn('item_code', $itemCodes)
+                ->whereIn('s_warehouse', $allWarehouses)
+                ->selectRaw('item_code, s_warehouse, SUM(qty) as qty')
+                ->groupBy('item_code', 's_warehouse')
+                ->get();
+
+            foreach ($steRows as $r) {
+                $steByItemAndWarehouse[$r->item_code][$r->s_warehouse] = $r->qty;
+            }
+
+            $atRows = AthenaTransaction::query()
+                ->joinPackingSlipDeliveryNote()
+                ->whereIn('at.item_code', $itemCodes)
+                ->whereIn('at.source_warehouse', $allWarehouses)
+                ->selectRaw('at.item_code, at.source_warehouse, SUM(at.issued_qty) as qty')
+                ->groupBy('at.item_code', 'at.source_warehouse')
+                ->get();
+
+            foreach ($atRows as $r) {
+                $atByItemAndWarehouse[$r->item_code][$r->source_warehouse] = $r->qty;
+            }
+        }
+
+        $out = [];
+        foreach ($itemCodes as $code) {
+            $rows = $inventoryByItem->get($code, collect());
+            $out[$code] = $this->computeStockLevelsFromInventoryRows(
+                $rows,
+                $reservesByItemAndWarehouse[$code] ?? [],
+                $steByItemAndWarehouse[$code] ?? [],
+                $atByItemAndWarehouse[$code] ?? [],
+                $isPromodiser
+            );
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return array{0: int, 1: array<int, string>}
+     */
+    private function resolvePromodiserBinContext(): array
+    {
         $isPromodiser = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
+        $allowWarehouse = [];
         if ($isPromodiser) {
             $allowedParentWarehouseForPromodiser = WarehouseAccess::query()
                 ->from('tabWarehouse Access as wa')
@@ -877,59 +988,31 @@ class ItemProfileController extends Controller
             $allowWarehouse = array_merge($allowWarehouse, $consignmentStores);
         }
 
-        $itemInventory = Bin::query()
-            ->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')
-            ->where('item_code', $itemCode)
-            ->when($isPromodiser, function ($query) use ($allowWarehouse) {
-                return $query->whereIn('warehouse', $allowWarehouse);
-            })
-            ->where('stock_warehouse', 1)
-            ->where('tabWarehouse.disabled', 0)
-            ->select('item_code', 'warehouse', 'location', 'actual_qty', 'consigned_qty', 'tabBin.stock_uom', 'parent_warehouse')
-            ->get();
+        return [$isPromodiser, $allowWarehouse];
+    }
 
-        $stockWarehouses = array_column($itemInventory->toArray(), 'warehouse');
-
-        $stockReserves = [];
-        $steIssued = [];
-        $atIssued = [];
-        if (count($stockWarehouses) > 0) {
-            $stockReserves = StockReservation::where('item_code', $itemCode)
-                ->whereIn('warehouse', $stockWarehouses)
-                ->whereIn('status', ['Active', 'Partially Issued'])
-                ->selectRaw('SUM(reserve_qty) as reserved_qty, SUM(consumed_qty) as consumed_qty, warehouse')
-                ->groupBy('warehouse')
-                ->get();
-
-            $stockReserves = collect($stockReserves)->groupBy('warehouse')->toArray();
-
-            $steIssued = StockEntryDetail::query()
-                ->where('docstatus', 0)
-                ->where('status', 'Issued')
-                ->where('item_code', $itemCode)
-                ->whereIn('s_warehouse', $stockWarehouses)
-                ->selectRaw('SUM(qty) as qty, s_warehouse')
-                ->groupBy('s_warehouse')
-                ->pluck('qty', 's_warehouse')
-                ->toArray();
-
-            $atIssued = AthenaTransaction::query()
-                ->joinPackingSlipDeliveryNote()
-                ->where('at.item_code', $itemCode)
-                ->whereIn('at.source_warehouse', $stockWarehouses)
-                ->selectRaw('SUM(at.issued_qty) as qty, at.source_warehouse')
-                ->groupBy('at.source_warehouse')
-                ->pluck('qty', 'source_warehouse')
-                ->toArray();
-        }
-
+    /**
+     * @param  array<string, array{reserved_qty: mixed, consumed_qty: mixed}>  $reservesByWarehouse
+     * @param  array<string, float|int|string>  $steByWarehouse
+     * @param  array<string, float|int|string>  $atByWarehouse
+     * @return array{consignment_warehouses: array<int, array<string, mixed>>, site_warehouses: array<int, array<string, mixed>>}
+     */
+    private function computeStockLevelsFromInventoryRows(
+        Collection $itemInventory,
+        array $reservesByWarehouse,
+        array $steByWarehouse,
+        array $atByWarehouse,
+        int $isPromodiser
+    ): array {
         $siteWarehouses = [];
         $consignmentWarehouses = [];
+
         foreach ($itemInventory as $value) {
-            $reservedQty = Arr::get($stockReserves, "{$value->warehouse}.0.reserved_qty", 0);
-            $consumedQty = Arr::get($stockReserves, "{$value->warehouse}.0.consumed_qty", 0);
-            $steIssuedQty = Arr::get($steIssued, $value->warehouse, 0);
-            $atIssuedQty = Arr::get($atIssued, $value->warehouse, 0);
+            $rw = $reservesByWarehouse[$value->warehouse] ?? [];
+            $reservedQty = $rw['reserved_qty'] ?? 0;
+            $consumedQty = $rw['consumed_qty'] ?? 0;
+            $steIssuedQty = $steByWarehouse[$value->warehouse] ?? 0;
+            $atIssuedQty = $atByWarehouse[$value->warehouse] ?? 0;
 
             $issuedQty = $atIssuedQty + $steIssuedQty;
             $reservedQty = $reservedQty - $consumedQty;
@@ -966,10 +1049,6 @@ class ItemProfileController extends Controller
             }
         }
 
-        if ($request->ajax()) {
-            return view('item_stock_level', compact('consignmentWarehouses', 'siteWarehouses', 'itemDetails'));
-        }
-
         return [
             'consignment_warehouses' => $consignmentWarehouses,
             'site_warehouses' => $siteWarehouses,
@@ -977,6 +1056,13 @@ class ItemProfileController extends Controller
     }
 
     public function getBundledItemStockLevels(Request $request, $itemCode)
+    {
+        $stocks = $this->buildBundledStockLevels($request, $itemCode);
+
+        return view('item_stock_level_bundled', compact('stocks'));
+    }
+
+    private function buildBundledStockLevels(Request $request, string $itemCode): array
     {
         $productBundle = DB::table('tabProduct Bundle as p')
             ->join('tabProduct Bundle Item as c', 'c.parent', 'p.name')
@@ -987,25 +1073,25 @@ class ItemProfileController extends Controller
         $itemCodes = collect($productBundle)->pluck('item_code')->unique()->values();
         $grouped = collect($productBundle)->groupBy('item_code');
 
-        $itemsById = Item::query()->whereIn('name', $itemCodes)->get()->keyBy('name');
+        $levelsByCode = $this->getItemStockLevelsForMany($itemCodes->all(), $request);
 
         $stocks = [];
-        foreach ($itemCodes as $itemCode) {
-            $bundleItem = $grouped[$itemCode][0] ?? null;
+        foreach ($itemCodes as $bundleItemCode) {
+            $bundleItem = $grouped[$bundleItemCode][0] ?? null;
             if (is_array($bundleItem)) {
                 $bundleItem = (object) $bundleItem;
             }
             $description = $bundleItem->description ?? null;
-            $details = $this->getItemStockLevels($itemCode, $request, $itemsById->get($itemCode));
+            $details = $levelsByCode[$bundleItemCode] ?? ['consignment_warehouses' => [], 'site_warehouses' => []];
 
             unset($details['consignment_warehouses']);
 
             $details['site_warehouses'] = collect($details['site_warehouses'])->where('actual_qty', '>', 0);
             $details['description'] = $description;
 
-            $stocks[$itemCode] = $details;
+            $stocks[$bundleItemCode] = $details;
         }
 
-        return view('item_stock_level_bundled', compact('stocks'));
+        return $stocks;
     }
 }

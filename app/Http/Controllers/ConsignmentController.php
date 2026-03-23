@@ -26,6 +26,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -123,6 +124,10 @@ class ConsignmentController extends Controller
 
     public function consignmentStockMovement($itemCode, Request $request)
     {
+        if ($request->get('get_users') == '1') {
+            return response()->json($this->consignmentStockMovementUserOptions($itemCode, $request));
+        }
+
         $branchWarehouse = $request->branch_warehouse;
 
         $dates = $request->date_range ? explode(' to ', $request->date_range) : [];
@@ -160,15 +165,7 @@ class ConsignmentController extends Controller
                 ];
             }
 
-            $beginningInventoryStart = BeginningInventory::query()
-                ->when($branchWarehouse, function ($query) use ($branchWarehouse) {
-                    return $query->where('branch_warehouse', $branchWarehouse);
-                })
-                ->orderBy('transaction_date', 'asc')
-                ->pluck('transaction_date')
-                ->first();
-
-            $beginningInventoryStartDate = $beginningInventoryStart ? Carbon::parse($beginningInventoryStart)->startOfDay()->format('Y-m-d') : Carbon::parse('2022-06-25')->startOfDay()->format('Y-m-d');
+            $beginningInventoryStartDate = $this->resolveBeginningInventoryStartDate($branchWarehouse);
 
             $itemReceive = StockEntry::query()
                 ->from('tabStock Entry as ste')
@@ -318,26 +315,6 @@ class ConsignmentController extends Controller
             }
         }
 
-        if ($request->get_users == 1) {
-            $all[] = [
-                'id' => 'Select All',
-                'text' => 'Select All',
-            ];
-
-            $users = collect($result)->map(function ($row) {
-                if ($row['owner']) {
-                    return [
-                        'id' => $row['owner'],
-                        'text' => $row['owner'],
-                    ];
-                }
-            })->filter()->unique();
-
-            $users = collect($all)->merge($users);
-
-            return response()->json($users);
-        }
-
         $result = collect($result)->sortBy('creation')->reverse()->toArray();
 
         // Get current page form url e.x. &page=1
@@ -356,6 +333,176 @@ class ConsignmentController extends Controller
         $result = $paginatedItems;
 
         return view('tbl_consignment_stock_movement', compact('result'));
+    }
+
+    private function resolveBeginningInventoryStartDate(?string $branchWarehouse): string
+    {
+        $cacheKeyBi = 'consignment.beginning_inv_start.'.($branchWarehouse ?: 'all');
+        $beginningInventoryStart = Cache::remember($cacheKeyBi, 3600, function () use ($branchWarehouse) {
+            return BeginningInventory::query()
+                ->when($branchWarehouse, function ($query) use ($branchWarehouse) {
+                    return $query->where('branch_warehouse', $branchWarehouse);
+                })
+                ->orderBy('transaction_date', 'asc')
+                ->value('transaction_date');
+        });
+
+        return $beginningInventoryStart
+            ? Carbon::parse($beginningInventoryStart)->startOfDay()->format('Y-m-d')
+            : Carbon::parse('2022-06-25')->startOfDay()->format('Y-m-d');
+    }
+
+    /**
+     * Select2 user filter: distinct owners only (avoids loading full movement history).
+     *
+     * @return array<int, array{id: string, text: string}>
+     */
+    private function consignmentStockMovementUserOptions(string $itemCode, Request $request): array
+    {
+        $branchWarehouse = $request->branch_warehouse;
+        $dates = $request->date_range ? explode(' to ', $request->date_range) : [];
+        $user = $request->user != 'Select All' ? $request->user : null;
+
+        $base = [['id' => 'Select All', 'text' => 'Select All']];
+
+        if (! $itemCode) {
+            return $base;
+        }
+
+        $beginningInventoryStartDate = $this->resolveBeginningInventoryStartDate($branchWarehouse);
+
+        $owners = collect();
+
+        $owners = $owners->merge(
+            BeginningInventory::query()
+                ->from('tabConsignment Beginning Inventory as cb')
+                ->join('tabConsignment Beginning Inventory Item as cbi', 'cb.name', 'cbi.parent')
+                ->where('cb.status', 'Approved')
+                ->where('cbi.item_code', $itemCode)
+                ->when($branchWarehouse, fn ($q) => $q->where('branch_warehouse', $branchWarehouse))
+                ->when($request->filled('date_range'), function ($q) use ($dates) {
+                    return $q->whereDate('cb.transaction_date', '>=', Carbon::parse($dates[0])->startOfDay())
+                        ->whereDate('cb.transaction_date', '<=', Carbon::parse($dates[1])->endOfDay());
+                })
+                ->when($user, fn ($q) => $q->where('cb.owner', $user))
+                ->whereNotNull('cb.owner')
+                ->where('cb.owner', '!=', '')
+                ->distinct()
+                ->pluck('cb.owner')
+        );
+
+        $recvExpr = 'TRIM(COALESCE(
+            NULLIF(TRIM(sted.consignment_received_by), \'\'),
+            NULLIF(TRIM(ste.consignment_received_by), \'\'),
+            TRIM(sted.modified_by)
+        ))';
+
+        $owners = $owners->merge(
+            StockEntry::query()
+                ->from('tabStock Entry as ste')
+                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                ->when($beginningInventoryStartDate, function ($query) use ($beginningInventoryStartDate) {
+                    return $query->whereDate('ste.delivery_date', '>=', $beginningInventoryStartDate);
+                })
+                ->when($branchWarehouse, function ($query) use ($branchWarehouse) {
+                    return $query->where('sted.t_warehouse', $branchWarehouse);
+                })
+                ->when($request->filled('date_range'), function ($query) use ($dates) {
+                    return $query->whereDate('sted.consignment_date_received', '>=', Carbon::parse($dates[0])->startOfDay())
+                        ->whereDate('sted.consignment_date_received', '<=', Carbon::parse($dates[1])->endOfDay());
+                })
+                ->when($user, function ($query) use ($user) {
+                    return $query->where(function ($query) use ($user) {
+                        return $query->where('sted.consignment_received_by', $user)
+                            ->orWhere('ste.consignment_received_by', $user)
+                            ->orWhere('sted.modified_by', $user);
+                    });
+                })
+                ->whereIn('ste.transfer_as', ['Consignment', 'Store Transfer'])
+                ->where('ste.purpose', 'Material Transfer')
+                ->where('ste.docstatus', 1)
+                ->where('sted.consignment_status', 'Received')
+                ->where('sted.item_code', $itemCode)
+                ->selectRaw($recvExpr.' as owner')
+                ->whereRaw('('.$recvExpr.') IS NOT NULL AND ('.$recvExpr.') <> \'\'')
+                ->distinct()
+                ->pluck('owner')
+        );
+
+        $owners = $owners->merge(
+            StockEntry::query()
+                ->from('tabStock Entry as ste')
+                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                ->when($beginningInventoryStartDate, function ($query) use ($beginningInventoryStartDate) {
+                    return $query->whereDate('ste.delivery_date', '>=', $beginningInventoryStartDate);
+                })
+                ->when($branchWarehouse, function ($query) use ($branchWarehouse) {
+                    return $query->where('sted.s_warehouse', $branchWarehouse);
+                })
+                ->when($request->filled('date_range'), function ($query) use ($dates) {
+                    return $query->whereDate('sted.creation', '>=', Carbon::parse($dates[0])->startOfDay())
+                        ->whereDate('sted.creation', '<=', Carbon::parse($dates[1])->endOfDay());
+                })
+                ->when($user, fn ($q) => $q->where('ste.owner', $user))
+                ->whereIn('ste.transfer_as', ['Store Transfer'])
+                ->where('ste.purpose', 'Material Transfer')
+                ->where('ste.docstatus', 1)
+                ->where('sted.item_code', $itemCode)
+                ->whereNotNull('ste.owner')
+                ->where('ste.owner', '!=', '')
+                ->distinct()
+                ->pluck('ste.owner')
+        );
+
+        $owners = $owners->merge(
+            StockEntry::query()
+                ->from('tabStock Entry as ste')
+                ->join('tabStock Entry Detail as sted', 'ste.name', 'sted.parent')
+                ->when($beginningInventoryStartDate, function ($query) use ($beginningInventoryStartDate) {
+                    return $query->whereDate('ste.delivery_date', '>=', $beginningInventoryStartDate);
+                })
+                ->when($branchWarehouse, function ($query) use ($branchWarehouse) {
+                    return $query->where('sted.s_warehouse', $branchWarehouse);
+                })
+                ->when($request->filled('date_range'), function ($query) use ($dates) {
+                    return $query->whereDate('sted.creation', '>=', Carbon::parse($dates[0])->startOfDay())
+                        ->whereDate('sted.creation', '<=', Carbon::parse($dates[1])->endOfDay());
+                })
+                ->when($user, fn ($q) => $q->where('ste.owner', $user))
+                ->whereIn('ste.transfer_as', ['For Return'])
+                ->where('ste.purpose', 'Material Transfer')
+                ->where('ste.docstatus', 1)
+                ->where('sted.item_code', $itemCode)
+                ->whereNotNull('ste.owner')
+                ->where('ste.owner', '!=', '')
+                ->distinct()
+                ->pluck('ste.owner')
+        );
+
+        $owners = $owners->merge(
+            ConsignmentStockAdjustment::query()
+                ->from('tabConsignment Stock Adjustment as csa')
+                ->join('tabConsignment Stock Adjustment Items as csai', 'csa.name', 'csai.parent')
+                ->where('csai.item_code', $itemCode)
+                ->whereRaw('csai.previous_qty != csai.new_qty')
+                ->when($branchWarehouse, fn ($q) => $q->where('csa.warehouse', $branchWarehouse))
+                ->when($request->filled('date_range'), function ($q) use ($dates) {
+                    return $q->whereDate('csa.creation', '>=', Carbon::parse($dates[0])->startOfDay())
+                        ->whereDate('csa.creation', '<=', Carbon::parse($dates[1])->endOfDay());
+                })
+                ->when($user, fn ($q) => $q->where('csa.owner', $user))
+                ->whereNotNull('csa.owner')
+                ->where('csa.owner', '!=', '')
+                ->distinct()
+                ->pluck('csa.owner')
+        );
+
+        $rows = $owners->filter()->unique()->sort()->values()->map(fn ($name) => [
+            'id' => $name,
+            'text' => $name,
+        ]);
+
+        return array_merge($base, $rows->all());
     }
 
     private function generateGlEntries($stockEntry)
