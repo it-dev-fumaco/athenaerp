@@ -793,7 +793,7 @@ class MainController extends Controller
             ]);
         }
 
-        $logs = $query->paginate(15);
+        $logs = $query->paginate(15)->withQueryString();
 
         $productionLogs = collect($logs->items())->groupBy('purpose');
         $productionLogs = Arr::get($productionLogs, 'Material Transfer for Manufacture', []);
@@ -1213,7 +1213,8 @@ class MainController extends Controller
             ->orderBy('sle.posting_date', 'desc')
             ->orderBy('sle.posting_time', 'desc')
             ->orderBy('sle.name', 'desc')
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
 
         $pickingSlips = array_filter(collect($logs->items())->pluck('dr_voucher_no')->toArray());
 

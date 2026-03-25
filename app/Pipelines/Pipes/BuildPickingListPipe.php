@@ -43,6 +43,10 @@ class BuildPickingListPipe implements Pipe
             ->where('ps.creation', '>=', $creationFrom)
             ->where('psi.status', '!=', 'Issued')
             ->where(function ($query) {
+                $query->whereNull('ps.item_status')
+                    ->orWhere('ps.item_status', '!=', 'Issued');
+            })
+            ->where(function ($query) {
                 $query->whereNull('dr.name')
                     ->orWhereIn('dr.docstatus', [0, 1]);
             })
@@ -91,6 +95,10 @@ class BuildPickingListPipe implements Pipe
             ->whereIn('s_warehouse', $warehouseIds)
             ->whereIn('transfer_as', ['Consignment', 'Sample Item'])
             ->where('sted.status', '!=', 'Issued')
+            ->where(function ($query) {
+                $query->whereNull('ste.item_status')
+                    ->orWhere('ste.item_status', '!=', 'Issued');
+            })
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('sted.item_code', 'like', "%{$search}%")
@@ -122,6 +130,10 @@ class BuildPickingListPipe implements Pipe
             ->where('ps.creation', '>=', $creationFrom)
             ->whereIn('dri.warehouse', $warehouseIds)
             ->where('psi.status', '!=', 'Issued')
+            ->where(function ($query) {
+                $query->whereNull('ps.item_status')
+                    ->orWhere('ps.item_status', '!=', 'Issued');
+            })
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('pi.item_code', 'like', "%{$search}%")

@@ -76,6 +76,9 @@ function onContainerClick(event) {
   const link = event.target.closest('a[href*="get_stock_ledger"]');
   if (!link || !link.href) return;
   event.preventDefault();
+  // Prevent legacy document-level handlers (in layout.blade.php) from also firing
+  // and loading an extra Blade table, which causes duplicated rows.
+  event.stopPropagation();
   const href = link.getAttribute('href') || link.href;
   if (href && href.indexOf('get_stock_ledger') !== -1) {
     load(href);

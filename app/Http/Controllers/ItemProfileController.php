@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Helpers\ApiResponse;
 use App\Http\Helpers\SafePath;
 use App\Http\Resources\ItemResource;
+use App\Http\Requests\UploadItemImageRequest;
 use App\Models\AssignedWarehouses;
 use App\Models\AthenaTransaction;
 use App\Models\Bin;
@@ -492,9 +493,33 @@ class ItemProfileController extends Controller
         return view('print_barcode', compact('itemDetails'));
     }
 
-    public function uploadItemImage(Request $request)
+    public function uploadItemImage(UploadItemImageRequest $request)
     {
-        $existingImages = $request->existing_images ?? [];
+        $existingImages = array_values(array_filter(
+            $request->existing_images ?? [],
+            fn ($v) => is_string($v) && trim($v) !== ''
+        ));
+
+        $disk = Storage::disk('upcloud');
+        $tempDir = sys_get_temp_dir();
+
+        $putToUpcloud = function (string $storageKey, string $localPath) use ($disk): void {
+            $stream = fopen($localPath, 'rb');
+            if ($stream === false) {
+                throw new \RuntimeException('Failed to open file for reading: '.$localPath);
+            }
+
+            try {
+                $success = $disk->put($storageKey, $stream);
+                if (! $success) {
+                    throw new \RuntimeException('Failed to write file to storage: '.$storageKey);
+                }
+            } finally {
+                if (is_resource($stream)) {
+                    fclose($stream);
+                }
+            }
+        };
 
         $query = ItemImages::query()
             ->where('parent', $request->item_code);
@@ -507,7 +532,7 @@ class ItemProfileController extends Controller
 
         // Delete from cloud
         if (! empty($removedImages)) {
-            Storage::disk('upcloud')->delete($removedImages);
+            $disk->delete($removedImages);
         }
 
         // Delete DB records
@@ -537,41 +562,45 @@ class ItemProfileController extends Controller
                         $storageKey = "img/{$filename}";
 
                         $webp = Webp::make($file);
-                        $tempPath = storage_path("app/temp/{$filename}");
-                        if (! File::exists(dirname($tempPath))) {
-                            File::makeDirectory(dirname($tempPath), 0755, true);
-                        }
+                        $tempPath = rtrim($tempDir, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'athena-item-'.$filename;
                         $webp->save($tempPath);
-                        Storage::disk('upcloud')->put($storageKey, file_get_contents($tempPath));
+                        $putToUpcloud($storageKey, $tempPath);
 
                         // Generate a smaller thumbnail (~600px wide) under img/thumbs/ for LCP.
                         $thumbFilename = $filename;
                         $thumbKey = "img/thumbs/{$thumbFilename}";
-                        $thumbTempPath = storage_path("app/temp/thumb-{$filename}");
-                        $thumbImage = Webp::make($file);
+                        $thumbTempPath = rtrim($tempDir, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'athena-item-thumb-'.$filename;
+
+                        // Reuse the same WebP object to avoid re-decoding.
+                        $thumbImage = $webp;
                         if (method_exists($thumbImage, 'resize')) {
                             $thumbImage->resize(600, null, function ($constraint) {
                                 $constraint->aspectRatio();
                                 $constraint->upsize();
                             });
                         }
-                        if (! File::exists(dirname($thumbTempPath))) {
-                            File::makeDirectory(dirname($thumbTempPath), 0755, true);
-                        }
                         $thumbImage->save($thumbTempPath);
-                        Storage::disk('upcloud')->put($thumbKey, file_get_contents($thumbTempPath));
+                        $putToUpcloud($thumbKey, $thumbTempPath);
                     } else {
                         $ext = strtolower((string) $file->getClientOriginalExtension()) ?: 'jpg';
                         $filename = $randomBase.'.'.$ext;
                         $storageKey = "img/{$filename}";
-                        Storage::disk('upcloud')->put($storageKey, file_get_contents($file->getRealPath()));
+                        $realPath = (string) $file->getRealPath();
+                        if (! is_file($realPath)) {
+                            throw new \RuntimeException('Uploaded file real path not found.');
+                        }
+                        $putToUpcloud($storageKey, $realPath);
                     }
                 } catch (\Throwable $e) {
                     // Last-resort fallback: store original bytes so upload never 500s.
                     $ext = strtolower((string) $file->getClientOriginalExtension()) ?: 'jpg';
                     $filename = $randomBase.'.'.$ext;
                     $storageKey = "img/{$filename}";
-                    Storage::disk('upcloud')->put($storageKey, file_get_contents($file->getRealPath()));
+                    $realPath = (string) $file->getRealPath();
+                    if (! is_file($realPath)) {
+                        throw $e;
+                    }
+                    $putToUpcloud($storageKey, $realPath);
                 } finally {
                     if ($tempPath && is_file($tempPath)) {
                         @unlink($tempPath);
