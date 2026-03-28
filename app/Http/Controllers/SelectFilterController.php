@@ -168,11 +168,11 @@ class SelectFilterController extends Controller
 
     public function getSalesPersons(Request $request)
     {
-        return DB::table('tabSales Person')
+        $query = DB::table('tabSales Person')
             ->where('enabled', 1)
             ->where('is_group', 0)
-            ->when($request->q, function ($query) use ($request) {
-                return $query->where('name', 'like', '%'.$request->q.'%');
+            ->when($request->q, function ($q) use ($request) {
+                return $q->where('name', 'like', '%'.$request->q.'%');
             })
             ->select('name as id', 'name as text')
             ->orderBy('name', 'asc')
