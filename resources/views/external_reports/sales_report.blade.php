@@ -502,12 +502,21 @@
 			});
 
 			function view_item_details(item_code){
-				$.ajax({
-					type: 'GET',
-					url: '/get_item_details/' + item_code,
-					success: function(response){
-						$('#item-detail-content').html(response);
-						$('#view-item-details-modal').modal('show');
+				fetch('/get_item_details/' + encodeURIComponent(item_code), {
+					method: 'GET',
+					headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+					credentials: 'same-origin'
+				}).then(function(res){
+					if (!res.ok) throw new Error('failed');
+					return res.text();
+				}).then(function(html){
+					$('#item-detail-content').html(html);
+					$('#view-item-details-modal').modal('show');
+				}).catch(function(){
+					if (typeof showNotification === 'function') {
+						showNotification('danger', 'Failed to load item details.', 'fa fa-info');
+					} else {
+						alert('Failed to load item details.');
 					}
 				});
 
@@ -516,12 +525,13 @@
 			}
 
 			function get_athena_transactions(item_code, page){
-				$.ajax({
-					type: 'GET',
-					url: '/get_athena_transactions/' + item_code + '?page=' + page,
-					success: function(response){
-						$('#athena-transactions-table').html(response);
-					}
+				var pageNo = page || 1;
+				fetch('/get_athena_transactions/' + encodeURIComponent(item_code) + '?page=' + pageNo, {
+					method: 'GET',
+					headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+					credentials: 'same-origin'
+				}).then(function(res){ return res.text(); }).then(function(html){
+					$('#athena-transactions-table').html(html);
 				});
 			}
 
@@ -533,12 +543,13 @@
 			});
 
 			function get_stock_ledger(item_code, page){
-				$.ajax({
-					type: 'GET',
-					url: '/get_stock_ledger/' + item_code + '?page=' + page,
-					success: function(response){
-						$('#stock-ledger-table').html(response);
-					}
+				var pageNo = page || 1;
+				fetch('/get_stock_ledger/' + encodeURIComponent(item_code) + '?page=' + pageNo, {
+					method: 'GET',
+					headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+					credentials: 'same-origin'
+				}).then(function(res){ return res.text(); }).then(function(html){
+					$('#stock-ledger-table').html(html);
 				});
 			}
 

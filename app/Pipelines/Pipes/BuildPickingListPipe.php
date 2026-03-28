@@ -2,6 +2,7 @@
 
 namespace App\Pipelines\Pipes;
 
+use App\Constants\StockEntryConstants;
 use App\Contracts\Pipeline\Pipe;
 use App\Models\PackingSlip;
 use App\Models\StockEntry;
@@ -41,7 +42,18 @@ class BuildPickingListPipe implements Pipe
             ->leftJoin('tabDelivery Note as dr', 'dri.parent', '=', 'dr.name')
             ->whereIn('ps.docstatus', [0, 1])
             ->where('ps.creation', '>=', $creationFrom)
-            ->where('psi.status', '!=', 'Issued')
+            ->where(function ($query) {
+                $query->where( 'psi.status', StockEntryConstants::STATUS_FOR_CHECKING)
+                    ->orWhere(function ($issuedQuery) {
+                        $issuedQuery->where('psi.status', StockEntryConstants::STATUS_ISSUED)
+                            ->whereExists(function ($siblingQuery) {
+                                $siblingQuery->select(DB::raw(1))
+                                    ->from('tabPacking Slip Item as psi_sibling')
+                                    ->whereColumn('psi_sibling.parent', 'psi.parent')
+                                    ->where('psi_sibling.status', StockEntryConstants::STATUS_FOR_CHECKING);
+                            });
+                    });
+            })
             ->where(function ($query) {
                 $query->whereNull('dr.name')
                     ->orWhereIn('dr.docstatus', [0, 1]);
@@ -90,7 +102,18 @@ class BuildPickingListPipe implements Pipe
             ->where('purpose', 'Material Transfer')
             ->whereIn('s_warehouse', $warehouseIds)
             ->whereIn('transfer_as', ['Consignment', 'Sample Item'])
-            ->where('sted.status', '!=', 'Issued')
+            ->where(function ($query) {
+                $query->where('sted.status', StockEntryConstants::STATUS_FOR_CHECKING)
+                    ->orWhere(function ($issuedQuery) {
+                        $issuedQuery->where('sted.status', StockEntryConstants::STATUS_ISSUED)
+                            ->whereExists(function ($siblingQuery) {
+                                $siblingQuery->select(DB::raw(1))
+                                    ->from('tabStock Entry Detail as sted_sibling')
+                                    ->whereColumn('sted_sibling.parent', 'sted.parent')
+                                    ->where('sted_sibling.status', StockEntryConstants::STATUS_FOR_CHECKING);
+                            });
+                    });
+            })
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('sted.item_code', 'like', "%{$search}%")
@@ -121,7 +144,18 @@ class BuildPickingListPipe implements Pipe
             ->whereIn('ps.docstatus', [0, 1])
             ->where('ps.creation', '>=', $creationFrom)
             ->whereIn('dri.warehouse', $warehouseIds)
-            ->where('psi.status', '!=', 'Issued')
+            ->where(function ($query) {
+                $query->where('psi.status', StockEntryConstants::STATUS_FOR_CHECKING)
+                    ->orWhere(function ($issuedQuery) {
+                        $issuedQuery->where('psi.status', StockEntryConstants::STATUS_ISSUED)
+                            ->whereExists(function ($siblingQuery) {
+                                $siblingQuery->select(DB::raw(1))
+                                    ->from('tabPacking Slip Item as psi_sibling')
+                                    ->whereColumn('psi_sibling.parent', 'psi.parent')
+                                    ->where('psi_sibling.status', StockEntryConstants::STATUS_FOR_CHECKING);
+                            });
+                    });
+            })
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('pi.item_code', 'like', "%{$search}%")

@@ -275,21 +275,17 @@
 																</a>
 					
 																<div class="text-center mt-2 mb-1">
-																	<div class="d-flex flex-row">
-																		<div class="p-1 col-6">
-																			<a href="/get_item_details/{{ $row['name'] }}">
-																				<div class="btn btn-primary btn-xs btn-block">
-																					<i class="fa fa-search"></i> <span class="d-inline d-md-none" style="font-size: 10pt">View Item Details</span>
-																				</div>
-																			</a>
-																		</div>
-																		<div class="p-1 col-6">
-																			<a href="#" class="cLink d-none d-xl-inline" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;">
-																				<div class="btn btn-warning btn-xs btn-block">
-																					<i class="fa fa-qrcode"></i>
-																				</div>
-																			</a>
-																		</div>
+																	<div class="item-action-row">
+																		<a href="/get_item_details/{{ $row['name'] }}" class="item-action-link">
+																			<div class="btn btn-primary btn-xs btn-block item-action-btn">
+																				<i class="fa fa-search"></i> <span class="d-inline d-md-none" style="font-size: 10pt">View Item Details</span>
+																			</div>
+																		</a>
+																		<a href="#" class="cLink d-none d-xl-inline item-action-link" value="Print Barcode" onClick="javascript:void window.open('/print_barcode/{{ $row['name'] }}','1445905018294','width=450,height=700,toolbar=0,menubar=0,location=0,status=1,scrollbars=1,resizable=1,left=0,top=0');return false;">
+																			<div class="btn btn-warning btn-xs btn-block item-action-btn">
+																				<i class="fa fa-qrcode"></i>
+																			</div>
+																		</a>
 																	</div>
 																</div>
 															</div>
@@ -802,6 +798,25 @@
 	.cLink{
 		text-decoration: none !important;
 		text-transform: none !important;
+	}
+	.item-action-row{
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+	}
+	.item-action-link{
+		flex: 0 0 auto;
+	}
+	.item-action-btn{
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 56px;
+		min-width: 56px;
+		height: 30px;
+		padding: 0;
+		line-height: 1;
 	}
 
 	.tbl-custom-hover:hover,

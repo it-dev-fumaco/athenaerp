@@ -37,6 +37,7 @@ services:
       dockerfile: docker/nginx/Dockerfile
       args:
         APP_IMAGE: ${ATHENAERP_APP_IMAGE:-athenaerp-app-fpm:latest}
+        ESSEX_APP_IMAGE: ${ESSEX_APP_IMAGE:-devfumaco/essex-app:essexV4}
     container_name: athenaerp-nginx
     restart: unless-stopped
     ports:

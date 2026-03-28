@@ -17,6 +17,7 @@
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
+        "fruitcake/laravel-debugbar": "^4.0",
         "laravel/pint": "^1.27",
         "laravel/sail": "^1.29",
         "mockery/mockery": "^1.6",
@@ -29,7 +30,10 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "files": [
+            "app/Support/buglinjo_webp_polyfill.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

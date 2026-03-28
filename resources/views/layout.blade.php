@@ -679,17 +679,6 @@
 		}
 	</style>
 	@yield('style')
-	<!-- Google tag (gtag.js) -->
-	@if (config('app.env') !== 'local')
-	<script async src="https://www.googletagmanager.com/gtag/js?id=G-M1ZN4YBE16"></script>
-	<script>
-	window.dataLayer = window.dataLayer || [];
-	function gtag(){dataLayer.push(arguments);}
-	gtag('js', new Date());
-
-	gtag('config', 'G-M1ZN4YBE16');
-	</script>
-	@endif
 </head>
 <body class="hold-transition layout-top-nav">
 	<div id="loader-wrapper">
@@ -1671,6 +1660,45 @@
 				$('.for-consignment').addClass('d-none');
 			});
 
+			var itemDetailsFetchController = null;
+			var itemDetailsTabsLoaded = { tab2: false, tab3: false, tab4: false };
+
+			function reset_item_details_tab_state(){
+				itemDetailsTabsLoaded = { tab2: false, tab3: false, tab4: false };
+			}
+
+			function load_item_details_tab(tabId, item_code){
+				if (!item_code) return;
+				if (tabId === '#tab_2' && !itemDetailsTabsLoaded.tab2) {
+					itemDetailsTabsLoaded.tab2 = true;
+					get_athena_transactions(item_code);
+					return;
+				}
+				if (tabId === '#tab_3' && !itemDetailsTabsLoaded.tab3) {
+					itemDetailsTabsLoaded.tab3 = true;
+					get_stock_ledger(item_code);
+					return;
+				}
+				if (tabId === '#tab_4' && !itemDetailsTabsLoaded.tab4) {
+					itemDetailsTabsLoaded.tab4 = true;
+					get_stock_reservations(item_code);
+				}
+			}
+
+			$(document).on('shown.bs.tab', '#item-tabs a[data-toggle="pill"]', function(e){
+				var target = $(e.target).attr('href');
+				var item_code = $('#selected-item-code').text().trim();
+				load_item_details_tab(target, item_code);
+			});
+
+			$('#view-item-details-modal').on('hidden.bs.modal', function(){
+				if (itemDetailsFetchController) {
+					itemDetailsFetchController.abort();
+					itemDetailsFetchController = null;
+				}
+				reset_item_details_tab_state();
+			});
+
 			$(document).on('click', '.view-item-details', function(e){
 				e.preventDefault();
 				var item_code = $(this).data('item-code');
@@ -1689,65 +1717,80 @@
 				$('#stock-ledger-table').html('');
 				$('#stock-reservation-table').html('');
 
-				$.ajax({
-					type: 'GET',
-					url: '/get_item_details/' + encodeURIComponent(item_code),
-					success: function(response){
-						if (typeof response === 'string' && response.trim().length > 0) {
-							$('#item-detail-content').html(response);
-						} else {
-							$('#item-detail-content').html('<div class="p-2 text-muted">No item details returned.</div>');
-						}
-					},
-					error: function(xhr){
-						var msg = (xhr && xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to load item details.';
-						showNotification("danger", msg, "fa fa-info");
-					},
-					complete: function(){
-						$('#item-preloader').hide();
-					}
-				});
+				reset_item_details_tab_state();
+				if (itemDetailsFetchController) {
+					itemDetailsFetchController.abort();
+				}
+				itemDetailsFetchController = new AbortController();
 
-				// Load tab content (best-effort) for the modal tabs.
-				get_athena_transactions(item_code);
-				get_stock_ledger(item_code);
-				get_stock_reservations(item_code);
+				fetch('/get_item_details/' + encodeURIComponent(item_code), {
+					method: 'GET',
+					headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+					credentials: 'same-origin',
+					signal: itemDetailsFetchController.signal
+				}).then(function(res){
+					if (!res.ok) throw res;
+					return res.text();
+				}).then(function(response){
+					var el = document.getElementById('item-detail-content');
+					if (el) {
+						if (typeof response === 'string' && response.trim().length > 0) {
+							el.innerHTML = response;
+						} else {
+							el.innerHTML = '<div class="p-2 text-muted">No item details returned.</div>';
+						}
+					}
+				}).catch(function(res){
+					if (res && res.name === 'AbortError') return;
+					var msg = 'Failed to load item details.';
+					if (res && typeof res.json === 'function') {
+						res.json().then(function(j){
+							showNotification("danger", (j && j.message) ? j.message : msg, "fa fa-info");
+						}).catch(function(){
+							showNotification("danger", msg, "fa fa-info");
+						});
+					} else {
+						showNotification("danger", msg, "fa fa-info");
+					}
+				}).finally(function(){
+					$('#item-preloader').hide();
+				});
 			}
 
 			function get_athena_transactions(item_code, page){
 				var pageNo = page || 1;
-				$.ajax({
-					type: 'GET',
-					url: '/get_athena_transactions/' + encodeURIComponent(item_code) + '?page=' + pageNo,
-					success: function(response){
-						$('#athena-transactions-table').html(response);
-					},
-					error: function(){ }
-				});
+				fetch('/get_athena_transactions/' + encodeURIComponent(item_code) + '?page=' + pageNo, {
+					method: 'GET',
+					headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+					credentials: 'same-origin'
+				}).then(function(res){ return res.text(); }).then(function(html){
+					var el = document.getElementById('athena-transactions-table');
+					if (el) el.innerHTML = html;
+				}).catch(function(){ });
 			}
 
 			function get_stock_ledger(item_code, page){
 				var pageNo = page || 1;
-				$.ajax({
-					type: 'GET',
-					url: '/get_stock_ledger/' + encodeURIComponent(item_code) + '?page=' + pageNo,
-					success: function(response){
-						$('#stock-ledger-table').html(response);
-					},
-					error: function(){ }
-				});
+				fetch('/get_stock_ledger/' + encodeURIComponent(item_code) + '?page=' + pageNo, {
+					method: 'GET',
+					headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+					credentials: 'same-origin'
+				}).then(function(res){ return res.text(); }).then(function(html){
+					var el = document.getElementById('stock-ledger-table');
+					if (el) el.innerHTML = html;
+				}).catch(function(){ });
 			}
 
 			function get_stock_reservations(item_code, page){
 				var pageNo = page || 1;
-				$.ajax({
-					type: 'GET',
-					url: '/get_stock_reservation/' + encodeURIComponent(item_code) + '?page=' + pageNo,
-					success: function(response){
-						$('#stock-reservation-table').html(response);
-					},
-					error: function(){ }
-				});
+				fetch('/get_stock_reservation/' + encodeURIComponent(item_code) + '?page=' + pageNo, {
+					method: 'GET',
+					headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+					credentials: 'same-origin'
+				}).then(function(res){ return res.text(); }).then(function(html){
+					var el = document.getElementById('stock-reservation-table');
+					if (el) el.innerHTML = html;
+				}).catch(function(){ });
 			}
 
 			$(document).on('click', '#athena-transactions-pagination a', function(event){
@@ -1769,6 +1812,35 @@
 				var item_code = $('#selected-item-code').text().trim();
 				var page = ($(this).attr('href') || '').split('page=')[1] || 1;
 				get_stock_reservations(item_code, page);
+			});
+
+			// Keep the legacy stock-reservation Blade table in sync with Vue actions
+			// (create/edit/cancel) without requiring a manual page reload.
+			window.addEventListener('item-profile-stock-reservation-refresh', function(ev){
+				try{
+					if (!$('#stock-reservation-table').length) return;
+
+					var detail = ev && ev.detail ? ev.detail : {};
+					var item_code = (detail.itemCode || '').toString().trim() || $('#selected-item-code').text().trim();
+					if (!item_code) return;
+
+					// Best-effort: preserve the currently active pagination page (falls back to 1).
+					var activePageEl = $('#stock-reservations-pagination-1 .page-item.active a, #stock-reservations-pagination-2 .page-item.active a, #stock-reservations-pagination-3 .page-item.active a').first();
+					var pageNo = 1;
+					if (activePageEl && activePageEl.length) {
+						var parsed = parseInt((activePageEl.text() || '').toString().trim(), 10);
+						if (!isNaN(parsed) && parsed > 0) pageNo = parsed;
+					}
+
+					fetch('/get_stock_reservation/' + encodeURIComponent(item_code) + '?page=' + pageNo, {
+						method: 'GET',
+						headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+						credentials: 'same-origin'
+					}).then(function(res){ return res.text(); }).then(function(html){
+						var el = document.getElementById('stock-reservation-table');
+						if (el) el.innerHTML = html;
+					}).catch(function(){ /* keep UI stable */ });
+				}catch(_){}
 			});
 
 			$(document).on('submit', '.cancel-modal form', function(e){
@@ -1793,10 +1865,29 @@
 				e.preventDefault();
 				$('.img_upload').remove();
 				var item_code = $(this).data('item-code');
-				get_item_images(item_code);
+				$('#image-previews').empty();
+
+				var $form = $('#upload-image-modal form');
+				var $submit = $form.find('button[type="submit"]');
+				$submit.data('orig-html', $submit.html());
+				$submit.prop('disabled', true).html('<i class="fa fa-save"></i> Saving...');
+
 				$('#upload-image-modal input[name="item_code"]').val(item_code);
 				$('#image-preview').attr('src', $(this).data('image'));
 				$('#upload-image-modal').modal('show');
+
+				get_item_images(item_code)
+					.done(function(){
+						var orig = $submit.data('orig-html');
+						$submit.prop('disabled', false).html(orig || '<i class="fa fa-save"></i> Save');
+					})
+					.fail(function(jqXHR){
+						$submit.prop('disabled', true);
+						var msg = jqXHR && jqXHR.responseJSON && jqXHR.responseJSON.message
+							? jqXHR.responseJSON.message
+							: 'Failed to load existing images.';
+						showNotification("danger", msg, "fa fa-info");
+					});
 			});
 
 			$(document).on('click', '.upload-files-btn', function(e){
@@ -1830,10 +1921,11 @@
 			}
 
 			function get_item_images(item_code){
-				$.ajax({
+				return $.ajax({
 					type: 'GET',
 					url: '/get_item_images/' + item_code,
 					success: function(response){
+						$('#image-previews').empty();
 						$.each(response, function(i, image_src){
 							$("<div class=\"col-md-4 pip img_upload\">" +
 							"<input type=\"hidden\" name=\"existing_images[]\" value=\"" + i + "\">" +
@@ -1846,28 +1938,25 @@
 			}
 
 			$(document).on('click', '.remove', function(){
-				$(this).parent(".pip").remove();
+				var $pip = $(this).closest(".pip");
+				var url = $pip.find('img[data-preview-url]').attr('src');
+				if (url) {
+					try { URL.revokeObjectURL(url); } catch(e) {}
+				}
+				$pip.remove();
 			});
 
 			if (window.File && window.FileList && window.FileReader) {
 				$("#browse-img").on("change", function(e) {
-					var files = e.target.files,
-					filesLength = files.length;
+					var files = e.target.files;
+					var filesLength = files.length;
 					for (var i = 0; i < filesLength; i++) {
-						var f = files[i]
-						var fileReader = new FileReader();
-						fileReader.onload = (function(e) {
-							var file = e.target;
-							$("<div class=\"col-md-4 pip img_upload\">" +
-								"<input type=\"hidden\" name=\"existing_images[]\">" +
-							"<img class=\"img-thumbnail\" src=\"" + e.target.result + "\">" +
+						var f = files[i];
+						var url = URL.createObjectURL(f);
+						$("<div class=\"col-md-4 pip img_upload\">" +
+							"<img class=\"img-thumbnail\" src=\"" + url + "\" data-preview-url=\"" + url + "\">" +
 							"<span class=\"add-fav remove\">&times;</span>" +
 							"</div>").insertAfter("#image-previews");
-							$(".remove").click(function(){
-								$(this).parent(".pip").remove();
-							});
-						});
-						fileReader.readAsDataURL(f);
 					}
 				});
 
@@ -1905,10 +1994,14 @@
 
 			$('#upload-image-modal form').submit(function(e){
 				e.preventDefault();
+				var $form = $(this);
 				var item_code = $(this).find('.item-code').eq(0).val();
+				var $submit = $form.find('button[type="submit"]');
+				var origHtml = $submit.html();
+				$submit.prop('disabled', true).html('<i class="fa fa-save"></i> Saving...');
 				$.ajax({
 					type: 'POST',
-					url: $(this).attr('action'),
+					url: $form.attr('action'),
 					data: new FormData(this),
 					cache: false,
 					contentType: false,
@@ -1919,6 +2012,14 @@
 						$('#desc').html(response.message);
 						view_item_details(item_code);
 						$('#upload-image-modal').modal('hide');
+						$submit.prop('disabled', false).html(origHtml);
+					},
+					error: function(jqXHR){
+						$submit.prop('disabled', false).html(origHtml);
+						var msg = jqXHR && jqXHR.responseJSON && jqXHR.responseJSON.message
+							? jqXHR.responseJSON.message
+							: 'Image upload failed.';
+						showNotification("danger", msg, "fa fa-info");
 					},
 				});
 			});
@@ -1995,7 +2096,8 @@
 			});
 
 			$(document).on('select2:select', '#warehouse-user-filter', function(e){
-				document.dispatchEvent(new CustomEvent('item-profile-athena-transactions-refresh'));
+				var data = e.params.data;
+				document.dispatchEvent(new CustomEvent('item-profile-athena-transactions-refresh', { detail: { wh_user: data && data.id ? data.id : '' } }));
 			});
 			//Athena Warehouse Users
 			//Athena Source Warehouse
@@ -2021,7 +2123,8 @@
 			});
 
 			$(document).on('select2:select', '#ath-src-warehouse-filter', function(e){
-				document.dispatchEvent(new CustomEvent('item-profile-athena-transactions-refresh'));
+				var data = e.params.data;
+				document.dispatchEvent(new CustomEvent('item-profile-athena-transactions-refresh', { detail: { src_wh: data && data.id ? data.id : '' } }));
 			});
 			//Athena Source Warehouse
 			//Athena Target Warehouse
@@ -2047,12 +2150,13 @@
 			});
 
 			$(document).on('select2:select', '#ath-to-warehouse-filter', function(e){
-				document.dispatchEvent(new CustomEvent('item-profile-athena-transactions-refresh'));
+				var data = e.params.data;
+				document.dispatchEvent(new CustomEvent('item-profile-athena-transactions-refresh', { detail: { trg_wh: data && data.id ? data.id : '' } }));
 			});
 			//Athena Target Warehouse
 			//Athena Month
 			$('#ath_dates').on('change', function(e){ 
-				document.dispatchEvent(new CustomEvent('item-profile-athena-transactions-refresh'));
+				document.dispatchEvent(new CustomEvent('item-profile-athena-transactions-refresh', { detail: { ath_dates: $(this).val() || '' } }));
 			})
 			//Athena Month
 			// ERP Warehouse Users

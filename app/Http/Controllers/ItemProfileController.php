@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Helpers\ApiResponse;
 use App\Http\Helpers\SafePath;
 use App\Http\Resources\ItemResource;
+use App\Http\Requests\UploadItemImageRequest;
 use App\Models\AssignedWarehouses;
 use App\Models\AthenaTransaction;
 use App\Models\Bin;
@@ -28,7 +29,10 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -83,7 +87,37 @@ class ItemProfileController extends Controller
 
     public function getItemDetails(Request $request, $itemCode)
     {
-        $itemDetails = Item::query()->where('name', $itemCode)->first();
+        $debugQueries = $request->boolean('debug_queries', false);
+        if ($debugQueries) {
+            DB::enableQueryLog();
+        }
+
+        $cacheTtl = (int) config('item_profile.cache_ttl', 300);
+
+        // Fetch only fields needed by this controller + `resources/views/item_profile.blade.php`.
+        // Also eager-load images to avoid an extra `ItemImages` query.
+        $itemDetails = Item::query()
+            ->where('name', $itemCode)
+            ->select([
+                'name',
+                'brand',
+                'description',
+                'item_name',
+                'item_brochure_name',
+                'item_brochure_description',
+                'stock_uom',
+                'custom_item_cost',
+                'item_classification',
+                'variant_of',
+                'has_variants',
+                'disabled',
+            ])
+            ->with([
+                'images' => fn ($q) => $q
+                    ->select('parent', 'image_path', 'idx')
+                    ->orderBy('idx', 'asc'),
+            ])
+            ->first();
 
         if (! $itemDetails) {
             abort(404);
@@ -102,9 +136,16 @@ class ItemProfileController extends Controller
 
         $userDepartment = Auth::user()->department;
         $userGroup = Auth::user()->user_group;
-        $allowedDepartment = DepartmentWithPriceAccess::query()->pluck('department')->toArray();
+        $allowedDepartment = Cache::remember('item_profile.allowed_departments', $cacheTtl, function () {
+            return DepartmentWithPriceAccess::query()->pluck('department')->toArray();
+        });
 
-        $priceData = $this->itemProfileService->getItemPrices($itemCode, $itemDetails, $allowedDepartment);
+        // Price queries can be expensive (purchase orders, landed costs, website prices).
+        // Cache per item + permission context so unauthorized users still get zeros.
+        $priceCacheKey = sprintf('item_profile.item_prices:%s:%s:%s', $itemCode, $userDepartment ?? 'null', $userGroup ?? 'null');
+        $priceData = Cache::remember($priceCacheKey, $cacheTtl, function () use ($itemCode, $itemDetails, $allowedDepartment) {
+            return $this->itemProfileService->getItemPrices($itemCode, $itemDetails, $allowedDepartment);
+        });
         $itemRate = $priceData['itemRate'];
         $minimumSellingPrice = $priceData['minimumSellingPrice'];
         $defaultPrice = $priceData['defaultPrice'];
@@ -122,20 +163,23 @@ class ItemProfileController extends Controller
         $consignmentWarehouses = $itemStockLevels['consignment_warehouses'];
         $siteWarehouses = $itemStockLevels['site_warehouses'];
 
+        $bundledStocks = [];
+        if ($bundled) {
+            $bundledStocks = $this->buildBundledStockLevels($request, $itemCode);
+        }
+
         $itemStockAvailable = collect($consignmentWarehouses)->sum('available_qty');
         if ($itemStockAvailable <= 0) {
             $itemStockAvailable = collect($siteWarehouses)->sum('available_qty');
         }
 
-        $itemImagesRaw = ItemImages::query()
-            ->where('parent', $itemCode)
-            ->orderBy('idx', 'asc')
-            ->pluck('image_path');
+        // images are eager-loaded on the main item query above.
+        $itemImagesRaw = $itemDetails->images?->pluck('image_path') ?? collect();
 
         $disk = Storage::disk('upcloud');
         $itemImages = collect($itemImagesRaw)->map(function ($imagePath) use ($disk) {
             $path = $imagePath ? trim((string) $imagePath) : null;
-            $url = $this->itemImageUrlWebpOrNoImg($path);
+            $url = $this->itemImageUrlFast($path);
 
             $thumbUrl = $url;
             if ($path && ! Str::startsWith($path, ['http://', 'https://'])) {
@@ -176,7 +220,7 @@ class ItemProfileController extends Controller
         foreach ($productionItemAlternatives as $productionAltRow) {
             $productionAltRow = (object) $productionAltRow;
             $path = Arr::exists($itemAlternativeImages, $productionAltRow->item_code) ? $itemAlternativeImages[$productionAltRow->item_code] : null;
-            $itemAlternativeImage = $this->itemImageUrlWebpOrNoImg($path);
+            $itemAlternativeImage = $this->itemImageUrlFast($path);
 
             $actualStocks = Arr::get($productionItemAltActualStock, $productionAltRow->item_code, 0);
 
@@ -194,11 +238,15 @@ class ItemProfileController extends Controller
 
         if (! $bundled) {
             $itemAttributes = ItemVariantAttribute::query()->where('parent', $itemCode)->orderBy('idx', 'asc')->pluck('attribute_value', 'attribute')->toArray();
-            $variantItems = Item::query()->variantSiblings($itemDetails->variant_of, $itemDetails->name)->orderBy('modified', 'desc')->get();
+            $variantItems = Item::query()
+                ->variantSiblings($itemDetails->variant_of, $itemDetails->name)
+                ->orderBy('modified', 'desc')
+                ->select(['name', 'description', 'disabled', 'custom_item_cost', 'variant_of'])
+                ->get();
             $alternativeItemCodes = $variantItems->pluck('name');
 
             $actualStocksQuery = Bin::query()->whereIn('item_code', $alternativeItemCodes)->selectRaw('item_code, SUM(actual_qty) as actual_qty')->groupBy('item_code')->get();
-            $actualStocks = collect($actualStocksQuery)->groupBy('item_code');
+            $actualQtyByItemCode = $actualStocksQuery->pluck('actual_qty', 'item_code')->map(fn ($q) => (float) $q)->all();
 
             $stockReservesQuery = StockReservation::whereIn('item_code', $alternativeItemCodes)->whereIn('status', ['Active', 'Partially Issued'])->selectRaw('SUM(reserve_qty) as reserved_qty, SUM(consumed_qty) as consumed_qty, item_code')->groupBy('item_code')->get();
             $alternativeReserves = collect($stockReservesQuery)->groupBy('item_code');
@@ -218,7 +266,7 @@ class ItemProfileController extends Controller
 
             foreach ($variantItems as $variantItem) {
                 $path = Arr::exists($itemAlternativeImages, $variantItem->name) ? $itemAlternativeImages[$variantItem->name] : null;
-                $itemAlternativeImage = $this->itemImageUrlWebpOrNoImg($path);
+                $itemAlternativeImage = $this->itemImageUrlFast($path);
 
                 $totalReserved = $totalConsumed = 0;
                 if (Arr::exists($alternativeReserves, $variantItem->name)) {
@@ -232,11 +280,7 @@ class ItemProfileController extends Controller
                 $totalIssued = $totalIssuedSte + $totalIssetAt;
                 $remainingReserved = $totalReserved - $totalConsumed;
 
-                $actualStock = $actualStocks[$variantItem->name][0] ?? null;
-                if (is_array($actualStock)) {
-                    $actualStock = (object) $actualStock;
-                }
-                $actualQty = $actualStock->actual_qty ?? 0;
+                $actualQty = $actualQtyByItemCode[$variantItem->name] ?? 0.0;
                 $availableQty = $actualQty - ($totalIssued + $remainingReserved);
                 $availableQty = $availableQty > 0 ? $availableQty : 0;
 
@@ -256,12 +300,13 @@ class ItemProfileController extends Controller
                     ->where('name', '!=', $itemDetails->name)
                     ->limit(15)
                     ->orderBy('modified', 'desc')
+                    ->select(['name', 'description'])
                     ->get();
                 $itemAlternativeImages = ItemImages::query()->whereIn('parent', $classificationItems->pluck('name'))->orderBy('idx', 'asc')->pluck('image_path', 'parent')->toArray();
 
                 foreach ($classificationItems as $altItem) {
                     $path = Arr::exists($itemAlternativeImages, $altItem->name) ? $itemAlternativeImages[$altItem->name] : null;
-                    $itemAlternativeImage = $this->itemImageUrlWebpOrNoImg($path);
+                    $itemAlternativeImage = $this->itemImageUrlFast($path);
 
                     $totalReserved = $totalConsumed = 0;
                     if (Arr::exists($alternativeReserves, $altItem->name)) {
@@ -275,11 +320,7 @@ class ItemProfileController extends Controller
                     $totalIssued = $totalIssuedSte + $totalIssetAt;
                     $remainingReserved = $totalReserved - $totalConsumed;
 
-                    $actualStock = $actualStocks[$altItem->name][0] ?? null;
-                    if (is_array($actualStock)) {
-                        $actualStock = (object) $actualStock;
-                    }
-                    $actualQty = $actualStock->actual_qty ?? 0;
+                    $actualQty = $actualQtyByItemCode[$altItem->name] ?? 0.0;
                     $availableQty = $actualQty - ($totalIssued + $remainingReserved);
                     $availableQty = $availableQty > 0 ? $availableQty : 0;
 
@@ -372,16 +413,27 @@ class ItemProfileController extends Controller
                 }
             }
 
-            $actualVariantStocks = Bin::query()->whereIn('item_code', $variantItemCodes)->selectRaw('SUM(actual_qty) as actual_qty, item_code')->groupBy('item_code')->pluck('actual_qty', 'item_code')->toArray();
+            $actualVariantStocks = collect($variantItemCodes)->mapWithKeys(fn ($code) => [
+                $code => $actualQtyByItemCode[$code] ?? 0.0,
+            ])->all();
+            // Eager-load all variant attributes for the current page slice (plus the main item)
+            // so these attributes are fetched in a single query (no relation N+1 risk).
+            $itemsForAttributes = $coVariantsSlice->concat(collect([$itemDetails]));
+            $itemsForAttributes->load([
+                'variantAttributes' => fn ($q) => $q
+                    ->select('parent', 'attribute', 'attribute_value', 'idx')
+                    ->orderBy('idx', 'asc'),
+            ]);
 
-            array_push($variantItemCodes, $itemDetails->name);
+            $allAttrRows = $itemsForAttributes
+                ->flatMap(fn ($item) => $item->variantAttributes)
+                ->sortBy('idx')
+                ->values();
 
-            $attributesQuery = ItemVariantAttribute::query()->whereIn('parent', $variantItemCodes)->select('parent', 'attribute', 'attribute_value')->orderBy('idx', 'asc')->get();
-
-            $attributeNames = collect($attributesQuery)->pluck('attribute')->unique();
+            $attributeNames = $allAttrRows->pluck('attribute')->unique()->values();
 
             $attributes = [];
-            foreach ($attributesQuery as $row) {
+            foreach ($allAttrRows as $row) {
                 $attributes[$row->parent][$row->attribute] = $row->attribute_value;
             }
         }
@@ -391,7 +443,15 @@ class ItemProfileController extends Controller
             $consignmentBranches = AssignedWarehouses::where('parent', Auth::user()->frappe_userid)->pluck('warehouse');
         }
 
-        return view('item_profile', compact('isTaxIncludedInRate', 'itemDetails', 'itemAttributes', 'siteWarehouses', 'itemImages', 'itemAlternatives', 'consignmentWarehouses', 'userGroup', 'minimumSellingPrice', 'defaultPrice', 'attributeNames', 'coVariants', 'attributes', 'variantsPriceArr', 'itemRate', 'lastPurchaseDate', 'allowedDepartment', 'userDepartment', 'avgPurchaseRate', 'lastPurchaseRate', 'variantsCostArr', 'variantsMinPriceArr', 'actualVariantStocks', 'itemStockAvailable', 'manualRate', 'manualPriceInput', 'consignmentBranches', 'bundled', 'noImg'));
+        if ($debugQueries) {
+            $queries = DB::getQueryLog();
+            Log::info('item_profile.getItemDetails query count', [
+                'item_code' => $itemCode,
+                'count' => is_array($queries) ? count($queries) : 0,
+            ]);
+        }
+
+        return view('item_profile', compact('isTaxIncludedInRate', 'itemDetails', 'itemAttributes', 'siteWarehouses', 'itemImages', 'itemAlternatives', 'consignmentWarehouses', 'userGroup', 'minimumSellingPrice', 'defaultPrice', 'attributeNames', 'coVariants', 'attributes', 'variantsPriceArr', 'itemRate', 'lastPurchaseDate', 'allowedDepartment', 'userDepartment', 'avgPurchaseRate', 'lastPurchaseRate', 'variantsCostArr', 'variantsMinPriceArr', 'actualVariantStocks', 'itemStockAvailable', 'manualRate', 'manualPriceInput', 'consignmentBranches', 'bundled', 'noImg', 'bundledStocks'));
     }
 
     public function saveItemInformation(Request $request, $itemCode)
@@ -433,9 +493,33 @@ class ItemProfileController extends Controller
         return view('print_barcode', compact('itemDetails'));
     }
 
-    public function uploadItemImage(Request $request)
+    public function uploadItemImage(UploadItemImageRequest $request)
     {
-        $existingImages = $request->existing_images ?? [];
+        $existingImages = array_values(array_filter(
+            $request->existing_images ?? [],
+            fn ($v) => is_string($v) && trim($v) !== ''
+        ));
+
+        $disk = Storage::disk('upcloud');
+        $tempDir = sys_get_temp_dir();
+
+        $putToUpcloud = function (string $storageKey, string $localPath) use ($disk): void {
+            $stream = fopen($localPath, 'rb');
+            if ($stream === false) {
+                throw new \RuntimeException('Failed to open file for reading: '.$localPath);
+            }
+
+            try {
+                $success = $disk->put($storageKey, $stream);
+                if (! $success) {
+                    throw new \RuntimeException('Failed to write file to storage: '.$storageKey);
+                }
+            } finally {
+                if (is_resource($stream)) {
+                    fclose($stream);
+                }
+            }
+        };
 
         $query = ItemImages::query()
             ->where('parent', $request->item_code);
@@ -448,7 +532,7 @@ class ItemProfileController extends Controller
 
         // Delete from cloud
         if (! empty($removedImages)) {
-            Storage::disk('upcloud')->delete($removedImages);
+            $disk->delete($removedImages);
         }
 
         // Delete DB records
@@ -478,41 +562,45 @@ class ItemProfileController extends Controller
                         $storageKey = "img/{$filename}";
 
                         $webp = Webp::make($file);
-                        $tempPath = storage_path("app/temp/{$filename}");
-                        if (! File::exists(dirname($tempPath))) {
-                            File::makeDirectory(dirname($tempPath), 0755, true);
-                        }
+                        $tempPath = rtrim($tempDir, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'athena-item-'.$filename;
                         $webp->save($tempPath);
-                        Storage::disk('upcloud')->put($storageKey, file_get_contents($tempPath));
+                        $putToUpcloud($storageKey, $tempPath);
 
                         // Generate a smaller thumbnail (~600px wide) under img/thumbs/ for LCP.
                         $thumbFilename = $filename;
                         $thumbKey = "img/thumbs/{$thumbFilename}";
-                        $thumbTempPath = storage_path("app/temp/thumb-{$filename}");
-                        $thumbImage = Webp::make($file);
+                        $thumbTempPath = rtrim($tempDir, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'athena-item-thumb-'.$filename;
+
+                        // Reuse the same WebP object to avoid re-decoding.
+                        $thumbImage = $webp;
                         if (method_exists($thumbImage, 'resize')) {
                             $thumbImage->resize(600, null, function ($constraint) {
                                 $constraint->aspectRatio();
                                 $constraint->upsize();
                             });
                         }
-                        if (! File::exists(dirname($thumbTempPath))) {
-                            File::makeDirectory(dirname($thumbTempPath), 0755, true);
-                        }
                         $thumbImage->save($thumbTempPath);
-                        Storage::disk('upcloud')->put($thumbKey, file_get_contents($thumbTempPath));
+                        $putToUpcloud($thumbKey, $thumbTempPath);
                     } else {
                         $ext = strtolower((string) $file->getClientOriginalExtension()) ?: 'jpg';
                         $filename = $randomBase.'.'.$ext;
                         $storageKey = "img/{$filename}";
-                        Storage::disk('upcloud')->put($storageKey, file_get_contents($file->getRealPath()));
+                        $realPath = (string) $file->getRealPath();
+                        if (! is_file($realPath)) {
+                            throw new \RuntimeException('Uploaded file real path not found.');
+                        }
+                        $putToUpcloud($storageKey, $realPath);
                     }
                 } catch (\Throwable $e) {
                     // Last-resort fallback: store original bytes so upload never 500s.
                     $ext = strtolower((string) $file->getClientOriginalExtension()) ?: 'jpg';
                     $filename = $randomBase.'.'.$ext;
                     $storageKey = "img/{$filename}";
-                    Storage::disk('upcloud')->put($storageKey, file_get_contents($file->getRealPath()));
+                    $realPath = (string) $file->getRealPath();
+                    if (! is_file($realPath)) {
+                        throw $e;
+                    }
+                    $putToUpcloud($storageKey, $realPath);
                 } finally {
                     if ($tempPath && is_file($tempPath)) {
                         @unlink($tempPath);
@@ -790,9 +878,120 @@ class ItemProfileController extends Controller
 
     public function getItemStockLevels($itemCode, Request $request, ?Item $itemDetails = null)
     {
-        $itemDetails = $itemDetails ?? Item::query()->where('name', $itemCode)->first();
-        $allowWarehouse = [];
+        $levels = $this->getItemStockLevelsForMany([$itemCode], $request);
+        $row = $levels[$itemCode] ?? ['consignment_warehouses' => [], 'site_warehouses' => []];
+        $consignmentWarehouses = $row['consignment_warehouses'];
+        $siteWarehouses = $row['site_warehouses'];
+
+        if ($request->ajax()) {
+            $itemDetails = $itemDetails ?? Item::query()->where('name', $itemCode)->first();
+
+            return view('item_stock_level', compact('consignmentWarehouses', 'siteWarehouses', 'itemDetails'));
+        }
+
+        return [
+            'consignment_warehouses' => $consignmentWarehouses,
+            'site_warehouses' => $siteWarehouses,
+        ];
+    }
+
+    /**
+     * Batch stock-level computation for many item codes (single Bin + batched reservation / issued queries).
+     *
+     * @param  array<int, string>  $itemCodes
+     * @return array<string, array{consignment_warehouses: array<int, array<string, mixed>>, site_warehouses: array<int, array<string, mixed>>}>
+     */
+    private function getItemStockLevelsForMany(array $itemCodes, Request $request): array
+    {
+        $itemCodes = array_values(array_unique(array_filter($itemCodes)));
+        if ($itemCodes === []) {
+            return [];
+        }
+
+        [$isPromodiser, $allowWarehouse] = $this->resolvePromodiserBinContext();
+
+        $itemInventory = Bin::query()
+            ->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')
+            ->whereIn('item_code', $itemCodes)
+            ->when($isPromodiser, function ($query) use ($allowWarehouse) {
+                return $query->whereIn('warehouse', $allowWarehouse);
+            })
+            ->where('stock_warehouse', 1)
+            ->where('tabWarehouse.disabled', 0)
+            ->select('item_code', 'warehouse', 'location', 'actual_qty', 'consigned_qty', 'tabBin.stock_uom', 'parent_warehouse')
+            ->get();
+
+        $inventoryByItem = $itemInventory->groupBy('item_code');
+        $allWarehouses = $itemInventory->pluck('warehouse')->unique()->filter()->values()->all();
+
+        $reservesByItemAndWarehouse = [];
+        $steByItemAndWarehouse = [];
+        $atByItemAndWarehouse = [];
+
+        if (count($allWarehouses) > 0) {
+            $reserveRows = StockReservation::query()
+                ->whereIn('item_code', $itemCodes)
+                ->whereIn('warehouse', $allWarehouses)
+                ->whereIn('status', ['Active', 'Partially Issued'])
+                ->selectRaw('item_code, warehouse, SUM(reserve_qty) as reserved_qty, SUM(consumed_qty) as consumed_qty')
+                ->groupBy('item_code', 'warehouse')
+                ->get();
+
+            foreach ($reserveRows as $r) {
+                $reservesByItemAndWarehouse[$r->item_code][$r->warehouse] = [
+                    'reserved_qty' => $r->reserved_qty,
+                    'consumed_qty' => $r->consumed_qty,
+                ];
+            }
+
+            $steRows = StockEntryDetail::query()
+                ->where('docstatus', 0)
+                ->where('status', 'Issued')
+                ->whereIn('item_code', $itemCodes)
+                ->whereIn('s_warehouse', $allWarehouses)
+                ->selectRaw('item_code, s_warehouse, SUM(qty) as qty')
+                ->groupBy('item_code', 's_warehouse')
+                ->get();
+
+            foreach ($steRows as $r) {
+                $steByItemAndWarehouse[$r->item_code][$r->s_warehouse] = $r->qty;
+            }
+
+            $atRows = AthenaTransaction::query()
+                ->joinPackingSlipDeliveryNote()
+                ->whereIn('at.item_code', $itemCodes)
+                ->whereIn('at.source_warehouse', $allWarehouses)
+                ->selectRaw('at.item_code, at.source_warehouse, SUM(at.issued_qty) as qty')
+                ->groupBy('at.item_code', 'at.source_warehouse')
+                ->get();
+
+            foreach ($atRows as $r) {
+                $atByItemAndWarehouse[$r->item_code][$r->source_warehouse] = $r->qty;
+            }
+        }
+
+        $out = [];
+        foreach ($itemCodes as $code) {
+            $rows = $inventoryByItem->get($code, collect());
+            $out[$code] = $this->computeStockLevelsFromInventoryRows(
+                $rows,
+                $reservesByItemAndWarehouse[$code] ?? [],
+                $steByItemAndWarehouse[$code] ?? [],
+                $atByItemAndWarehouse[$code] ?? [],
+                $isPromodiser
+            );
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return array{0: int, 1: array<int, string>}
+     */
+    private function resolvePromodiserBinContext(): array
+    {
         $isPromodiser = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
+        $allowWarehouse = [];
         if ($isPromodiser) {
             $allowedParentWarehouseForPromodiser = WarehouseAccess::query()
                 ->from('tabWarehouse Access as wa')
@@ -818,59 +1017,31 @@ class ItemProfileController extends Controller
             $allowWarehouse = array_merge($allowWarehouse, $consignmentStores);
         }
 
-        $itemInventory = Bin::query()
-            ->join('tabWarehouse', 'tabBin.warehouse', 'tabWarehouse.name')
-            ->where('item_code', $itemCode)
-            ->when($isPromodiser, function ($query) use ($allowWarehouse) {
-                return $query->whereIn('warehouse', $allowWarehouse);
-            })
-            ->where('stock_warehouse', 1)
-            ->where('tabWarehouse.disabled', 0)
-            ->select('item_code', 'warehouse', 'location', 'actual_qty', 'consigned_qty', 'tabBin.stock_uom', 'parent_warehouse')
-            ->get();
+        return [$isPromodiser, $allowWarehouse];
+    }
 
-        $stockWarehouses = array_column($itemInventory->toArray(), 'warehouse');
-
-        $stockReserves = [];
-        $steIssued = [];
-        $atIssued = [];
-        if (count($stockWarehouses) > 0) {
-            $stockReserves = StockReservation::where('item_code', $itemCode)
-                ->whereIn('warehouse', $stockWarehouses)
-                ->whereIn('status', ['Active', 'Partially Issued'])
-                ->selectRaw('SUM(reserve_qty) as reserved_qty, SUM(consumed_qty) as consumed_qty, warehouse')
-                ->groupBy('warehouse')
-                ->get();
-
-            $stockReserves = collect($stockReserves)->groupBy('warehouse')->toArray();
-
-            $steIssued = StockEntryDetail::query()
-                ->where('docstatus', 0)
-                ->where('status', 'Issued')
-                ->where('item_code', $itemCode)
-                ->whereIn('s_warehouse', $stockWarehouses)
-                ->selectRaw('SUM(qty) as qty, s_warehouse')
-                ->groupBy('s_warehouse')
-                ->pluck('qty', 's_warehouse')
-                ->toArray();
-
-            $atIssued = AthenaTransaction::query()
-                ->joinPackingSlipDeliveryNote()
-                ->where('at.item_code', $itemCode)
-                ->whereIn('at.source_warehouse', $stockWarehouses)
-                ->selectRaw('SUM(at.issued_qty) as qty, at.source_warehouse')
-                ->groupBy('at.source_warehouse')
-                ->pluck('qty', 'source_warehouse')
-                ->toArray();
-        }
-
+    /**
+     * @param  array<string, array{reserved_qty: mixed, consumed_qty: mixed}>  $reservesByWarehouse
+     * @param  array<string, float|int|string>  $steByWarehouse
+     * @param  array<string, float|int|string>  $atByWarehouse
+     * @return array{consignment_warehouses: array<int, array<string, mixed>>, site_warehouses: array<int, array<string, mixed>>}
+     */
+    private function computeStockLevelsFromInventoryRows(
+        Collection $itemInventory,
+        array $reservesByWarehouse,
+        array $steByWarehouse,
+        array $atByWarehouse,
+        int $isPromodiser
+    ): array {
         $siteWarehouses = [];
         $consignmentWarehouses = [];
+
         foreach ($itemInventory as $value) {
-            $reservedQty = Arr::get($stockReserves, "{$value->warehouse}.0.reserved_qty", 0);
-            $consumedQty = Arr::get($stockReserves, "{$value->warehouse}.0.consumed_qty", 0);
-            $steIssuedQty = Arr::get($steIssued, $value->warehouse, 0);
-            $atIssuedQty = Arr::get($atIssued, $value->warehouse, 0);
+            $rw = $reservesByWarehouse[$value->warehouse] ?? [];
+            $reservedQty = $rw['reserved_qty'] ?? 0;
+            $consumedQty = $rw['consumed_qty'] ?? 0;
+            $steIssuedQty = $steByWarehouse[$value->warehouse] ?? 0;
+            $atIssuedQty = $atByWarehouse[$value->warehouse] ?? 0;
 
             $issuedQty = $atIssuedQty + $steIssuedQty;
             $reservedQty = $reservedQty - $consumedQty;
@@ -907,10 +1078,6 @@ class ItemProfileController extends Controller
             }
         }
 
-        if ($request->ajax()) {
-            return view('item_stock_level', compact('consignmentWarehouses', 'siteWarehouses', 'itemDetails'));
-        }
-
         return [
             'consignment_warehouses' => $consignmentWarehouses,
             'site_warehouses' => $siteWarehouses,
@@ -918,6 +1085,13 @@ class ItemProfileController extends Controller
     }
 
     public function getBundledItemStockLevels(Request $request, $itemCode)
+    {
+        $stocks = $this->buildBundledStockLevels($request, $itemCode);
+
+        return view('item_stock_level_bundled', compact('stocks'));
+    }
+
+    private function buildBundledStockLevels(Request $request, string $itemCode): array
     {
         $productBundle = DB::table('tabProduct Bundle as p')
             ->join('tabProduct Bundle Item as c', 'c.parent', 'p.name')
@@ -928,25 +1102,25 @@ class ItemProfileController extends Controller
         $itemCodes = collect($productBundle)->pluck('item_code')->unique()->values();
         $grouped = collect($productBundle)->groupBy('item_code');
 
-        $itemsById = Item::query()->whereIn('name', $itemCodes)->get()->keyBy('name');
+        $levelsByCode = $this->getItemStockLevelsForMany($itemCodes->all(), $request);
 
         $stocks = [];
-        foreach ($itemCodes as $itemCode) {
-            $bundleItem = $grouped[$itemCode][0] ?? null;
+        foreach ($itemCodes as $bundleItemCode) {
+            $bundleItem = $grouped[$bundleItemCode][0] ?? null;
             if (is_array($bundleItem)) {
                 $bundleItem = (object) $bundleItem;
             }
             $description = $bundleItem->description ?? null;
-            $details = $this->getItemStockLevels($itemCode, $request, $itemsById->get($itemCode));
+            $details = $levelsByCode[$bundleItemCode] ?? ['consignment_warehouses' => [], 'site_warehouses' => []];
 
             unset($details['consignment_warehouses']);
 
             $details['site_warehouses'] = collect($details['site_warehouses'])->where('actual_qty', '>', 0);
             $details['description'] = $description;
 
-            $stocks[$itemCode] = $details;
+            $stocks[$bundleItemCode] = $details;
         }
 
-        return view('item_stock_level_bundled', compact('stocks'));
+        return $stocks;
     }
 }

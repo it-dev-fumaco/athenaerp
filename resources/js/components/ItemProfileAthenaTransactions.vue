@@ -19,6 +19,14 @@ const html = ref('');
 const loading = ref(true);
 
 const basePath = '/get_athena_transactions';
+/** @type {string|undefined} */
+let pendingSrcWh;
+/** @type {string|undefined} */
+let pendingTrgWh;
+/** @type {string|undefined} */
+let pendingWhUser;
+/** @type {string|undefined} */
+let pendingAthDates;
 
 function getFilterParams() {
   const container = document.querySelector('#athena-logs') || document;
@@ -26,11 +34,19 @@ function getFilterParams() {
   const trg = container.querySelector('#ath-to-warehouse-filter');
   const user = container.querySelector('#warehouse-user-filter');
   const dates = container.querySelector('#ath_dates');
+  const srcWh = pendingSrcWh !== undefined ? pendingSrcWh : (src ? src.value : '');
+  const trgWh = pendingTrgWh !== undefined ? pendingTrgWh : (trg ? trg.value : '');
+  const whUser = pendingWhUser !== undefined ? pendingWhUser : (user ? user.value : '');
+  const athDates = pendingAthDates !== undefined ? pendingAthDates : (dates ? dates.value : '');
+  pendingSrcWh = undefined;
+  pendingTrgWh = undefined;
+  pendingWhUser = undefined;
+  pendingAthDates = undefined;
   return {
-    src_wh: src ? src.value : '',
-    trg_wh: trg ? trg.value : '',
-    wh_user: user ? user.value : '',
-    ath_dates: dates ? dates.value : '',
+    src_wh: srcWh,
+    trg_wh: trgWh,
+    wh_user: whUser,
+    ath_dates: athDates,
   };
 }
 
@@ -65,13 +81,22 @@ function onContainerClick(event) {
   const link = event.target.closest('a[href*="get_athena_transactions"]');
   if (!link || !link.href) return;
   event.preventDefault();
+  // Prevent legacy document-level pagination handlers from firing too.
+  event.stopPropagation();
   const href = link.getAttribute('href') || link.href;
   if (href && href.indexOf('get_athena_transactions') !== -1) {
     load(href);
   }
 }
 
-function onRefresh() {
+function onRefresh(event) {
+  const detail = event && event.detail;
+  if (detail) {
+    if (detail.src_wh !== undefined) pendingSrcWh = detail.src_wh;
+    if (detail.trg_wh !== undefined) pendingTrgWh = detail.trg_wh;
+    if (detail.wh_user !== undefined) pendingWhUser = detail.wh_user;
+    if (detail.ath_dates !== undefined) pendingAthDates = detail.ath_dates;
+  }
   load();
 }
 
@@ -82,10 +107,10 @@ watch(() => props.itemCode, () => {
 
 onMounted(() => {
   load();
-  window.addEventListener('item-profile-athena-transactions-refresh', onRefresh);
+  document.addEventListener('item-profile-athena-transactions-refresh', onRefresh);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('item-profile-athena-transactions-refresh', onRefresh);
+  document.removeEventListener('item-profile-athena-transactions-refresh', onRefresh);
 });
 </script>

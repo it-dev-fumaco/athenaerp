@@ -489,7 +489,30 @@ export default {
             if (form.id === 'stock-reservation-form') hideModal('add-stock-reservation-modal');
             if (form.id === 'edit-reservation-form') hideModal('edit-stock-reservation-modal');
             if (form.id === 'cancel-reservation-form') hideModal('cancel-stock-reservation-modal');
-            document.dispatchEvent(new CustomEvent(REFRESH_EVENT));
+
+            // Notify the stock-reservations list to refresh immediately (no full page reload).
+            const actionType =
+              form.id === 'stock-reservation-form' ? 'create' : form.id === 'edit-reservation-form' ? 'update' : form.id === 'cancel-reservation-form' ? 'cancel' : 'update';
+
+            // Controller messages are like: "Stock Reservation No. STR-00001 has been created/updated/cancelled."
+            const reservationIdMatch = String(message || '').match(/Stock Reservation No\.\s*([A-Za-z0-9\-]+)/);
+            const reservationId = reservationIdMatch?.[1] || '';
+
+            const itemCode =
+              form.id === 'stock-reservation-form'
+                ? this.addForm.item_code
+                : form.id === 'edit-reservation-form'
+                  ? this.editForm.item_code
+                  : '';
+
+            const ev = new CustomEvent(REFRESH_EVENT, {
+              detail: { action: actionType, reservationId, itemCode },
+              bubbles: true,
+            });
+
+            // Vue listens on `window`; also dispatch on `document` for compatibility.
+            window.dispatchEvent(ev);
+            document.dispatchEvent(ev);
           }
         })
         .catch((err) => {

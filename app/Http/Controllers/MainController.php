@@ -793,7 +793,7 @@ class MainController extends Controller
             ]);
         }
 
-        $logs = $query->paginate(15);
+        $logs = $query->paginate(15)->withQueryString();
 
         $productionLogs = collect($logs->items())->groupBy('purpose');
         $productionLogs = Arr::get($productionLogs, 'Material Transfer for Manufacture', []);
@@ -1159,34 +1159,37 @@ class MainController extends Controller
             $warehouseUser = $userQry ? [$userQry->wh_user, $userQry->full_name] : [$whUserInput];
         }
 
+        // Join Stock Entry once for purpose / sales order (avoids repeated GROUP_CONCAT(purpose) per row).
+        // Detail + packing-slip fields stay as correlated subqueries — pre-aggregated JOINs broke on some MySQL/MariaDB builds (ONLY_FULL_GROUP_BY / GROUP_CONCAT).
         $logs = StockLedgerEntry::query()
             ->from('tabStock Ledger Entry as sle')
             ->where('sle.item_code', $itemCode)
             ->where('sle.is_cancelled', 0)
+            ->leftJoin('tabStock Entry as ste', 'ste.name', '=', 'sle.voucher_no')
             ->select(DB::raw('(SELECT GROUP_CONCAT(name) FROM `tabPacking Slip` where delivery_note = sle.voucher_no) as dr_voucher_no'))
             ->addSelect(DB::raw('
                 (CASE
-                    WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT IFNULL(date_modified, modified) FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
-                    WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) in ("Manufacture") THEN (SELECT modified FROM `tabStock Entry` where name = sle.voucher_no)
+                    WHEN ste.purpose IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT IFNULL(date_modified, modified) FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
+                    WHEN ste.purpose IN ("Manufacture") THEN ste.modified
                     WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT IFNULL(psi.date_modified, psi.modified) FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
                 ELSE
                     sle.posting_date
                 END) as ste_date_modified'))
             ->addSelect(DB::raw('
                 (CASE
-                    WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT IFNULL(session_user, modified_by) FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
+                    WHEN ste.purpose IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT IFNULL(session_user, modified_by) FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
                     WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT IFNULL(psi.session_user, psi.modified_by) FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
                 ELSE
                     sle.modified_by
                 END) as ste_session_user'))
-            ->addSelect(DB::raw('(SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) as ste_purpose'))
-            ->addSelect(DB::raw('(SELECT GROUP_CONCAT(sales_order_no) FROM `tabStock Entry` where name = sle.voucher_no) as ste_sales_order'))
+            ->addSelect(DB::raw('ste.purpose as ste_purpose'))
+            ->addSelect(DB::raw('ste.sales_order_no as ste_sales_order'))
             ->addSelect(DB::raw('(SELECT GROUP_CONCAT(DISTINCT purchase_order) FROM `tabPurchase Receipt Item` where parent = sle.voucher_no and item_code = sle.item_code) as pr_voucher_no'))
             ->addSelect('sle.voucher_type', 'sle.voucher_no', 'sle.warehouse', 'sle.actual_qty', 'sle.qty_after_transaction', 'sle.posting_date')
             ->when(! empty($warehouseUser), function ($query) use ($warehouseUser) {
                 return $query->whereIn(DB::raw('
                     (CASE
-                        WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT IFNULL(session_user, modified_by) FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
+                        WHEN ste.purpose IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT IFNULL(session_user, modified_by) FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
                         WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT IFNULL(psi.session_user, psi.modified_by) FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
                     ELSE
                         sle.modified_by
@@ -1200,8 +1203,8 @@ class MainController extends Controller
 
                 return $query->whereBetween(DB::raw('
                     (CASE
-                        WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT IFNULL(date_modified, modified) FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
-                        WHEN (SELECT GROUP_CONCAT(purpose) FROM `tabStock Entry` where name = sle.voucher_no) in ("Manufacture") THEN (SELECT modified FROM `tabStock Entry` where name = sle.voucher_no)
+                        WHEN ste.purpose IN ("Material Transfer for Manufacture", "Material Transfer", "Material Issue") THEN (SELECT IFNULL(date_modified, modified) FROM `tabStock Entry Detail` where parent = sle.voucher_no and item_code = sle.item_code limit 1)
+                        WHEN ste.purpose IN ("Manufacture") THEN ste.modified
                         WHEN sle.voucher_type in ("Picking Slip", "Packing Slip", "Delivery Note") THEN (SELECT psi.date_modified FROM `tabPacking Slip` as ps join `tabPacking Slip Item` as psi on ps.name = psi.parent where ps.delivery_note = sle.voucher_no and item_code = sle.item_code limit 1)
                     ELSE
                         sle.posting_date
@@ -1210,7 +1213,8 @@ class MainController extends Controller
             ->orderBy('sle.posting_date', 'desc')
             ->orderBy('sle.posting_time', 'desc')
             ->orderBy('sle.name', 'desc')
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
 
         $pickingSlips = array_filter(collect($logs->items())->pluck('dr_voucher_no')->toArray());
 
@@ -1509,11 +1513,30 @@ class MainController extends Controller
 
         $q = DB::table('tabStock Reservation as sr')
             ->join('tabItem as ti', 'sr.item_code', 'ti.name')
-            ->groupby('sr.item_code', 'sr.warehouse', 'sr.description', 'sr.stock_uom', 'ti.item_classification')
+            ->groupby(
+                'sr.item_code',
+                'sr.warehouse',
+                'sr.description',
+                'sr.stock_uom',
+                'ti.item_classification',
+                'sr.type',
+                'sr.sales_person',
+                'sr.project'
+            )
             ->whereIn('sr.warehouse', $allowedWarehouses)
             ->whereNotIn('sr.status', ['Cancelled', 'Expired'])
             ->orderBy('sr.creation', 'desc')
-            ->select('sr.item_code', DB::raw('sum(sr.reserve_qty) as qty'), 'sr.warehouse', 'sr.description', 'sr.stock_uom', 'ti.item_classification')
+            ->select(
+                'sr.item_code',
+                DB::raw('sum(sr.reserve_qty) as qty'),
+                'sr.warehouse',
+                'sr.description',
+                'sr.stock_uom',
+                'ti.item_classification',
+                'sr.type as reservation_type',
+                'sr.sales_person as sales_person_name',
+                'sr.project as project_name'
+            )
             ->get();
 
         $itemImages = ItemImages::query()->whereIn('parent', collect($q)->pluck('item_code'))->orderBy('idx', 'asc')->pluck('image_path', 'parent');
@@ -1532,6 +1555,9 @@ class MainController extends Controller
                 'warehouse' => $row->warehouse,
                 'stock_uom' => $row->stock_uom,
                 'image' => $image,
+                'reservation_type' => $row->reservation_type,
+                'sales_person' => $row->sales_person_name,
+                'project' => $row->project_name,
             ];
         }
 
@@ -3063,7 +3089,7 @@ class MainController extends Controller
             ->orderBy('idx', 'asc')
             ->get();
 
-        return view('tables.filesTable', compact('itemFiles'));
+        return view('tables.filesTable', ['item_files' => $itemFiles]);
     }
 
     /**

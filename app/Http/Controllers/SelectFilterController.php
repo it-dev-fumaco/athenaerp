@@ -175,13 +175,7 @@ class SelectFilterController extends Controller
                 return $q->where('name', 'like', '%'.$request->q.'%');
             })
             ->select('name as id', 'name as text')
-            ->orderBy('name');
-
-        // When no search term, return all enabled sales persons for dropdowns; otherwise limit for typeahead
-        if (filled($request->q)) {
-            $query->limit(10);
-        }
-
-        return $query->get();
+            ->orderBy('name', 'asc')
+            ->get();
     }
 }

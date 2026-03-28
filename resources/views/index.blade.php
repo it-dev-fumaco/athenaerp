@@ -20,6 +20,6 @@
                 </div>
             </div>
         </div>
-    </div>10.0.0.79
+    </div>
 </div>
 @endsection
