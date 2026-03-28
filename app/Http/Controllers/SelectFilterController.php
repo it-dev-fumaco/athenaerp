@@ -175,8 +175,7 @@ class SelectFilterController extends Controller
                 return $query->where('name', 'like', '%'.$request->q.'%');
             })
             ->select('name as id', 'name as text')
-            ->orderBy('modified', 'desc')
-            ->limit(10)
+            ->orderBy('name', 'asc')
             ->get();
     }
 }

@@ -3089,7 +3089,7 @@ class MainController extends Controller
             ->orderBy('idx', 'asc')
             ->get();
 
-        return view('tables.filesTable', compact('itemFiles'));
+        return view('tables.filesTable', ['item_files' => $itemFiles]);
     }
 
     /**
