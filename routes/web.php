@@ -19,6 +19,7 @@ use App\Http\Controllers\MainController;
 use App\Http\Controllers\MaterialTransferController;
 use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\RetrieveItemsByLifecycleStatusController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SelectFilterController;
 use App\Http\Controllers\StockReservationController;
@@ -325,6 +326,8 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
         Route::get('/consignment_ledger', [ConsignmentController::class, 'consignmentLedger']);
         Route::get('/get_item_list', [ConsignmentController::class, 'getErpItems']);
         Route::get('/consignment_stock_movement/{item_code}', [ConsignmentController::class, 'consignmentStockMovement']);
+
+        Route::get('/items/by-status', RetrieveItemsByLifecycleStatusController::class);
     });
 
     Route::get('/brochure', [BrochureController::class, 'viewForm'])->name('brochure');

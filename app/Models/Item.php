@@ -21,9 +21,29 @@ class Item extends Model
 
     protected $table = 'tabItem';
 
+    const LIFECYCLE_STATUS_ACTIVE = 'Active';
+    const LIFECYCLE_STATUS_PHASE_OUT = 'For Phase Out';
+    const LIFECYCLE_STATUS_DISCONTINUED = 'Discontinued';
+    const LIFECYCLE_STATUS_OBSOLETE = 'Obsolete';
+
+    const LIFECYCLE_STATUSES = [
+        self::LIFECYCLE_STATUS_ACTIVE,
+        self::LIFECYCLE_STATUS_PHASE_OUT,
+        self::LIFECYCLE_STATUS_DISCONTINUED,
+        self::LIFECYCLE_STATUS_OBSOLETE,
+    ];
+
     protected $fillable = [
-        'custom_item_cost', 'description', 'item_name', 'item_group', 'stock_uom',
-        'item_classification', 'disabled', 'has_variants', 'variant_of', 'brand',
+        'custom_item_cost',
+        'description',
+        'item_name',
+        'item_group',
+        'stock_uom',
+        'item_classification',
+        'disabled',
+        'has_variants',
+        'variant_of',
+        'brand',
     ];
 
     public function bin()
@@ -127,7 +147,7 @@ class Item extends Model
      */
     public function scopeSearch($query, ?string $searchString): Builder
     {
-        if (! $searchString) {
+        if (!$searchString) {
             return $query;
         }
 
