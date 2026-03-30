@@ -34,8 +34,16 @@ class Item extends Model
     ];
 
     protected $fillable = [
-        'custom_item_cost', 'description', 'item_name', 'item_group', 'stock_uom',
-        'item_classification', 'disabled', 'has_variants', 'variant_of', 'brand',
+        'custom_item_cost',
+        'description',
+        'item_name',
+        'item_group',
+        'stock_uom',
+        'item_classification',
+        'disabled',
+        'has_variants',
+        'variant_of',
+        'brand',
     ];
 
     public function bin()
@@ -139,7 +147,7 @@ class Item extends Model
      */
     public function scopeSearch($query, ?string $searchString): Builder
     {
-        if (! $searchString) {
+        if (!$searchString) {
             return $query;
         }
 
