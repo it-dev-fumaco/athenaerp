@@ -13,6 +13,7 @@ use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\GuideController;
 use App\Http\Controllers\ItemAttributeController;
 use App\Http\Controllers\ItemController;
+use App\Http\Controllers\BulkTagItemsController;
 use App\Http\Controllers\ItemProfileController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MainController;
@@ -327,7 +328,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
         Route::get('/get_item_list', [ConsignmentController::class, 'getErpItems']);
         Route::get('/consignment_stock_movement/{item_code}', [ConsignmentController::class, 'consignmentStockMovement']);
 
-        Route::get('/items/by-status', RetrieveItemsByLifecycleStatusController::class);
+        Route::post('/items/bulk-tag', BulkTagItemsController::class);
     });
 
     Route::get('/brochure', [BrochureController::class, 'viewForm'])->name('brochure');
