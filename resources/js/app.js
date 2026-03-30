@@ -32,6 +32,7 @@ const dashboardAppEl = document.getElementById('dashboard-app');
 if (dashboardAppEl) {
     createApp(DashboardApp, {
         userGroup: dashboardAppEl.dataset.userGroup || '',
+        initialTab: dashboardAppEl.dataset.initialTab || 'home',
     }).mount('#dashboard-app');
 } else {
     const appEl = document.getElementById('app');

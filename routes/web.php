@@ -17,6 +17,7 @@ use App\Http\Controllers\BulkTagItemsController;
 use App\Http\Controllers\ItemProfileController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MainController;
+use App\Http\Controllers\PhaseOutController;
 use App\Http\Controllers\MaterialTransferController;
 use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\ReportController;
@@ -91,6 +92,8 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
         Route::post('/updateParentItem/{item_code}', [ItemAttributeController::class, 'updateParentItem']);
 
         Route::get('/', [MainController::class, 'index']);
+        Route::get('/phase-out/dashboard', [PhaseOutController::class, 'dashboard']);
+        Route::get('/phase-out/items', [PhaseOutController::class, 'items']);
         Route::get('/search_results', [SearchController::class, 'searchResults']);
         Route::get('/search_results_images', [SearchController::class, 'searchResultsImages']);
         Route::get('/dashboard_data', [MainController::class, 'dashboardData']);

@@ -8,7 +8,7 @@
 	<title>{{ $namePage }} - {{ Auth::check() ? Auth::user()->full_name : null }}</title>
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="csrf-token" content="{{ csrf_token() }}">
-	@vite(['resources/css/app.css', 'resources/js/app.js'])
+	{{-- Vite is loaded after AdminLTE so Tailwind utilities are not overridden by the theme CSS. --}}
 	{{--  <!-- Google Font: Source Sans Pro -->  --}}
 	<link rel="stylesheet" href="{{ asset('updated/custom/font.css') }}">
 	<link rel="stylesheet" href="{{ asset('updated/icons/font-awesome.min.css') }}">
@@ -679,6 +679,8 @@
 		}
 	</style>
 	@yield('style')
+	{{-- Vite must load last so Tailwind + inventory sidebar styles win over AdminLTE, Select2, bootstrap-table, and inline rules. --}}
+	@vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="hold-transition layout-top-nav">
 	<div id="loader-wrapper">
@@ -817,7 +819,7 @@
 			</div>
 			@endif
 			
-			@if(!in_array($activePage, ['search_results', 'dashboard', 'error_page', 'item_profile', 'audit_list', 'import_from_ecommerce', 'beginning_inventory']))
+			@if(!in_array($activePage, ['search_results', 'dashboard', 'error_page', 'item_profile', 'audit_list', 'import_from_ecommerce', 'beginning_inventory', 'phase_out_dashboard', 'phase_out_items']))
 			<div class="row m-0 pb-0">
 				<div class="col-xl-5 p-3">
 					<h2 class="d-none d-lg-block"><a href="/" class="btn btn-default pt-2 pr-4 pb-2 pr-3 pl-3 mr-2 ">

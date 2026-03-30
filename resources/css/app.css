@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Application styles – Vite entry. Add global CSS or keep minimal for Blade/AdminLTE. */
 
 /* ==========================================================================
@@ -176,4 +180,218 @@
 .item-alternatives-scroll .custom-body .p-1.text-justify small,
 .item-alternatives-scroll .custom-body .p-1.text-justify .font-weight-bold {
 	white-space: normal;
+}
+
+/*
+ * Inventory shell + sidebar: plain CSS (does not rely on Tailwind load order).
+ * Plugins after Vite can still fight utilities; these rules use semantic classes + #id.
+ */
+[data-inventory-shell] {
+	display: flex;
+	flex-direction: row;
+	align-items: stretch;
+	width: 100%;
+	min-width: 0;
+	min-height: 0;
+}
+[data-inventory-shell] .inventory-shell__main {
+	flex: 1 1 0%;
+	min-width: 0;
+	min-height: 0;
+}
+
+/* Sidebar column */
+aside#inventory-sidebar.inventory-sidebar {
+	position: sticky;
+	top: 0;
+	z-index: 1030;
+	display: flex;
+	flex-direction: column;
+	flex-shrink: 0;
+	width: 16rem;
+	min-width: 16rem;
+	min-height: 100vh;
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+	border-right: 1px solid rgba(51, 65, 85, 0.55);
+	background: linear-gradient(180deg, #0f172a 0%, #172554 48%, #0f172a 100%);
+	background-color: #0f172a;
+	color: #f1f5f9;
+	box-shadow: 4px 0 24px rgba(15, 23, 42, 0.35);
+	transition: width 0.3s ease, min-width 0.3s ease;
+}
+
+.inventory-sidebar__header {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	padding: 1rem 0.75rem;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.inventory-sidebar__brand {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 0.5rem;
+	min-width: 0;
+	flex: 1;
+	padding: 0.125rem;
+	border-radius: 0.5rem;
+	text-decoration: none !important;
+	color: #ffffff !important;
+	transition: background-color 0.2s ease;
+}
+.inventory-sidebar__brand:hover {
+	background-color: rgba(255, 255, 255, 0.08);
+	color: #ffffff !important;
+}
+
+.inventory-sidebar__brand-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.25rem;
+	height: 2.25rem;
+	flex-shrink: 0;
+	border-radius: 0.5rem;
+	background: rgba(37, 99, 235, 0.45);
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: #fff;
+}
+
+.inventory-sidebar__brand-text {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 0.875rem;
+	font-weight: 600;
+	letter-spacing: -0.02em;
+}
+
+.inventory-sidebar__collapse-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.25rem;
+	height: 2.25rem;
+	flex-shrink: 0;
+	padding: 0;
+	border: none;
+	border-radius: 0.5rem;
+	background: transparent;
+	color: #cbd5e1;
+	cursor: pointer;
+	transition: background-color 0.2s ease, color 0.2s ease;
+}
+.inventory-sidebar__collapse-btn:hover {
+	background-color: rgba(255, 255, 255, 0.1);
+	color: #ffffff;
+}
+
+.inventory-sidebar-nav {
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 auto;
+	gap: 0.125rem;
+	min-height: 0;
+	overflow-x: hidden;
+	overflow-y: auto;
+	padding: 0.75rem 0.5rem;
+	-webkit-overflow-scrolling: touch;
+}
+
+.inventory-sidebar__link {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 0.75rem;
+	width: 100%;
+	box-sizing: border-box;
+	padding: 0.625rem 0.75rem;
+	border: none;
+	border-radius: 0.5rem;
+	font-size: 0.875rem;
+	font-weight: 500;
+	text-align: left;
+	text-decoration: none !important;
+	color: #e2e8f0 !important;
+	transition: background-color 0.2s ease, color 0.2s ease;
+}
+.inventory-sidebar__link:hover {
+	background-color: rgba(255, 255, 255, 0.1) !important;
+	color: #ffffff !important;
+}
+
+.inventory-sidebar__link--active {
+	background-color: rgba(30, 64, 175, 0.55) !important;
+	color: #ffffff !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+	border-left: 3px solid #f87171;
+	padding-left: calc(0.75rem - 3px);
+}
+
+.inventory-sidebar__icon {
+	width: 1.25rem;
+	flex-shrink: 0;
+	text-align: center;
+	opacity: 0.95;
+}
+
+.inventory-sidebar__divider {
+	margin: 0.75rem 0;
+	border: 0;
+	border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.inventory-sidebar__section-label {
+	margin: 0 0 0.5rem;
+	padding: 0 0.75rem;
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #94a3b8;
+}
+
+.inventory-sidebar__footer {
+	margin-top: auto;
+	padding: 0.5rem;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.inventory-sidebar__footer .inventory-sidebar__link {
+	width: 100%;
+}
+
+/* Collapsed rail */
+.inventory-shell--collapsed #inventory-sidebar.inventory-sidebar {
+	width: 4rem;
+	min-width: 4rem;
+}
+.inventory-shell--collapsed .inventory-sidebar-label {
+	display: none !important;
+}
+.inventory-shell--collapsed .inventory-sidebar__brand {
+	display: none;
+}
+.inventory-shell--collapsed .inventory-sidebar__header {
+	flex-wrap: wrap;
+	justify-content: center;
+	padding: 0.75rem 0.25rem;
+}
+.inventory-shell--collapsed .inventory-sidebar-nav .inventory-sidebar__link,
+.inventory-shell--collapsed .inventory-sidebar__footer .inventory-sidebar__link {
+	justify-content: center;
+	padding-left: 0.5rem;
+	padding-right: 0.5rem;
+}
+.inventory-shell--collapsed .inventory-sidebar__link--active {
+	padding-left: calc(0.5rem - 3px);
+}
+.inventory-shell--collapsed .inventory-shell-collapse-icon {
+	transform: rotate(180deg);
 }
