@@ -16,13 +16,13 @@ class BulkTagItemsController extends Controller
         $itemIds = $data['itemIds'];
 
         Item::whereIn('name', $itemIds)->update([
-            'custom_life_cycle_status' => $tag
+            Item::lifecycleStatusColumn() => $tag,
         ]);
 
         return response()->json([
             'message' => 'Items tagged successfully.',
             'taggedItems' => $itemIds,
-            'tag' => $tag
+            'tag' => $tag,
         ]);
     }
 }

@@ -27,6 +27,8 @@ import SearchResultsApp from './components/SearchResultsApp.vue';
 import StockReservationModals from './components/StockReservationModals.vue';
 import ItemAttributeSearch from './components/ItemAttributeSearch.vue';
 import ItemAttributeUpdateForm from './components/ItemAttributeUpdateForm.vue';
+import PhaseOutDashboardApp from './components/PhaseOutDashboardApp.vue';
+import PhaseOutItemsApp from './components/PhaseOutItemsApp.vue';
 
 const dashboardAppEl = document.getElementById('dashboard-app');
 if (dashboardAppEl) {
@@ -156,4 +158,14 @@ if (itemAttributeSearchEl) {
 const itemAttributeUpdateFormEl = document.getElementById('item-attribute-update-form-app');
 if (itemAttributeUpdateFormEl) {
     createApp(ItemAttributeUpdateForm).mount('#item-attribute-update-form-app');
+}
+
+const phaseOutDashboardEl = document.getElementById('phase-out-dashboard-app');
+if (phaseOutDashboardEl) {
+    createApp(PhaseOutDashboardApp).mount('#phase-out-dashboard-app');
+}
+
+const phaseOutItemsEl = document.getElementById('phase-out-items-app');
+if (phaseOutItemsEl) {
+    createApp(PhaseOutItemsApp).mount('#phase-out-items-app');
 }

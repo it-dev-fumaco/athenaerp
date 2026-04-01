@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Item;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use App\Models\Item;
 
 class BulkTagItemsRequest extends FormRequest
 {
@@ -19,16 +19,17 @@ class BulkTagItemsRequest extends FormRequest
             'itemIds' => [
                 'required',
                 'array',
-                'min:1'
+                'min:1',
             ],
             'itemIds.*' => [
                 'required',
-                Rule::exists(Item::class, 'id')
+                'string',
+                Rule::exists('tabItem', 'name'),
             ],
             'tag' => [
                 'required',
                 'string',
-                Rule::in(Item::LIFECYCLE_STATUSES)
+                Rule::in(Item::LIFECYCLE_STATUSES),
             ],
         ];
     }

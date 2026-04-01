@@ -15,7 +15,9 @@ class RetrieveItemsByLifecycleStatusController extends Controller
         $statuses = $data['status'];
         $perPage = $data['per_page'] ?? 15;
 
-        $items = Item::whereIn('custom_lifecycle_status', $statuses)
+        $col = Item::lifecycleStatusColumn();
+
+        $items = Item::whereIn($col, $statuses)
             ->orderBy('creation', 'desc')
             ->paginate($perPage);
 

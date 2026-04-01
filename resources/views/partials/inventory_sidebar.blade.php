@@ -15,10 +15,6 @@
     aria-label="Main navigation"
 >
     <div class="inventory-sidebar__header">
-        <a href="{{ url('/?tab=home') }}" class="inventory-sidebar__brand inventory-sidebar-label" title="Home">
-            <span class="inventory-sidebar__brand-icon">E</span>
-            <span class="inventory-sidebar-label inventory-sidebar__brand-text">ERPNext Inventory</span>
-        </a>
         <button
             type="button"
             data-sidebar-toggle
