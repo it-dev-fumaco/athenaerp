@@ -94,6 +94,8 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
         Route::get('/', [MainController::class, 'index']);
         Route::get('/phase-out/dashboard', [PhaseOutController::class, 'dashboard']);
         Route::get('/phase-out/items', [PhaseOutController::class, 'items']);
+        Route::get('/phase-out/update-lifecycle-status', [PhaseOutController::class, 'updateLifecycleStatus']);
+        Route::get('/phase-out/mass-update/items', [PhaseOutController::class, 'massUpdateItems']);
         Route::get('/search_results', [SearchController::class, 'searchResults']);
         Route::get('/search_results_images', [SearchController::class, 'searchResultsImages']);
         Route::get('/dashboard_data', [MainController::class, 'dashboardData']);

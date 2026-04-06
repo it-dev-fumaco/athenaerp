@@ -29,6 +29,7 @@ import ItemAttributeSearch from './components/ItemAttributeSearch.vue';
 import ItemAttributeUpdateForm from './components/ItemAttributeUpdateForm.vue';
 import PhaseOutDashboardApp from './components/PhaseOutDashboardApp.vue';
 import PhaseOutItemsApp from './components/PhaseOutItemsApp.vue';
+import UpdateLifecycleStatusApp from './components/UpdateLifecycleStatusApp.vue';
 
 const dashboardAppEl = document.getElementById('dashboard-app');
 if (dashboardAppEl) {
@@ -168,4 +169,9 @@ if (phaseOutDashboardEl) {
 const phaseOutItemsEl = document.getElementById('phase-out-items-app');
 if (phaseOutItemsEl) {
     createApp(PhaseOutItemsApp).mount('#phase-out-items-app');
+}
+
+const updateLifecycleStatusEl = document.getElementById('update-lifecycle-status-app');
+if (updateLifecycleStatusEl) {
+    createApp(UpdateLifecycleStatusApp).mount('#update-lifecycle-status-app');
 }

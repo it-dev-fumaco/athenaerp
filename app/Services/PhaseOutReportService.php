@@ -232,4 +232,70 @@ class PhaseOutReportService
 
         return $query->paginate($perPage, ['*'], 'candidates_page', $page);
     }
+
+    /**
+     * Paginate items eligible for mass lifecycle update (Active lifecycle, with stock ledger activity).
+     *
+     * @param  array{brand?: string, item_classification?: string, last_movement_days_min?: int, last_movement_days_max?: int}  $filters
+     */
+    public function paginateMassUpdateItems(int $perPage, int $page, array $filters = []): LengthAwarePaginator
+    {
+        $col = Item::lifecycleStatusColumn();
+        if (! Schema::hasTable('tabItem') || ! Schema::hasColumn('tabItem', $col)) {
+            return Item::query()->whereRaw('0 = 1')->paginate($perPage, ['*'], 'page', $page);
+        }
+
+        $ledgerSub = DB::table('tabStock Ledger Entry')
+            ->select('item_code', DB::raw('MAX(posting_date) as last_posting'));
+
+        if (Schema::hasColumn('tabStock Ledger Entry', 'is_cancelled')) {
+            $ledgerSub->where('is_cancelled', 0);
+        }
+
+        $ledgerSub->groupBy('item_code');
+
+        $query = Item::query()
+            ->joinSub($ledgerSub, 'sle', 'sle.item_code', '=', 'tabItem.name')
+            ->enabled()
+            ->stockItem()
+            ->leafVariants()
+            ->where(function ($q) use ($col) {
+                $q->whereNull('tabItem.'.$col)
+                    ->orWhere('tabItem.'.$col, '')
+                    ->orWhere('tabItem.'.$col, Item::LIFECYCLE_STATUS_ACTIVE);
+            })
+            ->when(! empty($filters['brand']) && Schema::hasColumn('tabItem', 'brand'), function ($q) use ($filters) {
+                $q->where('tabItem.brand', $filters['brand']);
+            })
+            ->when(! empty($filters['item_classification']) && Schema::hasColumn('tabItem', 'item_classification'), function ($q) use ($filters) {
+                $q->where('tabItem.item_classification', $filters['item_classification']);
+            })
+            ->when(isset($filters['last_movement_days_min']), function ($q) use ($filters) {
+                $q->whereRaw('DATEDIFF(CURDATE(), sle.last_posting) >= ?', [(int) $filters['last_movement_days_min']]);
+            })
+            ->when(isset($filters['last_movement_days_max']), function ($q) use ($filters) {
+                $q->whereRaw('DATEDIFF(CURDATE(), sle.last_posting) <= ?', [(int) $filters['last_movement_days_max']]);
+            })
+            ->orderByDesc('sle.last_posting')
+            ->select('tabItem.name', 'tabItem.item_name')
+            ->addSelect(DB::raw('sle.last_posting as last_stock_ledger_posting'))
+            ->addSelect(DB::raw('DATEDIFF(CURDATE(), sle.last_posting) as days_since_last_movement'));
+
+        if (Schema::hasColumn('tabItem', 'item_classification')) {
+            $query->addSelect('tabItem.item_classification');
+        }
+        if (Schema::hasColumn('tabItem', 'brand')) {
+            $query->addSelect('tabItem.brand');
+        }
+
+        if (Schema::hasTable('tabBin') && Schema::hasColumn('tabBin', 'actual_qty')) {
+            $query->addSelect(DB::raw(
+                '(SELECT COALESCE(SUM(b2.actual_qty), 0) FROM `tabBin` b2 WHERE b2.item_code = `tabItem`.name) as total_actual_qty'
+            ));
+        } else {
+            $query->addSelect(DB::raw('0 as total_actual_qty'));
+        }
+
+        return $query->paginate($perPage, ['*'], 'page', $page);
+    }
 }

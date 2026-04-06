@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\MassUpdateItemsRequest;
 use App\Http\Requests\PhaseOutReportRequest;
 use App\Http\Requests\PhaseOutTaggedItemsRequest;
+use App\Models\Item;
 use App\Services\PhaseOutReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -18,6 +20,61 @@ class PhaseOutController extends Controller
     public function items()
     {
         return view('phase_out.items');
+    }
+
+    public function updateLifecycleStatus()
+    {
+        return view('phase_out.update_lifecycle_status');
+    }
+
+    public function massUpdateItems(MassUpdateItemsRequest $request, PhaseOutReportService $phaseOutReportService): JsonResponse
+    {
+        $data = $request->validated();
+        $perPage = (int) ($data['per_page'] ?? 15);
+        $page = (int) ($data['page'] ?? 1);
+
+        $filters = [];
+        if (! empty($data['brand'])) {
+            $filters['brand'] = $data['brand'];
+        }
+        if (! empty($data['item_classification'])) {
+            $filters['item_classification'] = $data['item_classification'];
+        }
+        if (array_key_exists('last_movement_days_min', $data) && $data['last_movement_days_min'] !== null) {
+            $filters['last_movement_days_min'] = (int) $data['last_movement_days_min'];
+        }
+        if (array_key_exists('last_movement_days_max', $data) && $data['last_movement_days_max'] !== null) {
+            $filters['last_movement_days_max'] = (int) $data['last_movement_days_max'];
+        }
+
+        $paginator = $phaseOutReportService->paginateMassUpdateItems($perPage, $page, $filters);
+
+        $rows = [];
+        foreach ($paginator->items() as $item) {
+            /** @var Item $item */
+            $rows[] = [
+                'item_code' => $item->name,
+                'name' => $item->item_name,
+                'item_classification' => $item->item_classification ?? null,
+                'brand' => $item->brand ?? null,
+                'global_stock' => (float) ($item->total_actual_qty ?? 0),
+                'last_movement_days' => isset($item->days_since_last_movement)
+                    ? (int) $item->days_since_last_movement
+                    : null,
+                'last_movement_date' => $item->last_stock_ledger_posting ?? null,
+                'last_purchase' => null,
+            ];
+        }
+
+        return response()->json([
+            'data' => $rows,
+            'current_page' => $paginator->currentPage(),
+            'last_page' => $paginator->lastPage(),
+            'per_page' => $paginator->perPage(),
+            'total' => $paginator->total(),
+            'from' => $paginator->firstItem(),
+            'to' => $paginator->lastItem(),
+        ]);
     }
 
     public function summary(PhaseOutReportService $phaseOutReportService): JsonResponse

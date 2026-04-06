@@ -3,6 +3,7 @@
     $isDashboard = request()->is('/');
     $isPhaseOutDashboard = request()->is('phase-out/dashboard');
     $isPhaseOutItems = request()->is('phase-out/items');
+    $isPhaseOutUpdateLifecycle = request()->is('phase-out/update-lifecycle-status');
 
     $navClasses = function (bool $active): string {
         return 'inventory-sidebar__link'.($active ? ' inventory-sidebar__link--active' : '');
@@ -53,7 +54,7 @@
         </a>
 
         <div class="inventory-sidebar__divider inventory-sidebar-label" role="separator"></div>
-        <p class="inventory-sidebar__section-label inventory-sidebar-label">Phase-out</p>
+        <p class="inventory-sidebar__section-label inventory-sidebar-label">Item Lifecycle Settings</p>
 
         <a href="{{ url('/phase-out/dashboard') }}" class="{{ $navClasses($isPhaseOutDashboard) }}" title="Phase-Out Dashboard">
             <i class="fas fa-chart-pie inventory-sidebar__icon" aria-hidden="true"></i>
@@ -62,6 +63,10 @@
         <a href="{{ url('/phase-out/items') }}" class="{{ $navClasses($isPhaseOutItems) }}" title="Phase-Out Items">
             <i class="fas fa-box-open inventory-sidebar__icon" aria-hidden="true"></i>
             <span class="inventory-sidebar-label">Phase-Out Items</span>
+        </a>
+        <a href="{{ url('/phase-out/update-lifecycle-status') }}" class="{{ $navClasses($isPhaseOutUpdateLifecycle) }}" title="Update Lifecycle Status">
+            <i class="fas fa-arrows-rotate inventory-sidebar__icon" aria-hidden="true"></i>
+            <span class="inventory-sidebar-label">Update Lifecycle Status</span>
         </a>
     </nav>
 
