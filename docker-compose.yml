@@ -22,8 +22,9 @@ services:
       - .env
     volumes:
       - .:/var/www/html:delegated
+    # Host :80 is often taken on Windows (IIS, other stacks). Use 8080 or set FORWARD_APP_PORT in .env.
     ports:
-      - "80:8000"
+      - "${FORWARD_APP_PORT:-8080}:8000"
     # Optional: limit CPU/memory (uncomment and adjust). Prefer giving Docker more resources in Desktop.
     # deploy:
     #   resources:
