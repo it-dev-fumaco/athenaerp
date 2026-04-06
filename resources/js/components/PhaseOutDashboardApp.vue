@@ -24,7 +24,6 @@
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <p class="text-sm font-medium text-slate-500">Phase-Out items</p>
           <p class="mt-2 text-3xl font-semibold tabular-nums text-slate-900">{{ summary.tagged_count }}</p>
-          <p class="mt-1 text-sm text-slate-600">Total stock value: {{ formatMoney(summary.total_stock_value) }}</p>
         </div>
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <p class="text-sm font-medium text-slate-500">Total stock (units)</p>
