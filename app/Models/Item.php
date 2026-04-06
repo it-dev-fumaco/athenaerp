@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class Item extends Model
 {
@@ -22,8 +23,11 @@ class Item extends Model
     protected $table = 'tabItem';
 
     const LIFECYCLE_STATUS_ACTIVE = 'Active';
+
     const LIFECYCLE_STATUS_PHASE_OUT = 'For Phase Out';
+
     const LIFECYCLE_STATUS_DISCONTINUED = 'Discontinued';
+
     const LIFECYCLE_STATUS_OBSOLETE = 'Obsolete';
 
     const LIFECYCLE_STATUSES = [
@@ -32,6 +36,41 @@ class Item extends Model
         self::LIFECYCLE_STATUS_DISCONTINUED,
         self::LIFECYCLE_STATUS_OBSOLETE,
     ];
+
+    /**
+     * tabItem column for lifecycle (ERPNext custom field).
+     */
+    const CUSTOM_LIFE_CYCLE_STATUS_COLUMN = 'custom_life_cycle_status';
+
+    /**
+     * Resolved DB column for lifecycle status (see config phase_out.lifecycle_status_column).
+     */
+    private static ?string $lifecycleStatusColumnResolved = null;
+
+    /**
+     * Actual tabItem column name for lifecycle (handles ERPNext naming variants).
+     */
+    public static function lifecycleStatusColumn(): string
+    {
+        if (self::$lifecycleStatusColumnResolved !== null) {
+            return self::$lifecycleStatusColumnResolved;
+        }
+
+        $configured = config('phase_out.lifecycle_status_column');
+        if (is_string($configured) && $configured !== '' && Schema::hasTable('tabItem') && Schema::hasColumn('tabItem', $configured)) {
+            return self::$lifecycleStatusColumnResolved = $configured;
+        }
+
+        if (Schema::hasTable('tabItem')) {
+            foreach (['custom_life_cycle_status', 'custom_lifecycle_status'] as $candidate) {
+                if (Schema::hasColumn('tabItem', $candidate)) {
+                    return self::$lifecycleStatusColumnResolved = $candidate;
+                }
+            }
+        }
+
+        return self::$lifecycleStatusColumnResolved = self::CUSTOM_LIFE_CYCLE_STATUS_COLUMN;
+    }
 
     protected $fillable = [
         'custom_item_cost',
@@ -44,6 +83,8 @@ class Item extends Model
         'has_variants',
         'variant_of',
         'brand',
+        'custom_life_cycle_status',
+        'custom_lifecycle_status',
     ];
 
     public function bin()
@@ -147,7 +188,7 @@ class Item extends Model
      */
     public function scopeSearch($query, ?string $searchString): Builder
     {
-        if (!$searchString) {
+        if (! $searchString) {
             return $query;
         }
 

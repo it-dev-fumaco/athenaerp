@@ -11,57 +11,23 @@
 
     <div class="dashboard-main">
       <div class="dashboard-tabs-card">
-        <div class="dashboard-tabs-header">
-          <ul class="dashboard-tabs">
-            <li>
-              <a
-                href="#tab_1-1"
-                :class="{ active: activeTab === 'stock-alert' }"
-                @click.prevent="activeTab = 'stock-alert'"
-              >
-                <i class="fas fa-exclamation-triangle"></i> ▲ Stock Level Alert
-              </a>
-            </li>
-            <li>
-              <a
-                href="#tab_2-1"
-                :class="{ active: activeTab === 'movement' }"
-                @click.prevent="activeTab = 'movement'"
-              >
-                <i class="fas fa-list-alt"></i> Stock Movement
-              </a>
-            </li>
-            <li>
-              <a
-                href="#tab_3-1"
-                :class="{ active: activeTab === 'recent' }"
-                @click.prevent="activeTab = 'recent'"
-              >
-                <i class="fas fa-list-alt"></i> Recently Received Item(s)*
-              </a>
-            </li>
-            <li>
-              <a
-                href="#tab_4-1"
-                :class="{ active: activeTab === 'inventory-accuracy' }"
-                @click.prevent="activeTab = 'inventory-accuracy'"
-              >
-                <i class="fas fa-chart-line"></i> Inventory Accuracy
-              </a>
-            </li>
-            <li>
-              <a
-                href="#tab_5-1"
-                :class="{ active: activeTab === 'reserved-items' }"
-                @click.prevent="activeTab = 'reserved-items'"
-              >
-                <i class="fas fa-clipboard-list"></i> Reserved Items
-              </a>
-            </li>
-          </ul>
-          <a v-if="showItemCostLink" href="/search_item_cost" class="btn-register-cost">Register Item Cost</a>
+        <div v-if="showItemCostLink" class="dashboard-tabs-header dashboard-tabs-header--solo">
+          <span class="dashboard-tabs-header-spacer" aria-hidden="true"></span>
+          <a href="/search_item_cost" class="btn-register-cost">Register Item Cost</a>
         </div>
         <div class="dashboard-tabs-content">
+          <div v-show="activeTab === 'home'" class="tab-pane">
+            <div class="card-glass">
+              <div class="dashboard-widget-header">
+                <h3 class="dashboard-widget-title">Home</h3>
+              </div>
+              <div class="dashboard-widget-body">
+                <p class="mb-0 text-slate-600">
+                  Welcome to the inventory dashboard. Use the left sidebar to open stock alerts, movement, accuracy, reserved items, and phase-out tools.
+                </p>
+              </div>
+            </div>
+          </div>
           <div v-show="activeTab === 'stock-alert'" class="tab-pane">
             <DashboardLowStock />
           </div>
@@ -98,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import DashboardStats from '@/components/DashboardStats.vue';
 import DashboardLowStock from '@/components/DashboardLowStock.vue';
 import DashboardAthenaLogs from '@/components/DashboardAthenaLogs.vue';
@@ -106,17 +72,46 @@ import DashboardRecentlyReceived from '@/components/DashboardRecentlyReceived.vu
 import DashboardInventoryAccuracy from '@/components/DashboardInventoryAccuracy.vue';
 import DashboardReservedItems from '@/components/DashboardReservedItems.vue';
 
+const VALID_TABS = [
+  'home',
+  'stock-alert',
+  'movement',
+  'recent',
+  'inventory-accuracy',
+  'reserved-items',
+];
+
 const props = defineProps({
   userGroup: { type: String, default: '' },
+  initialTab: { type: String, default: 'home' },
 });
 
-const activeTab = ref('stock-alert');
+function normalizeTab(tab) {
+  const t = (tab || '').trim();
+  return VALID_TABS.includes(t) ? t : 'home';
+}
+
+const activeTab = ref(normalizeTab(props.initialTab));
 const now = new Date();
 const initialMonth = now.getMonth() + 1;
 const initialYear = now.getFullYear();
 
 const isDirector = computed(() => props.userGroup === 'Director');
 const showItemCostLink = computed(() => ['Manager', 'Director'].includes(props.userGroup));
+
+function syncUrlTab(tab) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  const url = new URL(window.location.href);
+  url.searchParams.set('tab', tab);
+  window.history.replaceState({}, '', url);
+}
+
+onMounted(() => {
+  activeTab.value = normalizeTab(props.initialTab);
+  syncUrlTab(activeTab.value);
+});
 </script>
 
 <style scoped>
@@ -177,38 +172,18 @@ const showItemCostLink = computed(() => ['Manager', 'Director'].includes(props.u
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
   background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   border-bottom: 1px solid rgba(13, 58, 110, 0.08);
 }
-.dashboard-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.dashboard-tabs-header--solo {
+  justify-content: flex-end;
 }
-.dashboard-tabs a {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 1rem;
-  border-radius: 10px;
-  color: #475569;
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-.dashboard-tabs a:hover {
-  background: rgba(13, 58, 110, 0.08);
-  color: #0d3a6e;
-}
-.dashboard-tabs a.active {
-  background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%);
-  color: #fff;
+.dashboard-tabs-header-spacer {
+  flex: 1;
+  min-width: 0;
 }
 .btn-register-cost {
   padding: 0.4rem 0.9rem;
