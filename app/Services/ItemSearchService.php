@@ -20,6 +20,8 @@ class ItemSearchService
      */
     public function search(Request $request): LengthAwarePaginator
     {
+        $lifecycleCol = Item::lifecycleStatusColumn();
+
         $selectColumns = [
             'tabItem.name as item_code',
             'tabItem.description',
@@ -38,6 +40,7 @@ class ItemSearchService
             'tabItem.package_height',
             'tabItem.weight_uom',
             'tabItem.package_dimension_uom',
+            'tabItem.'.$lifecycleCol.' as lifecycle_status',
             $request->wh ? 'd.warehouse' : null,
         ];
         $selectColumns = array_filter($selectColumns);

@@ -4,6 +4,29 @@
 ])
 
 @section('content')
+<style>
+	.search-result-thumb-wrap { overflow: hidden; }
+	.lifecycle-status-tag-blade {
+		position: absolute;
+		top: 6px;
+		left: 6px;
+		z-index: 2;
+		max-width: calc(100% - 8px);
+		display: inline-block;
+		padding: 2px 6px;
+		border-radius: 4px;
+		color: #fff;
+		font-weight: 700;
+		font-size: 11px;
+		line-height: 1.25;
+		letter-spacing: 0.02em;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+		pointer-events: none;
+	}
+</style>
 <div class="content p-0 m-0">
 	<div class="content-header p-0 m-0">
 		<div class="container-fluid">
@@ -265,14 +288,27 @@
 										<div id="search-results-list">
 										<div class="col-12">
 											<div class="container-fluid m-0">
+												@php
+													$lifecycleColors = config('lifecycle_status.colors', []);
+													$lifecycleUnknown = config('lifecycle_status.unknown_color', '#6B7280');
+												@endphp
 												@forelse ($itemList as $row)
+													@php
+														$lifecycleLabel = isset($row['lifecycleStatus']) && $row['lifecycleStatus'] !== '' ? trim((string) $row['lifecycleStatus']) : null;
+														$lifecycleBg = $lifecycleLabel ? ($lifecycleColors[$lifecycleLabel] ?? $lifecycleUnknown) : null;
+													@endphp
 													<div class="mb-1"></div>
 													<div class="d-none d-xl-block border border-outline-secondary"><!-- Desktop -->
 														<div class="row m-0">
 															<div class="col-1 p-1">
-																<a href="{{ $row['image'] }}" data-item-code="{{ $row['name'] }}" class="view-images">
-																	<img src="{{ $row['image'] }}" class="img w-100">
-																</a>
+																<div class="search-result-thumb-wrap position-relative">
+																	<a href="{{ $row['image'] }}" data-item-code="{{ $row['name'] }}" class="view-images d-block">
+																		<img src="{{ $row['image'] }}" class="img w-100">
+																	</a>
+																	@if ($lifecycleLabel)
+																		<span class="lifecycle-status-tag-blade" style="background-color: {{ $lifecycleBg }};">{{ $lifecycleLabel }}</span>
+																	@endif
+																</div>
 					
 																<div class="text-center mt-2 mb-1">
 																	<div class="item-action-row">
@@ -438,9 +474,14 @@
 													<div class="d-block d-xl-none border border-outline-secondary"><!-- Mobile/Tablet -->
 														<div class="row m-0">
 															<div class="col-3 col-lg-2 col-xl-3 p-1">
-																<a href="{{ $row['image'] }}" data-item-code="{{ $row['name'] }}" class="view-images">
-																	<img src="{{ $row['image'] }}" class="img w-100">
-																</a>
+																<div class="search-result-thumb-wrap position-relative">
+																	<a href="{{ $row['image'] }}" data-item-code="{{ $row['name'] }}" class="view-images d-block">
+																		<img src="{{ $row['image'] }}" class="img w-100">
+																	</a>
+																	@if ($lifecycleLabel)
+																		<span class="lifecycle-status-tag-blade" style="background-color: {{ $lifecycleBg }};">{{ $lifecycleLabel }}</span>
+																	@endif
+																</div>
 
 																<a href="/get_item_details/{{ $row['name'] }}">
 																	<div class="btn btn-sm btn-primary w-100">
