@@ -1,98 +1,97 @@
 <template>
-  <div class="update-lifecycle-status ulc-root flex min-h-full min-w-0 flex-1 flex-col bg-[#eef2f6]">
-    <div
-      class="mx-auto w-full max-w-[1600px] flex-1 space-y-4 p-4 sm:space-y-5 sm:p-6"
-      :class="currentStep === 2 ? 'pb-28 sm:pb-32' : 'pb-8 sm:pb-10'"
-    >
-      <header class="flex flex-col gap-1">
-        <div class="flex flex-wrap items-start gap-3 sm:gap-4">
-          <div class="min-w-0 flex-1">
-            <h1 class="text-xl font-semibold text-slate-800">
-              Mass Update Lifecycle Status
-            </h1>
-            <p class="mt-1 text-sm text-slate-600">
-              Select items to update their lifecycle status to &quot;For Phase Out&quot;.
-            </p>
+  <div class="update-lifecycle-status ulc-root font-sans flex min-h-0 min-w-0 flex-1 flex-col bg-[#f4f7f9]">
+    <div class="mx-auto w-full max-w-[1600px] p-4 sm:p-6">
+      <div class="ulc-shell flex flex-col rounded-lg bg-white shadow-[0_2px_12px_rgba(15,23,42,0.08)]">
+        <!-- Header -->
+        <header class="border-b border-[#e5e7eb] px-5 pb-4 pt-5 sm:px-6 sm:pb-5 sm:pt-6">
+          <div class="flex flex-wrap items-start gap-3">
+            <div class="min-w-0 flex-1">
+              <h1 class="text-2xl font-bold leading-snug text-[#1f2937]">
+                Mass Update Lifecycle Status
+              </h1>
+              <p class="mt-2 text-sm leading-snug text-[#6b7280]">
+                Select items to update their lifecycle status to &quot;For Phase Out&quot;.
+              </p>
+            </div>
+          </div>
+        </header>
+
+        <!-- Stepper: Step 1 always active, Step 2 inactive (match reference) -->
+        <div class="ulc-stepper-wrap border-b border-[#e5e7eb]" aria-live="polite">
+          <div class="ulc-stepper">
+            <div
+              class="ulc-stepper__ribbon ulc-stepper__ribbon--active"
+              aria-current="step"
+            >
+              <span class="ulc-stepper__label">1 Filter Items</span>
+            </div>
+            <div class="ulc-stepper__ribbon ulc-stepper__ribbon--next">
+              <span class="ulc-stepper__label">2 Review &amp; Confirm</span>
+            </div>
           </div>
         </div>
-      </header>
 
-      <!-- Stepper: pointed ribbon; active step highlights after Find Items -->
-      <div
-        class="ulc-stepper-wrap rounded-sm shadow-sm"
-        aria-live="polite"
-      >
-        <div class="ulc-stepper">
-          <div
-            class="ulc-stepper__ribbon"
-            :class="step1RibbonClass"
-            :aria-current="currentStep === 1 ? 'step' : undefined"
-          >
-            <span class="ulc-stepper__label">Step 1: Filter Items</span>
-          </div>
-          <div
-            class="ulc-stepper__ribbon"
-            :class="step2RibbonClass"
-            :aria-current="currentStep === 2 ? 'step' : undefined"
-          >
-            <span class="ulc-stepper__label">Step 2: Review &amp; Confirm</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 1: filters only -->
-      <div v-if="currentStep === 1" class="ulc-workspace mx-auto w-full max-w-lg">
-        <section class="w-full">
-          <div class="ulc-card h-full rounded-lg border border-slate-200/90 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-            <h2 class="text-[0.8125rem] font-bold uppercase tracking-wide text-slate-800">Search Filters</h2>
+        <!-- Main grid: fixed filter column + fluid table (prevents overlap) -->
+        <div class="ulc-main-grid">
+          <!-- Left: Search Filters -->
+          <aside class="ulc-panel ulc-panel--left rounded-lg border border-[#d1d5db] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <h2 class="ulc-section-title text-[#1f2937]">
+              Search Filters
+            </h2>
             <div class="mt-4 space-y-4">
-              <div>
-                <label class="ulc-field-label">Item Classification</label>
+              <div class="min-w-0">
+                <label class="ulc-field-label" for="ulc-classification">Item Classification</label>
                 <select
+                  id="ulc-classification"
                   v-model="filters.item_classification"
-                  class="ulc-input mt-2 w-full"
+                  class="ulc-input mt-2 w-full max-w-full min-w-0"
                 >
-                  <option value="">All</option>
+                  <option value="">
+                    Select classification
+                  </option>
                   <option v-for="c in classificationOptions" :key="c" :value="c">{{ c }}</option>
                 </select>
               </div>
-              <div>
-                <label class="ulc-field-label">Brand</label>
+              <div class="min-w-0">
+                <label class="ulc-field-label" for="ulc-brand">Brand</label>
                 <select
+                  id="ulc-brand"
                   v-model="filters.brand"
-                  class="ulc-input mt-2 w-full"
+                  class="ulc-input mt-2 w-full max-w-full min-w-0"
                 >
-                  <option value="">All</option>
+                  <option value="">
+                    Select brand
+                  </option>
                   <option v-for="b in brandOptions" :key="b.id" :value="b.id">{{ b.text }}</option>
                 </select>
               </div>
-              <div>
+              <div class="min-w-0">
                 <span class="ulc-field-label block">Last Movement (Days)</span>
-                <div class="mt-2 flex flex-wrap items-center gap-2">
-                  <input
+                <div class="mt-2 flex min-w-0 flex-wrap items-stretch gap-2">
+                  <select
                     v-model="filters.last_movement_days_min"
-                    type="number"
-                    min="0"
-                    max="36500"
-                    placeholder="Min"
-                    class="ulc-input min-w-[6rem] flex-1"
+                    class="ulc-input min-w-0 flex-1 basis-[5.5rem]"
                   >
-                  <span class="text-slate-400">–</span>
+                    <option value="">
+                      Min
+                    </option>
+                    <option v-for="n in movementMinPresets" :key="n" :value="String(n)">{{ n }}</option>
+                  </select>
                   <input
                     v-model="filters.last_movement_days_max"
                     type="number"
                     min="0"
                     max="36500"
                     placeholder="Max"
-                    class="ulc-input min-w-[6rem] flex-1"
+                    class="ulc-input min-w-0 flex-1 basis-[5.5rem]"
                   >
                 </div>
               </div>
             </div>
-            <div class="mt-6 flex flex-wrap gap-3 border-t border-slate-100 pt-5">
+            <div class="mt-6 flex gap-3 border-t border-[#f3f4f6] pt-5">
               <button
                 type="button"
-                class="ulc-btn-primary inline-flex min-h-10 flex-1 items-center justify-center px-5 sm:flex-none"
+                class="ulc-btn-primary ulc-filter-btn-primary inline-flex min-h-10 min-w-0 flex-1 items-center justify-center px-5"
                 :disabled="listLoading"
                 @click="loadItems(1)"
               >
@@ -100,102 +99,102 @@
               </button>
               <button
                 type="button"
-                class="ulc-btn-secondary inline-flex min-h-10 flex-1 items-center justify-center px-5 sm:flex-none"
+                class="ulc-btn-secondary ulc-filter-btn-secondary inline-flex min-h-10 min-w-0 flex-1 items-center justify-center px-5"
                 @click="resetFilters"
               >
                 Reset
               </button>
             </div>
-          </div>
-        </section>
-      </div>
+          </aside>
 
-      <!-- Step 2: items found + back to filters -->
-      <div v-else class="ulc-workspace w-full min-w-0 space-y-3">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <h2 class="text-base font-bold text-slate-900">
-            Review items
-          </h2>
-          <button
-            type="button"
-            class="ulc-btn-secondary inline-flex min-h-9 items-center justify-center px-4 text-sm"
-            @click="goToStep1"
-          >
-            Back to filters
-          </button>
-        </div>
-        <section class="min-w-0 w-full">
-          <div class="ulc-card overflow-hidden rounded-lg border border-slate-200/90 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3.5 sm:px-5">
-              <p class="flex flex-wrap items-center gap-2 text-sm font-bold text-slate-900">
-                <span class="ulc-count-pill tabular-nums">{{ meta.total }}</span>
-                <span>items found</span>
+          <!-- Right: Items found + table -->
+          <section class="ulc-panel ulc-panel--right flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-[#d1d5db] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <div class="shrink-0 border-b border-[#e5e7eb] bg-white px-5 py-4">
+              <p class="ulc-section-title font-bold leading-snug text-[#1f2937]">
+                <span class="tabular-nums">{{ meta.total }}</span> Items found
               </p>
-              <label v-if="rows.length" class="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-700">
+            </div>
+            <div
+              v-if="rows.length"
+              class="ulc-select-all-row flex shrink-0 flex-wrap items-center border-b border-[#e5e7eb] bg-white py-3 pl-3 pr-5"
+            >
+              <label for="ulc-select-all" class="ulc-select-all-control inline-flex cursor-pointer items-center">
                 <input
+                  id="ulc-select-all"
                   type="checkbox"
-                  class="h-4 w-4 rounded border-slate-300 text-[#1976D2] focus:ring-[#1976D2]"
+                  class="ulc-checkbox ulc-select-all-checkbox h-4 w-4 shrink-0 rounded border-[#cbd5e1]"
                   :checked="allPageSelected"
                   @change="toggleAll($event.target.checked)"
                 >
-                <span>Select All</span>
+                <span class="ulc-select-all-label whitespace-nowrap text-sm font-bold text-[#1f2937]">Select All</span>
               </label>
+              <span class="ulc-select-all-count text-sm text-[#6b7280]">
+                {{ selectedCount }} of {{ meta.total }} items selected
+              </span>
             </div>
 
-            <div v-if="listLoading" class="px-5 py-10 text-center text-sm text-slate-600">
+            <div
+              v-if="listLoading"
+              class="ulc-panel-placeholder flex min-h-[min(360px,55vh)] items-center justify-center px-5 py-12 text-center text-sm text-[#6b7280]"
+            >
               Loading…
             </div>
-            <div v-else-if="listError" class="px-5 py-6 text-sm text-red-700">
+            <div
+              v-else-if="listError"
+              class="ulc-panel-placeholder min-h-[min(360px,55vh)] px-5 py-6 text-sm text-red-700"
+            >
               {{ listError }}
             </div>
-            <div v-else-if="!rows.length" class="px-5 py-10 text-center text-sm text-slate-600">
-              No items match the current filters. Click &quot;Back to filters&quot; to adjust your search.
+            <div
+              v-else-if="!rows.length"
+              class="ulc-panel-placeholder flex min-h-[min(360px,55vh)] items-center justify-center px-5 py-12 text-center text-sm text-[#6b7280]"
+            >
+              No items loaded yet. Set filters and click &quot;Find Items&quot;, or no items match the current filters.
             </div>
-            <div v-else class="overflow-x-auto">
-              <table class="min-w-full border-collapse text-left text-sm">
-                <thead class="ulc-table-head border-b border-slate-200 text-xs font-bold uppercase tracking-wide text-slate-700">
+            <div v-else class="ulc-table-viewport min-h-0">
+              <table class="ulc-data-table border-collapse text-left">
+                <thead class="ulc-table-head-text border-b border-[#e5e7eb] font-bold uppercase tracking-wide text-[#374151]">
                   <tr>
-                    <th class="w-12 px-3 py-3 text-center" scope="col" />
-                    <th class="whitespace-nowrap px-3 py-3" scope="col">Item Code</th>
-                    <th class="whitespace-nowrap px-3 py-3" scope="col">Name</th>
-                    <th class="whitespace-nowrap px-3 py-3" scope="col">Item Classification</th>
-                    <th class="whitespace-nowrap px-3 py-3 text-right tabular-nums" scope="col">Global Stock</th>
-                    <th class="whitespace-nowrap px-3 py-3 text-right" scope="col">Last Movement</th>
-                    <th class="whitespace-nowrap px-3 py-3" scope="col">Last Purchase</th>
+                    <th class="ulc-table-th w-12 px-3 py-3 text-center" scope="col" />
+                    <th class="ulc-table-th whitespace-nowrap px-3 py-3" scope="col">Item Code</th>
+                    <th class="ulc-table-th whitespace-nowrap px-3 py-3" scope="col">Name</th>
+                    <th class="ulc-table-th max-w-[8rem] whitespace-nowrap px-3 py-3" scope="col">Item Classification</th>
+                    <th class="ulc-table-th whitespace-nowrap px-3 py-3 text-right tabular-nums" scope="col">Global Stock</th>
+                    <th class="ulc-table-th whitespace-nowrap px-3 py-3 text-right" scope="col">Last Movement</th>
+                    <th class="ulc-table-th whitespace-nowrap px-3 py-3" scope="col">Last Purchase</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 bg-white">
+                <tbody class="divide-y divide-[#f3f4f6] bg-white">
                   <tr
                     v-for="row in rows"
                     :key="row.item_code"
-                    class="ulc-table-row transition-colors hover:bg-slate-50/90"
+                    class="ulc-table-row transition-colors hover:bg-[#f9fafb]"
                     :class="selected[row.item_code] ? 'ulc-table-row--selected' : ''"
                   >
-                    <td class="px-3 py-2 align-middle">
+                    <td class="px-3 py-2.5 align-middle">
                       <input
                         type="checkbox"
-                        class="h-4 w-4 rounded border-slate-300 text-[#1976D2] focus:ring-[#1976D2]"
+                        class="ulc-checkbox h-4 w-4 rounded border-[#cbd5e1]"
                         :checked="!!selected[row.item_code]"
                         @change="onToggleRow(row.item_code, $event.target.checked)"
                       >
                     </td>
-                    <td class="whitespace-nowrap px-3 py-2 font-mono text-sm font-semibold text-slate-900">
+                    <td class="whitespace-nowrap px-3 py-2.5 font-bold text-[#1f2937]">
                       {{ row.item_code }}
                     </td>
-                    <td class="max-w-[12rem] px-3 py-2 text-slate-800 sm:max-w-xs">
-                      <span class="line-clamp-2" :title="row.name">{{ row.name }}</span>
+                    <td class="max-w-[12rem] min-w-0 px-3 py-2.5 text-[#1f2937] sm:max-w-xs">
+                      <span class="line-clamp-2 break-words" :title="row.name">{{ row.name }}</span>
                     </td>
-                    <td class="whitespace-nowrap px-3 py-2 text-slate-700">
+                    <td class="whitespace-nowrap px-3 py-2.5 text-[#374151]">
                       {{ row.item_classification || '—' }}
                     </td>
-                    <td class="whitespace-nowrap px-3 py-2 text-right tabular-nums text-slate-900">
+                    <td class="whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-[#1f2937]">
                       {{ formatQty(row.global_stock) }}
                     </td>
-                    <td class="whitespace-nowrap px-3 py-2 text-right text-slate-800">
-                      <span v-if="row.last_movement_days != null" class="tabular-nums">{{ row.last_movement_days }} days</span>
-                      <span v-else>—</span>
+                    <td class="whitespace-nowrap px-3 py-2.5 text-right text-[#1f2937]">
+                      {{ formatDateLong(row.last_movement_date) }}
                     </td>
-                    <td class="whitespace-nowrap px-3 py-2 text-slate-600">
+                    <td class="whitespace-nowrap px-3 py-2.5 text-[#6b7280]">
                       {{ row.last_purchase != null ? formatDate(row.last_purchase) : '—' }}
                     </td>
                   </tr>
@@ -205,15 +204,15 @@
 
             <div
               v-if="rows.length && meta.last_page > 1"
-              class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/50 px-4 py-3"
+              class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-[#e5e7eb] bg-[#f9fafb] px-4 py-3"
             >
-              <p class="text-xs font-medium text-slate-600">
+              <p class="text-xs font-medium text-[#6b7280]">
                 Page {{ meta.current_page }} of {{ meta.last_page }}
               </p>
               <div class="flex gap-2">
                 <button
                   type="button"
-                  class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+                  class="rounded-md border border-[#d1d5db] bg-white px-3 py-1.5 text-sm font-medium text-[#1f2937] shadow-sm transition hover:bg-[#f9fafb] disabled:opacity-50"
                   :disabled="meta.current_page <= 1 || listLoading"
                   @click="loadItems(meta.current_page - 1)"
                 >
@@ -221,7 +220,7 @@
                 </button>
                 <button
                   type="button"
-                  class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+                  class="rounded-md border border-[#d1d5db] bg-white px-3 py-1.5 text-sm font-medium text-[#1f2937] shadow-sm transition hover:bg-[#f9fafb] disabled:opacity-50"
                   :disabled="meta.current_page >= meta.last_page || listLoading"
                   @click="loadItems(meta.current_page + 1)"
                 >
@@ -229,60 +228,84 @@
                 </button>
               </div>
             </div>
+          </section>
+        </div>
+
+        <!-- Bottom action bar (inside shell): summary row + actions row (reference UI) -->
+        <footer
+          v-if="rows.length > 0"
+          class="ulc-footer-inner shrink-0 border-t border-[#e5e7eb] bg-white px-5 py-4 sm:px-6"
+        >
+          <div class="ulc-footer-summary">
+            <span class="ulc-footer-clear-badge" aria-hidden="true">×</span>
+            <span class="ulc-footer-summary-strong">
+              <span class="tabular-nums text-[#3b5998]">{{ selectedCount }}</span> items selected
+            </span>
+            <svg
+              class="ulc-footer-info-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 16v-4M12 8h.01" />
+            </svg>
+            <span class="ulc-footer-summary-muted">{{ selectedCount }} of {{ meta.total }} items selected</span>
           </div>
-        </section>
+          <div class="ulc-footer-actions">
+            <div class="ulc-footer-actions-left">
+              <p class="ulc-footer-count-muted">
+                {{ selectedCount }} items selected
+              </p>
+              <div class="ulc-footer-status-field">
+                <span
+                  id="new-lifecycle-status-label"
+                  class="ulc-footer-status-label"
+                >Set New Status:</span>
+                <select
+                  id="new-lifecycle-status"
+                  v-model="newStatus"
+                  class="ulc-input ulc-status-select ulc-footer-status-select"
+                  aria-labelledby="new-lifecycle-status-label"
+                >
+                  <option v-for="s in lifecycleStatuses" :key="s" :value="s">{{ s }}</option>
+                </select>
+              </div>
+            </div>
+            <div class="ulc-footer-actions-right">
+              <button
+                type="button"
+                class="ulc-btn-secondary min-h-10 min-w-[7rem] px-6"
+                @click="onFooterCancel"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                class="ulc-btn-primary min-h-10 min-w-[8rem] px-6 disabled:cursor-not-allowed disabled:opacity-50"
+                :disabled="selectedCount === 0"
+                @click="confirmOpen = true"
+              >
+                Apply Update
+              </button>
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
 
-    <!-- Step 2 only: apply bar -->
-    <footer
-      v-if="currentStep === 2"
-      class="ulc-footer sticky bottom-0 z-20 border-t border-slate-200/90 bg-white shadow-[0_-8px_24px_rgba(15,23,42,0.08)]"
-    >
-      <div
-        class="mx-auto grid max-w-[1600px] grid-cols-1 items-center gap-4 px-4 py-4 sm:px-6 lg:grid-cols-3 lg:gap-6"
-      >
-        <p class="text-center text-sm font-semibold text-slate-800 lg:text-left">
-          <span class="tabular-nums text-[#1976D2]">{{ selectedCount }}</span>
-          <span class="text-slate-700"> items selected</span>
-        </p>
-        <div class="flex flex-wrap items-center justify-center gap-2 lg:justify-center">
-          <label for="new-lifecycle-status" class="text-sm font-bold text-slate-800">Set New Status:</label>
-          <select
-            id="new-lifecycle-status"
-            v-model="newStatus"
-            class="ulc-input min-w-[13rem] max-w-full py-2.5 font-medium"
-          >
-            <option v-for="s in lifecycleStatuses" :key="s" :value="s">{{ s }}</option>
-          </select>
-        </div>
-        <div class="flex flex-wrap items-center justify-center gap-3 lg:justify-end">
-          <button
-            type="button"
-            class="ulc-btn-secondary min-h-10 min-w-[7rem] px-6"
-            @click="onFooterCancel"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            class="ulc-btn-primary min-h-10 min-w-[8rem] px-6 disabled:cursor-not-allowed disabled:opacity-50"
-            :disabled="selectedCount === 0"
-            @click="confirmOpen = true"
-          >
-            Apply Update
-          </button>
-        </div>
-      </div>
-    </footer>
-
-    <MassUpdateConfirmModal
-      v-model="confirmOpen"
+    <ConfirmMassUpdateModal
+      :is-open="confirmOpen"
       :count="selectedCount"
       :status-label="newStatus"
-      :confirming="bulkSubmitting"
-      @cancel="confirmOpen = false"
-      @confirm="submitBulkUpdate"
+      warning-message="This action may affect sales and availability."
+      :on-cancel="() => (confirmOpen = false)"
+      :on-confirm="submitBulkUpdate"
     />
   </div>
 </template>
@@ -290,22 +313,9 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue';
 import axios, { isAxiosError } from 'axios';
-import MassUpdateConfirmModal from '@/components/phase-out/MassUpdateConfirmModal.vue';
+import ConfirmMassUpdateModal from '@/components/phase-out/ConfirmMassUpdateModal.vue';
 
-/** 1 = Search filters only; 2 = Items found + footer actions */
-const currentStep = ref(1);
-
-const step1RibbonClass = computed(() =>
-  currentStep.value === 1 ? 'ulc-stepper__ribbon--active' : 'ulc-stepper__ribbon--done'
-);
-
-const step2RibbonClass = computed(() =>
-  currentStep.value === 1 ? 'ulc-stepper__ribbon--next' : 'ulc-stepper__ribbon--activeLast'
-);
-
-function goToStep1() {
-  currentStep.value = 1;
-}
+const movementMinPresets = [0, 30, 60, 90, 180, 365, 730, 1095, 1825, 3650];
 
 const LIFECYCLE_STATUSES = ['Active', 'For Phase Out', 'Discontinued', 'Obsolete'];
 
@@ -365,6 +375,17 @@ function formatDate(val) {
   return d.toLocaleDateString();
 }
 
+function formatDateLong(val) {
+  if (!val) {
+    return '—';
+  }
+  const d = new Date(val);
+  if (Number.isNaN(d.getTime())) {
+    return String(val);
+  }
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
 function clearSelection() {
   Object.keys(selected).forEach((k) => {
     delete selected[k];
@@ -390,7 +411,6 @@ function resetFilters() {
   meta.value = { current_page: 1, last_page: 1, total: 0, per_page: 15 };
   listError.value = null;
   clearSelection();
-  currentStep.value = 1;
 }
 
 function onFooterCancel() {
@@ -448,7 +468,6 @@ async function loadItems(page) {
       total: data.total ?? 0,
       per_page: data.per_page ?? 15,
     };
-    currentStep.value = 2;
   } catch (err) {
     rows.value = [];
     listError.value = listErrorMessage(err);
@@ -506,74 +525,370 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Reference: light workspace, blue ribbon stepper, white cards, bold labels */
 .ulc-root {
-  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  box-sizing: border-box;
+  font-family:
+    'Inter',
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+}
+
+.ulc-root *,
+.ulc-root *::before,
+.ulc-root *::after {
+  box-sizing: border-box;
+}
+
+.ulc-shell {
+  border-radius: 0.5rem;
+}
+
+.ulc-title-badge {
+  background: linear-gradient(180deg, #4a6fb5 0%, #3b5998 100%);
+  box-shadow: 0 1px 2px rgba(59, 89, 152, 0.35);
+}
+
+.ulc-main-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  align-items: start;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  isolation: isolate;
+  grid-template-columns: 300px minmax(0, 1fr);
+}
+
+.ulc-section-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.ulc-panel--left,
+.ulc-panel--right {
+  align-self: start;
+  max-width: 100%;
+}
+
+.ulc-panel--left {
+  width: 100%;
+  min-width: 0;
+  /* Contain overflow if any child still measures wide (e.g. native select sizing). */
+  overflow-x: hidden;
+}
+
+/*
+ * Native <select> can widen to the longest <option> after options load; global CSS may
+ * leave max-width unset. Force the control to stay within the filter column.
+ */
+.ulc-panel--left select.ulc-input {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+.ulc-panel--left input.ulc-input[type='number'] {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.ulc-panel--right {
+  width: 100%;
+  min-width: 0;
+}
+
+.ulc-table-viewport {
+  max-height: min(400px, 55vh);
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Select All row (match reference: checkbox + label + helper) */
+.ulc-select-all-row {
+  gap: 0;
+  align-items: center;
+}
+
+.ulc-select-all-count {
+  margin-left: 0.875rem;
+  font-weight: 500;
+}
+
+/* Custom checkbox look to match reference (filled blue with white check) */
+.ulc-select-all-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.25rem;
+  width: 1rem;
+  height: 1rem;
+  display: inline-grid;
+  place-content: center;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+}
+
+.ulc-select-all-control {
+  gap: 0.5rem;
+}
+
+.ulc-select-all-checkbox:checked {
+  background-color: #3b5998;
+  border-color: #3b5998;
+}
+
+.ulc-select-all-checkbox:checked::after {
+  content: '';
+  width: 0.55rem;
+  height: 0.55rem;
+  background: #fff;
+  clip-path: polygon(14% 54%, 0 68%, 36% 100%, 100% 22%, 86% 8%, 36% 74%);
+}
+
+.ulc-select-all-checkbox:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 89, 152, 0.25);
+}
+
+.ulc-data-table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.ulc-data-table tbody td {
+  font-size: 0.875rem;
+  vertical-align: middle;
+}
+
+.ulc-table-head-text {
+  font-size: 0.875rem;
+}
+
+.ulc-table-th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: linear-gradient(180deg, #eef2f7 0%, #e8edf4 100%);
+  box-shadow: 0 1px 0 #e5e7eb;
+}
+
+@media (max-width: 1024px) {
+  .ulc-main-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .ulc-field-label {
   display: block;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #475569;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #374151;
 }
 
 .ulc-input {
   border-radius: 0.375rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #d1d5db;
   background-color: #fff;
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   line-height: 1.25rem;
-  color: #0f172a;
+  color: #111827;
   box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
 }
 
 .ulc-input:focus {
   outline: none;
-  border-color: #1976d2;
-  box-shadow: 0 0 0 1px #1976d2;
+  border-color: #3b5998;
+  box-shadow: 0 0 0 1px #3b5998;
+}
+
+.ulc-status-select {
+  background-color: #fff7ed;
+  border-color: #fed7aa;
+}
+
+/* Footer action bar (reference: two rows + segmented status control) */
+.ulc-footer-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+
+.ulc-footer-clear-badge {
+  display: inline-flex;
+  height: 1.25rem;
+  min-width: 1.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  background: #3b5998;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+}
+
+.ulc-footer-summary-strong {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.ulc-footer-info-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: #9ca3af;
+}
+
+.ulc-footer-summary-muted {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.ulc-footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ulc-footer-actions-left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.ulc-footer-count-muted {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.ulc-footer-status-field {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: stretch;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.ulc-footer-status-label {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-right: 1px solid #e5e7eb;
+  background: #f3f4f6;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.ulc-footer-status-field .ulc-footer-status-select {
+  min-width: min(13rem, 100%);
+  max-width: 100%;
+  flex: 1 1 auto;
+  border: none;
+  border-radius: 0;
+  background-color: #fff7ed;
+  box-shadow: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+}
+
+.ulc-footer-status-field .ulc-footer-status-select:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 2px #3b5998;
+}
+
+.ulc-footer-actions-right {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
 }
 
 .ulc-btn-primary {
   border-radius: 0.375rem;
   border: none;
-  background: linear-gradient(180deg, #1e88e5 0%, #1976d2 100%);
+  background: linear-gradient(180deg, #4a6fb5 0%, #3b5998 100%);
   font-size: 0.875rem;
   font-weight: 600;
   color: #fff;
-  box-shadow: 0 1px 2px rgba(25, 118, 210, 0.35);
+  box-shadow: 0 1px 2px rgba(59, 89, 152, 0.35);
 }
 
 .ulc-btn-primary:hover:not(:disabled) {
-  background: linear-gradient(180deg, #1976d2 0%, #1565c0 100%);
+  background: linear-gradient(180deg, #3b5998 0%, #334b82 100%);
 }
 
 .ulc-btn-primary:disabled {
   opacity: 0.55;
 }
 
+.ulc-filter-btn-primary {
+  box-shadow: 0 2px 6px rgba(59, 89, 152, 0.25);
+}
+
 .ulc-btn-secondary {
   border-radius: 0.375rem;
-  border: 1px solid #cbd5e1;
-  background-color: #fff;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #334155;
+  color: #374151;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
 }
 
 .ulc-btn-secondary:hover {
+  background-color: #f3f4f6;
+}
+
+/* Reset button look in filters (outlined/white like reference) */
+.ulc-filter-btn-secondary {
+  background-color: #ffffff;
+}
+
+.ulc-filter-btn-secondary:hover {
   background-color: #f8fafc;
 }
 
-/* Pointed ribbon stepper */
+/* Pointed ribbon stepper — primary #3b5998 */
 .ulc-stepper-wrap {
+  position: relative;
+  z-index: 0;
   overflow: hidden;
   background: #fff;
-  border: 1px solid #e2e8f0;
 }
 
 .ulc-stepper {
@@ -595,42 +910,20 @@ onMounted(() => {
 .ulc-stepper__ribbon--active {
   z-index: 2;
   margin-right: -1.125rem;
-  background: linear-gradient(180deg, #1e88e5 0%, #1976d2 55%, #1565c0 100%);
+  background: linear-gradient(180deg, #4a6fb5 0%, #3b5998 55%, #334b82 100%);
   color: #fff;
   padding-right: 1.75rem;
   clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 50%, calc(100% - 18px) 100%, 0 100%);
-  box-shadow: 2px 0 6px rgba(25, 118, 210, 0.25);
+  box-shadow: 2px 0 6px rgba(59, 89, 152, 0.28);
 }
 
 .ulc-stepper__ribbon--next {
   z-index: 1;
   margin-left: 0;
   padding-left: 2rem;
-  background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
-  color: #64748b;
+  background: linear-gradient(180deg, #f3f4f6 0%, #e5e7eb 100%);
+  color: #6b7280;
   clip-path: polygon(18px 0, 100% 0, 100% 100%, 18px 100%, 0 50%);
-}
-
-/* Step 1 completed (when on step 2) */
-.ulc-stepper__ribbon--done {
-  z-index: 1;
-  margin-right: -1.125rem;
-  background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%);
-  color: #1e293b;
-  padding-right: 1.75rem;
-  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 50%, calc(100% - 18px) 100%, 0 100%);
-  box-shadow: none;
-}
-
-/* Step 2 active (right segment) */
-.ulc-stepper__ribbon--activeLast {
-  z-index: 2;
-  margin-left: 0;
-  padding-left: 2rem;
-  background: linear-gradient(180deg, #1e88e5 0%, #1976d2 55%, #1565c0 100%);
-  color: #fff;
-  clip-path: polygon(18px 0, 100% 0, 100% 100%, 18px 100%, 0 50%);
-  box-shadow: 2px 0 6px rgba(25, 118, 210, 0.25);
 }
 
 .ulc-stepper__label {
@@ -653,42 +946,36 @@ onMounted(() => {
     padding-left: 1.5rem;
     clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
   }
-
-  .ulc-stepper__ribbon--done {
-    padding-right: 1.25rem;
-    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%);
-  }
-
-  .ulc-stepper__ribbon--activeLast {
-    padding-left: 1.5rem;
-    clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
-  }
-}
-
-.ulc-count-pill {
-  display: inline-flex;
-  min-width: 1.75rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9999px;
-  background: linear-gradient(180deg, #e3f2fd 0%, #bbdefb 100%);
-  padding: 0.125rem 0.5rem;
-  font-size: 0.8125rem;
-  font-weight: 800;
-  color: #1565c0;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
-}
-
-.ulc-table-head {
-  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
 .ulc-table-row--selected {
-  background-color: rgba(227, 242, 253, 0.65) !important;
-  box-shadow: inset 3px 0 0 #1976d2;
+  background-color: rgba(235, 242, 252, 0.85) !important;
+  box-shadow: inset 3px 0 0 #3b5998;
 }
 
-.ulc-footer {
-  backdrop-filter: blur(8px);
+.ulc-checkbox {
+  accent-color: #3b5998;
+}
+
+.ulc-checkbox:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 89, 152, 0.25);
+}
+
+.ulc-icon-btn {
+  display: inline-flex;
+  height: 1.75rem;
+  min-width: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+.ulc-footer-inner {
+  flex-shrink: 0;
+  font-size: 0.875rem;
 }
 </style>
