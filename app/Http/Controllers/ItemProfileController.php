@@ -13,6 +13,7 @@ use App\Models\DepartmentWithPriceAccess;
 use App\Models\Item;
 use App\Models\ItemImages;
 use App\Models\ItemPrice;
+use App\Models\ItemLifecycleStatusChange;
 use App\Models\ItemVariantAttribute;
 use App\Models\LandedCostVoucher;
 use App\Models\ProductBundle;
@@ -37,6 +38,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 
 class ItemProfileController extends Controller
 {
@@ -96,22 +98,30 @@ class ItemProfileController extends Controller
 
         // Fetch only fields needed by this controller + `resources/views/item_profile.blade.php`.
         // Also eager-load images to avoid an extra `ItemImages` query.
+        $lifecycleCol = Item::lifecycleStatusColumn();
+
+        $selectCols = [
+            'name',
+            'brand',
+            'description',
+            'item_name',
+            'item_brochure_name',
+            'item_brochure_description',
+            'stock_uom',
+            'custom_item_cost',
+            'item_classification',
+            'variant_of',
+            'has_variants',
+            'disabled',
+        ];
+
+        if (Schema::hasTable('tabItem') && Schema::hasColumn('tabItem', $lifecycleCol)) {
+            $selectCols[] = $lifecycleCol;
+        }
+
         $itemDetails = Item::query()
             ->where('name', $itemCode)
-            ->select([
-                'name',
-                'brand',
-                'description',
-                'item_name',
-                'item_brochure_name',
-                'item_brochure_description',
-                'stock_uom',
-                'custom_item_cost',
-                'item_classification',
-                'variant_of',
-                'has_variants',
-                'disabled',
-            ])
+            ->select($selectCols)
             ->with([
                 'images' => fn ($q) => $q
                     ->select('parent', 'image_path', 'idx')
@@ -171,6 +181,56 @@ class ItemProfileController extends Controller
         $itemStockAvailable = collect($consignmentWarehouses)->sum('available_qty');
         if ($itemStockAvailable <= 0) {
             $itemStockAvailable = collect($siteWarehouses)->sum('available_qty');
+        }
+
+        $lifecycleCurrentStatus = null;
+        if (Schema::hasTable('tabItem') && Schema::hasColumn('tabItem', $lifecycleCol)) {
+            $val = $itemDetails->getAttribute($lifecycleCol);
+            $val = is_string($val) ? trim($val) : $val;
+            $lifecycleCurrentStatus = $val !== '' ? $val : Item::LIFECYCLE_STATUS_ACTIVE;
+        }
+        $lifecycleCurrentStatus = $lifecycleCurrentStatus ?? Item::LIFECYCLE_STATUS_ACTIVE;
+
+        // Last movement: compute days since last stock ledger posting_date (non-cancelled when column exists).
+        $lifecycleLastMovementLabel = '—';
+        try {
+            $sle = DB::table('tabStock Ledger Entry')->where('item_code', $itemCode);
+            if (Schema::hasColumn('tabStock Ledger Entry', 'is_cancelled')) {
+                $sle->where('is_cancelled', 0);
+            }
+            $lastPosting = $sle->max('posting_date');
+            if ($lastPosting) {
+                $days = (int) now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($lastPosting)->startOfDay());
+                $lifecycleLastMovementLabel = $days.' days ago';
+            }
+        } catch (\Throwable $e) {
+            $lifecycleLastMovementLabel = '—';
+        }
+
+        // Last purchase: derive from $lastPurchaseDate (string) if parseable.
+        $lifecycleLastPurchaseLabel = '—';
+        try {
+            if ($lastPurchaseDate) {
+                $d = \Carbon\Carbon::parse($lastPurchaseDate);
+                $days = (int) now()->startOfDay()->diffInDays($d->startOfDay());
+                $lifecycleLastPurchaseLabel = $days.' days ago';
+            }
+        } catch (\Throwable $e) {
+            $lifecycleLastPurchaseLabel = '—';
+        }
+
+        $lifecycleLastUpdatedLabel = 'Last updated';
+        $lifecycleLastUpdatedDetail = '—';
+        try {
+            $latestChange = ItemLifecycleStatusChange::query()
+                ->where('item_code', $itemCode)
+                ->orderByDesc('created_at')
+                ->first();
+            if ($latestChange?->created_at) {
+                $lifecycleLastUpdatedDetail = $latestChange->created_at->format('M j, Y g:i A');
+            }
+        } catch (\Throwable $e) {
+            $lifecycleLastUpdatedDetail = '—';
         }
 
         // images are eager-loaded on the main item query above.
@@ -451,7 +511,43 @@ class ItemProfileController extends Controller
             ]);
         }
 
-        return view('item_profile', compact('isTaxIncludedInRate', 'itemDetails', 'itemAttributes', 'siteWarehouses', 'itemImages', 'itemAlternatives', 'consignmentWarehouses', 'userGroup', 'minimumSellingPrice', 'defaultPrice', 'attributeNames', 'coVariants', 'attributes', 'variantsPriceArr', 'itemRate', 'lastPurchaseDate', 'allowedDepartment', 'userDepartment', 'avgPurchaseRate', 'lastPurchaseRate', 'variantsCostArr', 'variantsMinPriceArr', 'actualVariantStocks', 'itemStockAvailable', 'manualRate', 'manualPriceInput', 'consignmentBranches', 'bundled', 'noImg', 'bundledStocks'));
+        return view('item_profile', compact(
+            'isTaxIncludedInRate',
+            'itemDetails',
+            'itemAttributes',
+            'siteWarehouses',
+            'itemImages',
+            'itemAlternatives',
+            'consignmentWarehouses',
+            'userGroup',
+            'minimumSellingPrice',
+            'defaultPrice',
+            'attributeNames',
+            'coVariants',
+            'attributes',
+            'variantsPriceArr',
+            'itemRate',
+            'lastPurchaseDate',
+            'allowedDepartment',
+            'userDepartment',
+            'avgPurchaseRate',
+            'lastPurchaseRate',
+            'variantsCostArr',
+            'variantsMinPriceArr',
+            'actualVariantStocks',
+            'itemStockAvailable',
+            'manualRate',
+            'manualPriceInput',
+            'consignmentBranches',
+            'bundled',
+            'noImg',
+            'bundledStocks',
+            'lifecycleCurrentStatus',
+            'lifecycleLastMovementLabel',
+            'lifecycleLastPurchaseLabel',
+            'lifecycleLastUpdatedLabel',
+            'lifecycleLastUpdatedDetail'
+        ));
     }
 
     public function saveItemInformation(Request $request, $itemCode)
@@ -839,7 +935,7 @@ class ItemProfileController extends Controller
     /**
      * Return webp URL if webp exists for this key, otherwise null (caller uses original).
      */
-    private function preferWebpUrlOrOriginal(\Illuminate\Contracts\Filesystem\Filesystem $disk, string $storageKey): ?string
+    private function preferWebpUrlOrOriginal($disk, string $storageKey): ?string
     {
         $baseName = pathinfo($storageKey, PATHINFO_FILENAME);
         $dir = dirname($storageKey);

@@ -385,6 +385,19 @@
                             <div class="d-none d-lg-block col-lg-2 pr-2 pl-0 item-profile-actions-col">
                                 <div class="box box-solid h-100 item-profile-actions-box">
                                     <div class="item-profile-actions-buttons px-2">
+                                        <div
+                                            id="item-profile-lifecycle-status-app"
+                                            data-item-code="{{ $itemDetails->name }}"
+                                            data-item-name="{{ $itemDetails->item_name ?? $itemDetails->name }}"
+                                            data-item-tag="{{ $itemDetails->name }}"
+                                            data-current-stock="{{ (float) ($itemStockAvailable ?? 0) }}"
+                                            data-last-movement="{{ $lifecycleLastMovementLabel ?? '—' }}"
+                                            data-last-purchase="{{ $lifecycleLastPurchaseLabel ?? '—' }}"
+                                            data-current-status="{{ $lifecycleCurrentStatus ?? \App\Models\Item::LIFECYCLE_STATUS_ACTIVE }}"
+                                            data-last-updated-label="{{ $lifecycleLastUpdatedLabel ?? 'Last updated' }}"
+                                            data-last-updated-detail="{{ $lifecycleLastUpdatedDetail ?? '—' }}"
+                                            data-status-options='@json(\App\Models\Item::LIFECYCLE_STATUSES)'
+                                        ></div>
                                         <div class="dropdown show">
                                             <a class="btn btn-app m-2 d-block pb-5 dropdown-toggle generate-brochure-dropdown" href="#" role="button" id="dropdownMenuLink" data-toggle="{{ !$bundled ? 'dropdown' : null }}" aria-haspopup="true" aria-expanded="false">
                                                 <i class="fas fa-print pb-1"></i> Generate Brochure
