@@ -11,9 +11,15 @@
             <div class="border border-outline-secondary">
               <div class="row m-0">
                 <div class="col-1 p-1">
-                  <a :href="row.image" :data-item-code="row.name" class="view-images">
-                    <img :src="row.image" class="img w-100" alt="">
-                  </a>
+                  <div class="search-result-thumb-wrap position-relative">
+                    <a :href="row.image" :data-item-code="row.name" class="view-images d-block">
+                      <img :src="row.image" class="img w-100" alt="">
+                    </a>
+                    <LifecycleStatusTag
+                      :status="row.lifecycleStatus"
+                      class="search-result-lifecycle-overlay"
+                    />
+                  </div>
                   <div class="text-center mt-2 mb-1 d-flex flex-row justify-content-center flex-wrap gap-1">
                     <a :href="'/get_item_details/' + row.name" class="btn btn-primary btn-xs" title="View Item Details">
                       <i class="fa fa-search"></i>
@@ -104,6 +110,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
+import LifecycleStatusTag from '@/components/LifecycleStatusTag.vue';
 
 const initialHtml = ref(typeof window !== 'undefined' && window.__SEARCH_RESULTS_INITIAL_HTML__ ? window.__SEARCH_RESULTS_INITIAL_HTML__ : '');
 const apiData = ref(null);
@@ -296,3 +303,17 @@ onUnmounted(() => {
   document.removeEventListener('click', handleDocumentClick, true);
 });
 </script>
+
+<style scoped>
+.search-result-thumb-wrap {
+  overflow: hidden;
+}
+
+.search-result-lifecycle-overlay {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+  max-width: calc(100% - 8px);
+}
+</style>
