@@ -8,12 +8,12 @@
     "name": "runtime-dom.esm-bundler"
   },
   "resources/css/app.css": {
-    "file": "assets/app-DfpfM7Yh.css",
+    "file": "assets/app-BlMxXcOL.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-BQRdVhs-.js",
+    "file": "assets/app-BWu7EWnE.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -22,7 +22,7 @@
       "__plugin-vue_export-helper-DlAUqK2U.js"
     ],
     "css": [
-      "assets/app-D_np9vv5.css"
+      "assets/app-DyHoixBb.css"
     ]
   },
   "resources/js/brochure.js": {
