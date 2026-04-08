@@ -168,7 +168,7 @@ class SelectFilterController extends Controller
 
     public function getSalesPersons(Request $request)
     {
-        $query = DB::table('tabSales Person')
+        $salesPersons = DB::table('tabSales Person')
             ->where('enabled', 1)
             ->where('is_group', 0)
             ->when($request->q, function ($q) use ($request) {
@@ -177,5 +177,7 @@ class SelectFilterController extends Controller
             ->select('name as id', 'name as text')
             ->orderBy('name', 'asc')
             ->get();
+
+        return response()->json($salesPersons);
     }
 }
