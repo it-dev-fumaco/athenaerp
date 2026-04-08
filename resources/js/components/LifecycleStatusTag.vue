@@ -24,18 +24,21 @@ const resolved = computed(() => resolveLifecycleStatusDisplay(props.status));
 
 <style scoped>
 .lifecycle-status-tag {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
   max-width: 100%;
-  padding: 2px 6px;
+  padding: 2px 8px;
   border-radius: 4px;
   color: #fff;
   font-weight: 700;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.25;
   letter-spacing: 0.02em;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  text-overflow: clip;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   pointer-events: none;
 }

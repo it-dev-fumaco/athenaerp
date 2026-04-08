@@ -56,6 +56,7 @@ const props = defineProps({
 const open = ref(false);
 const submitting = ref(false);
 const currentStatus = ref(props.currentStatus);
+const lastUpdatedDetail = ref(props.lastUpdatedDetail);
 
 function onChangeStatus() {
   open.value = true;
@@ -79,6 +80,10 @@ async function onConfirm(newStatus, reason) {
     const url = `/items/${encodeURIComponent(props.itemCode)}/lifecycle-status`;
     const { data } = await axios.post(url, { newStatus, reason });
     currentStatus.value = data?.status ?? newStatus;
+    lastUpdatedDetail.value =
+      data?.updated_at_display ??
+      data?.updated_at ??
+      new Date().toLocaleString();
     notify('success', 'Lifecycle status updated.');
     open.value = false;
   } catch (e) {

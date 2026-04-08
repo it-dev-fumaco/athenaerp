@@ -51,7 +51,7 @@ const resolved = computed(() => {
   border-radius: 8px;
   padding: 10px 12px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   color: #ffffff;
@@ -74,9 +74,10 @@ const resolved = computed(() => {
   font-weight: 800;
   font-size: 14px;
   line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
 }
 
 .ilsc-right {
@@ -88,9 +89,10 @@ const resolved = computed(() => {
   font-size: 11px;
   font-weight: 700;
   line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
 }
 
 .ilsc-meta-detail {
@@ -98,9 +100,10 @@ const resolved = computed(() => {
   font-size: 11px;
   line-height: 1.2;
   color: rgba(255, 255, 255, 0.82);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
 }
 </style>
 

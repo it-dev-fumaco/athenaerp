@@ -36,7 +36,7 @@ class ItemLifecycleStatusController extends Controller
             ->update([$col => $newStatus]);
 
         $user = Auth::user();
-        ItemLifecycleStatusChange::create([
+        $change = ItemLifecycleStatusChange::create([
             'item_code' => $item_code,
             'old_status' => $oldStatus,
             'new_status' => $newStatus,
@@ -49,6 +49,8 @@ class ItemLifecycleStatusController extends Controller
             'message' => 'Lifecycle status updated.',
             'item_code' => $item_code,
             'status' => $newStatus,
+            'updated_at' => $change->created_at?->toIso8601String(),
+            'updated_at_display' => $change->created_at?->format('M j, Y g:i A'),
         ]);
     }
 }
