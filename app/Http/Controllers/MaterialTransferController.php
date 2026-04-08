@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\ErpAuthenticationException;
+use App\Exceptions\MaterialTransferValidationException;
 use App\Http\Helpers\ApiResponse;
 use App\Http\Requests\SubmitInternalTransferRequest;
 use App\Http\Requests\UpdateStockEntryRequest;
@@ -33,6 +34,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class MaterialTransferController extends Controller
 {
@@ -465,7 +467,7 @@ class MaterialTransferController extends Controller
             $now = now();
 
             if (! $stockEntry) {
-                throw new Exception('Record not found');
+                throw new MaterialTransferValidationException('Record not found.');
             }
 
             $stockEntry->qty = (float) $stockEntry->qty;
@@ -485,24 +487,24 @@ class MaterialTransferController extends Controller
                     $stockEntryItem = collect($stockEntry->items)->where('name', $childId)->first();
                 } else {
                     $msg = $stockEntry->docstatus == 1 ? 'Item already issued.' : "Item already $stockEntry->item_status";
-                    throw new Exception($msg);
+                    throw new MaterialTransferValidationException($msg);
                 }
             }
 
             if (! $itemDetails) {
-                throw new Exception("Item <b>$itemCode</b> not found.");
+                throw new MaterialTransferValidationException("Item <b>$itemCode</b> not found.");
             }
 
             if ($itemDetails->is_stock_item == 0) {
-                throw new Exception("Item <b>$itemCode</b> is not a stock item.");
+                throw new MaterialTransferValidationException("Item <b>$itemCode</b> is not a stock item.");
             }
 
             if ($request->barcode != $itemCode) {
-                throw new Exception("Invalid barcode for <b>$itemDetails->item_code</b>.");
+                throw new MaterialTransferValidationException("Invalid barcode for <b>$itemDetails->item_code</b>.");
             }
 
             if ($request->qty <= 0) {
-                throw new Exception('Qty cannot be less than or equal to 0.');
+                throw new MaterialTransferValidationException('Qty cannot be less than or equal to 0.');
             }
 
             if ($stockEntry->material_request) {
@@ -519,27 +521,30 @@ class MaterialTransferController extends Controller
                     ->where('ste.docstatus', '<', 2)
                     ->sum('issued_qty');
 
-                $mreqQry = MaterialRequest::with(['items' => function ($item) use ($itemCode) {
-                    $item->where('item_code', $itemCode);
-                }])->whereHas('items', function ($item) use ($itemCode) {
-                    $item->where('item_code', $itemCode);
-                })->find($stockEntry->material_request);
+                $mreqResult = $this->resolveMaterialRequestForInternalTransfer(
+                    $stockEntry->material_request,
+                    $itemCode,
+                    $stockEntry->requested_by ?? null
+                );
 
-                if (! $mreqQry) {
-                    throw new Exception("Item $itemCode not found in $stockEntry->material_request<br/>Please contact MREQ owner: $stockEntry->requested_by");
+                if (! $mreqResult['ok']) {
+                    throw new MaterialTransferValidationException($mreqResult['message']);
                 }
 
-                $mreqItem = collect($mreqQry->items)->first();
-                $mreqRequestedQty = $mreqItem->qty;
+                $mreqRequestedQty = $mreqResult['requested_qty'];
+                $ownerHint = $mreqResult['owner_contact'];
+
                 if ($mreqIssuedQty >= $mreqRequestedQty) {
-                    $mreqIssuedQty = number_format($mreqIssuedQty);
-                    $mreqRequestedQty = number_format($mreqRequestedQty);
-                    throw new Exception("Issued qty cannot be greater than requested qty<br/>Total Issued Qty: $mreqIssuedQty<br/>Requested Qty: $mreqRequestedQty<br/>Please contact MREQ owner: ".$stockEntry->requested_by);
+                    $fmtIssued = number_format($mreqIssuedQty);
+                    $fmtRequested = number_format($mreqRequestedQty);
+                    throw new MaterialTransferValidationException(
+                        "Issued quantity cannot exceed the quantity requested on the Material Request. Total issued: {$fmtIssued}. Requested: {$fmtRequested}.{$ownerHint}"
+                    );
                 }
 
                 if ($request->qty > ($mreqRequestedQty - $mreqIssuedQty)) {
                     $diff = $mreqRequestedQty - $mreqIssuedQty;
-                    throw new Exception("Qty cannot be greater than $diff.");
+                    throw new MaterialTransferValidationException("Qty cannot be greater than {$diff}.");
                 }
             }
 
@@ -575,7 +580,7 @@ class MaterialTransferController extends Controller
                 $unissuedResponse = $this->erpPost('Stock Entry', $unissuedStockEntry, true);
                 if (! isset($unissuedResponse['data'])) {
                     $err = data_get($unissuedResponse, 'exception', 'An error occured while submitting Stock entry for unissued items');
-                    throw new Exception($err);
+                    throw new MaterialTransferValidationException($err);
                 }
             }
 
@@ -632,11 +637,11 @@ class MaterialTransferController extends Controller
 
                     if (! Arr::has($response, 'data')) {
                         $err = data_get($response, 'exception', 'An error occured while updating Stock Entry');
-                        throw new Exception($err);
+                        throw new MaterialTransferValidationException($err);
                     }
                 } else {
                     $err = data_get($response, 'exception', 'An error occured while updating Stock Entry');
-                    throw new Exception($err);
+                    throw new MaterialTransferValidationException($err);
                 }
             }
 
@@ -706,8 +711,11 @@ class MaterialTransferController extends Controller
             }
 
             return ApiResponse::success("Item <b>$itemCode</b> has been checked out.");
+        } catch (MaterialTransferValidationException $e) {
+            return ApiResponse::failure($e->getMessage());
         } catch (ErpAuthenticationException $e) {
             Log::warning('MaterialTransferController checkoutSteItem ERP authentication failed');
+
             return ApiResponse::failure(ErpAuthenticationException::USER_MESSAGE, 401);
         } catch (\Throwable $th) {
             $exceptionMessage = $th->getMessage();
@@ -1014,6 +1022,130 @@ class MaterialTransferController extends Controller
 
             return ApiResponse::modal(false, 'Warning', 'There was a problem creating transaction.', 422);
         }
+    }
+
+    /**
+     * Resolve Material Request line qty for checkout when STE is tied to an MREQ.
+     * Prefers local DB; falls back to ERP when the request or line is missing locally (sync lag).
+     *
+     * @return array{ok: true, requested_qty: float, owner_contact: string}|array{ok: false, message: string}
+     */
+    private function resolveMaterialRequestForInternalTransfer(
+        string $materialRequestName,
+        string $itemCode,
+        ?string $stockEntryRequestedBy
+    ): array {
+        $mreqLocal = MaterialRequest::with('items')->find($materialRequestName);
+        $mreqItem = $mreqLocal
+            ? collect($mreqLocal->items)->first(fn ($row) => $row->item_code === $itemCode)
+            : null;
+
+        if ($mreqItem) {
+            return [
+                'ok' => true,
+                'requested_qty' => (float) $mreqItem->qty,
+                'owner_contact' => $this->materialRequestOwnerContactSuffix(
+                    $stockEntryRequestedBy,
+                    $mreqLocal?->owner
+                ),
+            ];
+        }
+
+        $erpResponse = $this->erpGet('Material Request', $materialRequestName, [], true);
+        $erpMsg = (string) (data_get($erpResponse, 'message') ?: data_get($erpResponse, 'exception') ?: '');
+
+        if (! data_get($erpResponse, 'data')) {
+            if ($this->isErpConnectionError($erpMsg)) {
+                return ['ok' => false, 'message' => ERPTrait::erpConnectionUnavailableMessage()];
+            }
+
+            Log::warning('Material Request missing from ERP or local DB during material transfer checkout', [
+                'material_request' => $materialRequestName,
+                'item_code' => $itemCode,
+                'erp_response' => $erpResponse,
+            ]);
+
+            return [
+                'ok' => false,
+                'message' => $this->materialRequestMismatchMessage(
+                    $materialRequestName,
+                    $itemCode,
+                    $stockEntryRequestedBy,
+                    null,
+                    'missing_document'
+                ),
+            ];
+        }
+
+        $doc = data_get($erpResponse, 'data');
+        $erpLine = collect(data_get($doc, 'items', []))->first(
+            fn ($row) => data_get($row, 'item_code') === $itemCode
+        );
+
+        if (! $erpLine) {
+            return [
+                'ok' => false,
+                'message' => $this->materialRequestMismatchMessage(
+                    $materialRequestName,
+                    $itemCode,
+                    $stockEntryRequestedBy,
+                    data_get($doc, 'owner'),
+                    'missing_line'
+                ),
+            ];
+        }
+
+        return [
+            'ok' => true,
+            'requested_qty' => (float) data_get($erpLine, 'qty', 0),
+            'owner_contact' => $this->materialRequestOwnerContactSuffix(
+                $stockEntryRequestedBy,
+                data_get($doc, 'owner')
+            ),
+        ];
+    }
+
+    private function materialRequestOwnerContactSuffix(?string $stockEntryRequestedBy, ?string $materialRequestOwner): string
+    {
+        $hint = $this->formatOwnerContactHint($stockEntryRequestedBy, $materialRequestOwner);
+
+        return $hint !== '' ? ' '.$hint : '';
+    }
+
+    private function formatOwnerContactHint(?string ...$candidates): string
+    {
+        foreach ($candidates as $c) {
+            if (! is_string($c)) {
+                continue;
+            }
+            $c = trim($c);
+            if ($c === '') {
+                continue;
+            }
+            $display = Str::contains($c, '@')
+                ? ucwords(str_replace('.', ' ', explode('@', $c)[0]))
+                : $c;
+
+            return "Contact the Material Request owner: {$display}.";
+        }
+
+        return '';
+    }
+
+    private function materialRequestMismatchMessage(
+        string $mreqName,
+        string $itemCode,
+        ?string $steRequestedBy,
+        ?string $mreqOwner,
+        string $reason
+    ): string {
+        $hint = $this->formatOwnerContactHint($steRequestedBy, $mreqOwner);
+        $suffix = $hint !== '' ? ' '.$hint : '';
+
+        return match ($reason) {
+            'missing_line' => "Item {$itemCode} is not listed on Material Request {$mreqName}.{$suffix}",
+            default => "Material Request {$mreqName} could not be found in the warehouse app or is out of sync with ERP. Item {$itemCode} could not be validated against that request.{$suffix}",
+        };
     }
 
     /**
