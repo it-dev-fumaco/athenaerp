@@ -40,11 +40,8 @@ class PhaseOutController extends Controller
         if (! empty($data['item_classification'])) {
             $filters['item_classification'] = $data['item_classification'];
         }
-        if (array_key_exists('last_movement_days_min', $data) && $data['last_movement_days_min'] !== null) {
-            $filters['last_movement_days_min'] = (int) $data['last_movement_days_min'];
-        }
-        if (array_key_exists('last_movement_days_max', $data) && $data['last_movement_days_max'] !== null) {
-            $filters['last_movement_days_max'] = (int) $data['last_movement_days_max'];
+        if (array_key_exists('last_movement_days', $data) && $data['last_movement_days'] !== null) {
+            $filters['last_movement_days'] = (int) $data['last_movement_days'];
         }
 
         $paginator = $phaseOutReportService->paginateMassUpdateItems($perPage, $page, $filters);
@@ -62,7 +59,7 @@ class PhaseOutController extends Controller
                     ? (int) $item->days_since_last_movement
                     : null,
                 'last_movement_date' => $item->last_stock_ledger_posting ?? null,
-                'last_purchase' => null,
+                'last_purchase' => $item->last_purchase_receipt_date ?? null,
             ];
         }
 

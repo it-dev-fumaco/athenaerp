@@ -15,10 +15,6 @@
                     <a :href="row.image" :data-item-code="row.name" class="view-images d-block">
                       <img :src="row.image" class="img w-100" alt="">
                     </a>
-                    <LifecycleStatusTag
-                      :status="row.lifecycleStatus"
-                      class="search-result-lifecycle-overlay"
-                    />
                   </div>
                   <div class="text-center mt-2 mb-1 d-flex flex-row justify-content-center flex-wrap gap-1">
                     <a :href="'/get_item_details/' + row.name" class="btn btn-primary btn-xs" title="View Item Details">
@@ -31,10 +27,15 @@
                 </div>
                 <div class="col-6 p-1">
                   <div class="col-md-12 m-0 text-justify">
-                    <span class="font-italic item-class">{{ row.item_classification }} - {{ row.item_group }}</span>
+                    <span class="font-italic item-class">
+                      {{ row.item_classification }} - {{ row.item_group }}
+                      <LifecycleStatusTag :status="row.lifecycleStatus" class="search-result-status-inline" />
+                    </span>
                     <span v-if="bundledItems.includes(row.name)" class="badge badge-info font-italic ml-1" style="font-size: 8pt;">Product Bundle</span>
                     <br/>
-                    <span class="text-justify item-name" style="font-size: 10pt !important;"><b>{{ row.name }}</b> - <span v-html="row.description"></span></span>
+                    <span class="text-justify item-name" style="font-size: 10pt !important;">
+                      <b>{{ row.name }}</b> - <span v-html="row.description"></span>
+                    </span>
                     <template v-if="row.package_dimension">
                       <dl class="mt-3 mb-0">
                         <dt style="font-size: 9pt;" class="text-muted">Package Dimension</dt>
@@ -305,15 +306,14 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.search-result-thumb-wrap {
-  overflow: hidden;
+.search-result-status-inline {
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
 }
 
-.search-result-lifecycle-overlay {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  z-index: 2;
-  max-width: calc(100% - 8px);
+.search-result-thumb-wrap {
+  overflow: hidden;
 }
 </style>

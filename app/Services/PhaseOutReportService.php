@@ -236,7 +236,7 @@ class PhaseOutReportService
     /**
      * Paginate items eligible for mass lifecycle update (Active lifecycle, with stock ledger activity).
      *
-     * @param  array{brand?: string, item_classification?: string, last_movement_days_min?: int, last_movement_days_max?: int}  $filters
+     * @param  array{brand?: string, item_classification?: string, last_movement_days?: int}  $filters
      */
     public function paginateMassUpdateItems(int $perPage, int $page, array $filters = []): LengthAwarePaginator
     {
@@ -270,11 +270,8 @@ class PhaseOutReportService
             ->when(! empty($filters['item_classification']) && Schema::hasColumn('tabItem', 'item_classification'), function ($q) use ($filters) {
                 $q->where('tabItem.item_classification', $filters['item_classification']);
             })
-            ->when(isset($filters['last_movement_days_min']), function ($q) use ($filters) {
-                $q->whereRaw('DATEDIFF(CURDATE(), sle.last_posting) >= ?', [(int) $filters['last_movement_days_min']]);
-            })
-            ->when(isset($filters['last_movement_days_max']), function ($q) use ($filters) {
-                $q->whereRaw('DATEDIFF(CURDATE(), sle.last_posting) <= ?', [(int) $filters['last_movement_days_max']]);
+            ->when(isset($filters['last_movement_days']), function ($q) use ($filters) {
+                $q->whereRaw('DATEDIFF(CURDATE(), sle.last_posting) < ?', [(int) $filters['last_movement_days']]);
             })
             ->orderByDesc('sle.last_posting')
             ->select('tabItem.name', 'tabItem.item_name')
@@ -294,6 +291,32 @@ class PhaseOutReportService
             ));
         } else {
             $query->addSelect(DB::raw('0 as total_actual_qty'));
+        }
+
+        if (
+            Schema::hasTable('tabPurchase Receipt Item')
+            && Schema::hasTable('tabPurchase Receipt')
+            && Schema::hasColumn('tabPurchase Receipt Item', 'item_code')
+            && Schema::hasColumn('tabPurchase Receipt Item', 'parent')
+            && Schema::hasColumn('tabPurchase Receipt', 'posting_date')
+        ) {
+            $priDocstatus = Schema::hasColumn('tabPurchase Receipt Item', 'docstatus')
+                ? ' AND pri.docstatus = 1'
+                : '';
+            $prReturn = Schema::hasColumn('tabPurchase Receipt', 'is_return')
+                ? ' AND (pr.is_return = 0 OR pr.is_return IS NULL)'
+                : '';
+
+            $query->addSelect(DB::raw(
+                '(SELECT MAX(pr.posting_date) FROM `tabPurchase Receipt Item` pri '
+                .'INNER JOIN `tabPurchase Receipt` pr ON pr.name = pri.parent '
+                .'WHERE pri.item_code = `tabItem`.name AND pr.docstatus = 1'
+                .$priDocstatus
+                .$prReturn
+                .') as last_purchase_receipt_date'
+            ));
+        } else {
+            $query->addSelect(DB::raw('NULL as last_purchase_receipt_date'));
         }
 
         return $query->paginate($perPage, ['*'], 'page', $page);
