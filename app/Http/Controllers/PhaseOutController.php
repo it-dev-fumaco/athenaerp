@@ -90,18 +90,34 @@ class PhaseOutController extends Controller
                 'total_units' => 0.0,
                 'total_stock_value' => 0.0,
                 'by_brand' => [],
+                'distinct_warehouse_count' => 0,
+                'warehouses' => [],
             ]);
         }
     }
 
     public function taggedItems(PhaseOutTaggedItemsRequest $request, PhaseOutReportService $phaseOutReportService): JsonResponse
     {
-        $perPage = (int) ($request->input('per_page') ?? config('phase_out.tagged_per_page'));
-        $page = (int) ($request->input('page') ?? 1);
+        $data = $request->validated();
+        $perPage = (int) ($data['per_page'] ?? config('phase_out.tagged_per_page'));
+        $page = (int) ($data['page'] ?? 1);
 
-        return response()->json(
-            $phaseOutReportService->paginateTaggedEnriched($perPage, $page)
+        $filters = array_filter(
+            [
+                'search' => isset($data['search']) ? trim((string) $data['search']) : null,
+                'warehouse' => isset($data['warehouse']) ? trim((string) $data['warehouse']) : null,
+                'brand' => isset($data['brand']) ? trim((string) $data['brand']) : null,
+            ],
+            fn ($v) => $v !== null && $v !== ''
         );
+
+        $paginator = $phaseOutReportService->paginateTaggedEnriched($perPage, $page, $filters);
+        $aggregates = $phaseOutReportService->aggregateTaggedEnriched($filters);
+
+        return response()->json(array_merge(
+            $paginator->toArray(),
+            ['aggregates' => $aggregates]
+        ));
     }
 
     public function report(PhaseOutReportRequest $request, PhaseOutReportService $phaseOutReportService): JsonResponse
