@@ -3,7 +3,7 @@
     <div class="mx-auto w-full max-w-[1600px] p-4 sm:p-6">
       <div class="ulc-shell flex flex-col rounded-lg bg-white shadow-[0_2px_12px_rgba(15,23,42,0.08)]">
         <!-- Header -->
-        <header class="border-b border-[#e5e7eb] px-5 pb-4 pt-5 sm:px-6 sm:pb-5 sm:pt-6">
+        <header class="border-b border-[#e5e7eb] px-5 sm:px-6 sm:pb-5" style="padding-top: 0.5rem;">
           <div class="flex flex-wrap items-start gap-3">
             <div class="min-w-0 flex-1">
               <h1 class="text-2xl font-bold leading-snug text-[#1f2937]">
@@ -44,17 +44,17 @@
         <div class="ulc-main-grid">
           <template v-if="workflowStep === 1">
             <!-- Left: Search Filters -->
-            <aside class="ulc-panel ulc-panel--left rounded-lg border border-[#d1d5db] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <aside class="ulc-panel ulc-panel--left rounded-lg border border-[#d1d5db] bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
               <h2 class="ulc-section-title text-[#1f2937]">
                 Search Filters
               </h2>
-              <div class="mt-4 space-y-4">
+              <div class="mt-3 space-y-3">
                 <div class="min-w-0">
                   <label class="ulc-field-label" for="ulc-classification">Item Classification</label>
                   <select
                     id="ulc-classification"
                     v-model="filters.item_classification"
-                    class="ulc-input mt-2 w-full max-w-full min-w-0"
+                    class="ulc-input mt-1 w-full max-w-full min-w-0"
                   >
                     <option value="">
                       Select classification
@@ -67,7 +67,7 @@
                   <select
                     id="ulc-brand"
                     v-model="filters.brand"
-                    class="ulc-input mt-2 w-full max-w-full min-w-0"
+                    class="ulc-input mt-1 w-full max-w-full min-w-0"
                   >
                     <option value="">
                       Select brand
@@ -75,20 +75,20 @@
                     <option v-for="b in brandOptions" :key="b.id" :value="b.id">{{ b.text }}</option>
                   </select>
                 </div>
-              <div class="min-w-0">
-                <label class="ulc-field-label" for="ulc-last-movement-days">Last Movement (Days)</label>
-                <select
-                  id="ulc-last-movement-days"
-                  v-model="filters.last_movement_days"
-                  class="ulc-input mt-2 w-full max-w-full min-w-0"
-                >
-                  <option v-for="o in lastMovementOptions" :key="o.value" :value="o.value">
-                    {{ o.label }}
-                  </option>
-                </select>
+                <div class="min-w-0">
+                  <label class="ulc-field-label" for="ulc-last-movement-days">Last Movement (Days)</label>
+                  <select
+                    id="ulc-last-movement-days"
+                    v-model="filters.last_movement_days"
+                    class="ulc-input mt-1 w-full max-w-full min-w-0"
+                  >
+                    <option v-for="o in lastMovementOptions" :key="o.value" :value="o.value">
+                      {{ o.label }}
+                    </option>
+                  </select>
+                </div>
               </div>
-              </div>
-              <div class="mt-6 flex gap-3 border-t border-[#f3f4f6] pt-5">
+              <div class="flex gap-3 border-t border-[#f3f4f6] pt-4">
                 <button
                   type="button"
                   class="ulc-btn-primary ulc-filter-btn-primary inline-flex min-h-10 min-w-0 flex-1 items-center justify-center px-5"
@@ -109,42 +109,29 @@
 
             <!-- Right: Items found + table -->
             <section class="ulc-panel ulc-panel--right flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-[#d1d5db] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-              <div class="shrink-0 border-b border-[#e5e7eb] bg-white px-5 py-4">
-                <p class="ulc-section-title font-bold leading-snug text-[#1f2937]">
-                  <span class="tabular-nums">{{ meta.total }}</span> Items found
-                </p>
-              </div>
               <div
-                v-if="rows.length"
-                class="ulc-select-all-row shrink-0 border-b border-[#e5e7eb] bg-white px-5 py-3"
+                class="ulc-results-top-row shrink-0 border-b border-[#e5e7eb] bg-white px-5"
+                :class="rows.length ? 'justify-between pt-3 pb-2.5' : 'py-4'"
               >
-                <label for="ulc-select-all" class="ulc-select-all-control inline-flex cursor-pointer items-center">
-                  <input
-                    id="ulc-select-all"
-                    type="checkbox"
-                    class="ulc-checkbox ulc-select-all-checkbox h-4 w-4 shrink-0 rounded border-[#cbd5e1]"
-                    :checked="allPageSelected"
-                    @change="toggleAll($event.target.checked)"
+                <template v-if="rows.length">
+                  <p class="ulc-results-top-items-found m-0 leading-snug text-[#1f2937]">
+                    <span class="tabular-nums text-xl font-bold sm:text-2xl">{{ meta.total }}</span>
+                    <span class="text-base font-normal sm:text-lg"> Items found</span>
+                  </p>
+                  <label
+                    for="ulc-step1-new-status"
+                    class="ulc-results-top-status flex shrink-0 cursor-pointer flex-col items-end gap-1"
                   >
-                  <span class="ulc-select-all-label whitespace-nowrap text-sm font-bold text-[#1f2937]">Select All</span>
-                </label>
-                <span class="ulc-select-all-count text-sm text-[#6b7280]">
-                  {{ selectedCount }} of {{ meta.total }} items selected
-                </span>
-              </div>
-
-              <div
-                v-if="rows.length"
-                class="ulc-step1-status-block shrink-0 border-b border-[#e5e7eb] bg-white px-5 py-3"
-              >
-                <label class="ulc-field-label mb-2 block" for="ulc-step1-new-status">Set New Status</label>
-                <select
-                  id="ulc-step1-new-status"
-                  v-model="newStatus"
-                  class="ulc-input ulc-status-select max-w-md w-full"
-                >
-                  <option v-for="s in lifecycleStatuses" :key="s" :value="s">{{ s }}</option>
-                </select>
+                    <span class="ulc-field-label m-0 whitespace-nowrap text-right">Set New Status</span>
+                    <select
+                      id="ulc-step1-new-status"
+                      v-model="newStatus"
+                      class="ulc-input ulc-status-select w-64"
+                    >
+                      <option v-for="s in lifecycleStatuses" :key="s" :value="s">{{ s }}</option>
+                    </select>
+                  </label>
+                </template>
               </div>
 
               <div
@@ -165,8 +152,27 @@
               >
                 No items loaded yet. Set filters and click &quot;Find Items&quot;, or no items match the current filters.
               </div>
-              <div v-else class="ulc-table-viewport min-h-0">
-                <table class="ulc-data-table">
+              <div v-else class="ulc-table-with-select-all flex min-h-0 min-w-0 grow-0 flex-col justify-start gap-0">
+                <div ref="selectAllRowEl" class="ulc-select-all-above-table">
+                  <input
+                    id="ulc-select-all"
+                    type="checkbox"
+                    class="ulc-checkbox ulc-select-all-checkbox h-4 w-4 shrink-0 rounded border-[#cbd5e1]"
+                    :checked="allPageSelected"
+                    @change="toggleAll($event.target.checked)"
+                  >
+                  <label
+                    for="ulc-select-all"
+                    class="ulc-select-all-control inline-flex cursor-pointer items-center whitespace-nowrap"
+                  >
+                    <span class="ulc-select-all-label whitespace-nowrap">Select All</span>
+                  </label>
+                  <span class="ulc-select-all-count whitespace-nowrap">
+                    {{ selectedCount }} of {{ meta.total }} items selected
+                  </span>
+                </div>
+                <div class="ulc-table-viewport min-h-0">
+                  <table ref="resultsTableEl" class="ulc-data-table ulc-data-table--step1">
                   <thead class="ulc-table-head-text text-[#374151]">
                     <tr>
                       <th class="ulc-table-th" scope="col" />
@@ -175,7 +181,6 @@
                       <th class="ulc-table-th max-w-[8rem] whitespace-nowrap" scope="col">Item Classification</th>
                       <th class="ulc-table-th ulc-table-th--num" scope="col">Global Stock</th>
                       <th class="ulc-table-th ulc-table-th--num" scope="col">Last Movement</th>
-                      <th class="ulc-table-th" scope="col">Last Purchase</th>
                     </tr>
                   </thead>
                   <tbody class="bg-white">
@@ -208,48 +213,45 @@
                       <td class="ulc-table-td--num whitespace-nowrap text-[#1f2937]">
                         {{ formatDateLong(row.last_movement_date) }}
                       </td>
-                      <td class="whitespace-nowrap text-[#6b7280]">
-                        {{ row.last_purchase != null ? formatDate(row.last_purchase) : '—' }}
-                      </td>
                     </tr>
                   </tbody>
                 </table>
-              </div>
-
-              <div
-                v-if="rows.length && meta.last_page > 1"
-                class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-[#e5e7eb] bg-[#f9fafb] px-4 py-3"
-              >
-                <p class="text-xs font-medium text-[#6b7280]">
-                  Page {{ meta.current_page }} of {{ meta.last_page }}
-                </p>
-                <div class="flex gap-2">
-                  <button
-                    type="button"
-                    class="rounded-md border border-[#d1d5db] bg-white px-3 py-1.5 text-sm font-medium text-[#1f2937] shadow-sm transition hover:bg-[#f9fafb] disabled:opacity-50"
-                    :disabled="meta.current_page <= 1 || listLoading"
-                    @click="loadItems(meta.current_page - 1)"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    type="button"
-                    class="rounded-md border border-[#d1d5db] bg-white px-3 py-1.5 text-sm font-medium text-[#1f2937] shadow-sm transition hover:bg-[#f9fafb] disabled:opacity-50"
-                    :disabled="meta.current_page >= meta.last_page || listLoading"
-                    @click="loadItems(meta.current_page + 1)"
-                  >
-                    Next
-                  </button>
                 </div>
               </div>
 
               <div
                 v-if="rows.length"
-                class="shrink-0 border-t border-[#e5e7eb] bg-white px-5 py-4"
+                class="ulc-step1-table-footer flex shrink-0 items-end justify-between gap-4 border-t border-[#e5e7eb] bg-[#f9fafb] px-4 py-3"
               >
+                <div class="flex min-w-0 flex-col items-start gap-2">
+                  <template v-if="meta.last_page > 1">
+                    <p class="m-0 text-xs font-medium text-[#6b7280]">
+                      Page {{ meta.current_page }} of {{ meta.last_page }}
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                      <button
+                        v-if="meta.current_page > 1"
+                        type="button"
+                        class="rounded-md border border-[#d1d5db] bg-white px-3 py-1.5 text-sm font-medium text-[#1f2937] shadow-sm transition hover:bg-[#f9fafb] disabled:opacity-50"
+                        :disabled="listLoading"
+                        @click="loadItems(meta.current_page - 1)"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        type="button"
+                        class="rounded-md border border-[#d1d5db] bg-white px-3 py-1.5 text-sm font-medium text-[#1f2937] shadow-sm transition hover:bg-[#f9fafb] disabled:opacity-50"
+                        :disabled="meta.current_page >= meta.last_page || listLoading"
+                        @click="loadItems(meta.current_page + 1)"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </template>
+                </div>
                 <button
                   type="button"
-                  class="ulc-btn-primary ulc-filter-btn-primary inline-flex min-h-10 items-center justify-center px-6 disabled:cursor-not-allowed disabled:opacity-50"
+                  class="ulc-btn-primary ulc-filter-btn-primary inline-flex min-h-10 shrink-0 items-center justify-center px-6 disabled:cursor-not-allowed disabled:opacity-50"
                   :disabled="selectedCount === 0"
                   @click="proceedToReview"
                 >
@@ -395,7 +397,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue';
+import { ref, reactive, computed, onBeforeUnmount, onMounted, nextTick, watch } from 'vue';
 import axios, { isAxiosError } from 'axios';
 import ConfirmMassUpdateModal from '@/components/phase-out/ConfirmMassUpdateModal.vue';
 
@@ -423,6 +425,30 @@ const filters = reactive({
   brand: '',
   last_movement_days: '',
 });
+
+/** Must match PhaseOutReportService::applyMassUpdateDefaultExclusions() — not selectable in this flow. */
+const MASS_UPDATE_EXCLUDED_ITEM_CLASSIFICATIONS = new Set([
+  'FY - Factory Supplies',
+  'MS - Maintenance Supplies',
+  'OS - Office Supplies',
+  'SC - Service Charge',
+  'MP - Ms Plate',
+  'PA - Paints',
+  'CH - Chemicals',
+  'MD - Medicines',
+  'FR - Factory Repair',
+  'MA - Maintenance',
+]);
+
+function filterMassUpdateClassificationOptions(list) {
+  if (!Array.isArray(list)) {
+    return [];
+  }
+  return list.filter((c) => {
+    const v = c == null ? '' : String(c).trim();
+    return v !== '' && !MASS_UPDATE_EXCLUDED_ITEM_CLASSIFICATIONS.has(v);
+  });
+}
 
 const classificationOptions = ref([]);
 const brandOptions = ref([]);
@@ -463,6 +489,28 @@ const allPageSelected = computed(() => {
   }
   return rows.value.every((r) => selected[r.item_code]);
 });
+
+const resultsTableEl = ref(null);
+const selectAllRowEl = ref(null);
+
+let pendingSelectAllSync = false;
+function queueSelectAllSync() {
+  if (pendingSelectAllSync) {
+    return;
+  }
+  pendingSelectAllSync = true;
+  nextTick(() => {
+    pendingSelectAllSync = false;
+    syncSelectAllColumnWidths();
+  });
+}
+
+function syncSelectAllColumnWidths() {
+  // Select-all row is a single flex line; no column-width sync needed.
+  if (!resultsTableEl.value || !selectAllRowEl.value) {
+    return;
+  }
+}
 
 function formatQty(n) {
   if (n === null || n === undefined) {
@@ -599,6 +647,7 @@ async function loadItems(page) {
       total: data.total ?? 0,
       per_page: data.per_page ?? 15,
     };
+    queueSelectAllSync();
     // Refresh names for any selected codes visible on this page
     rows.value.forEach((r) => {
       if (selected[r.item_code]) {
@@ -610,6 +659,7 @@ async function loadItems(page) {
     listError.value = listErrorMessage(err);
   } finally {
     listLoading.value = false;
+    queueSelectAllSync();
   }
 }
 
@@ -617,7 +667,11 @@ async function loadFilterOptions() {
   try {
     const { data } = await axios.get('/get_select_filters', { params: { q: '' } });
     const classes = data.item_classification;
-    classificationOptions.value = Array.isArray(classes) ? classes : [];
+    const filtered = filterMassUpdateClassificationOptions(Array.isArray(classes) ? classes : []);
+    classificationOptions.value = filtered;
+    if (filters.item_classification && !filtered.includes(filters.item_classification)) {
+      filters.item_classification = '';
+    }
     const brands = data.brand;
     brandOptions.value = Array.isArray(brands) ? brands : [];
   } catch {
@@ -657,8 +711,27 @@ watch(confirmOpen, (open) => {
   }
 });
 
+watch(
+  () => rows.value,
+  () => {
+    queueSelectAllSync();
+  },
+);
+
+watch(
+  () => meta.value.per_page,
+  () => {
+    queueSelectAllSync();
+  },
+);
+
 onMounted(() => {
   loadFilterOptions();
+  window.addEventListener('resize', queueSelectAllSync);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', queueSelectAllSync);
 });
 </script>
 
@@ -752,20 +825,47 @@ onMounted(() => {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Select All row */
-.ulc-select-all-row {
+/* Results header row: items found (left) vs status (right) */
+.ulc-results-top-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ulc-select-all-above-table {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+.ulc-select-all-above-table .ulc-select-all-label {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #1f2937;
+}
+
+.ulc-select-all-above-table .ulc-select-all-count {
+  color: #6b7280;
+  font-size: 13px;
 }
 
 .ulc-step1-status-block {
   margin-bottom: 16px;
 }
 
-.ulc-select-all-count {
-  font-weight: 500;
+/* Select All row */
+.ulc-select-all-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
 }
 
 .ulc-select-all-checkbox {
@@ -862,6 +962,16 @@ onMounted(() => {
 
 .ulc-data-table tbody td {
   font-size: 0.875rem;
+}
+
+/* Step 1 list: taller rows (more vertical padding), same borders as base table */
+.ulc-data-table--step1 :is(th, td) {
+  padding: 16px 18px;
+}
+
+.ulc-data-table--step1 th:first-child,
+.ulc-data-table--step1 td:first-child {
+  padding: 16px;
 }
 
 @media (max-width: 1024px) {

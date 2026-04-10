@@ -5,7 +5,7 @@
       <a class="nav-pill" href="/consignment_dashboard">Consignment Dashboard</a>
     </div>
 
-    <div class="dashboard-stats-wrap">
+    <div v-if="activeTab === 'home'" class="dashboard-stats-wrap">
       <DashboardStats />
     </div>
 
