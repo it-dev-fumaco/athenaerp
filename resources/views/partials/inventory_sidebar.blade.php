@@ -1,7 +1,6 @@
 @php
     $dashboardTab = request('tab', 'home');
     $isDashboard = request()->is('/');
-    $isPhaseOutDashboard = request()->is('phase-out/dashboard');
     $isPhaseOutItems = request()->is('phase-out/items');
     $isPhaseOutUpdateLifecycle = request()->is('phase-out/update-lifecycle-status');
 
@@ -58,10 +57,6 @@
                 <div class="inventory-sidebar__divider inventory-sidebar-label" role="separator"></div>
                 <p class="inventory-sidebar__section-label inventory-sidebar-label">Item Lifecycle Settings</p>
 
-                <a href="{{ url('/phase-out/dashboard') }}" class="{{ $navClasses($isPhaseOutDashboard) }}" title="Phase-Out Dashboard">
-                    <i class="fas fa-chart-pie inventory-sidebar__icon" aria-hidden="true"></i>
-                    <span class="inventory-sidebar-label">Phase-Out Dashboard</span>
-                </a>
                 <a href="{{ url('/phase-out/items') }}" class="{{ $navClasses($isPhaseOutItems) }}" title="Phase-Out Items">
                     <i class="fas fa-box-open inventory-sidebar__icon" aria-hidden="true"></i>
                     <span class="inventory-sidebar-label">Phase-Out Items</span>
