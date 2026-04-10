@@ -426,6 +426,30 @@ const filters = reactive({
   last_movement_days: '',
 });
 
+/** Must match PhaseOutReportService::applyMassUpdateDefaultExclusions() — not selectable in this flow. */
+const MASS_UPDATE_EXCLUDED_ITEM_CLASSIFICATIONS = new Set([
+  'FY - Factory Supplies',
+  'MS - Maintenance Supplies',
+  'OS - Office Supplies',
+  'SC - Service Charge',
+  'MP - Ms Plate',
+  'PA - Paints',
+  'CH - Chemicals',
+  'MD - Medicines',
+  'FR - Factory Repair',
+  'MA - Maintenance',
+]);
+
+function filterMassUpdateClassificationOptions(list) {
+  if (!Array.isArray(list)) {
+    return [];
+  }
+  return list.filter((c) => {
+    const v = c == null ? '' : String(c).trim();
+    return v !== '' && !MASS_UPDATE_EXCLUDED_ITEM_CLASSIFICATIONS.has(v);
+  });
+}
+
 const classificationOptions = ref([]);
 const brandOptions = ref([]);
 
@@ -643,7 +667,11 @@ async function loadFilterOptions() {
   try {
     const { data } = await axios.get('/get_select_filters', { params: { q: '' } });
     const classes = data.item_classification;
-    classificationOptions.value = Array.isArray(classes) ? classes : [];
+    const filtered = filterMassUpdateClassificationOptions(Array.isArray(classes) ? classes : []);
+    classificationOptions.value = filtered;
+    if (filters.item_classification && !filtered.includes(filters.item_classification)) {
+      filters.item_classification = '';
+    }
     const brands = data.brand;
     brandOptions.value = Array.isArray(brands) ? brands : [];
   } catch {

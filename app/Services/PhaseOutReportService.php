@@ -392,7 +392,11 @@ class PhaseOutReportService
                 $q->whereNull('tabItem.'.$col)
                     ->orWhere('tabItem.'.$col, '')
                     ->orWhere('tabItem.'.$col, Item::LIFECYCLE_STATUS_ACTIVE);
-            })
+            });
+
+        $this->applyMassUpdateDefaultExclusions($query);
+
+        $query
             ->when(! empty($filters['brand']) && Schema::hasColumn('tabItem', 'brand'), function ($q) use ($filters) {
                 $q->where('tabItem.brand', $filters['brand']);
             })
@@ -449,5 +453,58 @@ class PhaseOutReportService
         }
 
         return $query->paginate($perPage, ['*'], 'page', $page);
+    }
+
+    /**
+     * Mandatory exclusions for Mass Update Lifecycle Status list (not shown in UI).
+     * Non-disabled items: already enforced via {@see Item::scopeEnabled()} (disabled = 0).
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<\App\Models\Item>  $query
+     */
+    private function applyMassUpdateDefaultExclusions($query): void
+    {
+        $excludedItemGroups = [
+            'Sub Assemblies',
+            'All Factory Supplies',
+            'Base',
+            'Housing',
+            'Consumable',
+            'Expense Item',
+        ];
+
+        $excludedItemClassifications = [
+            'FY - Factory Supplies',
+            'MS - Maintenance Supplies',
+            'OS - Office Supplies',
+            'SC - Service Charge',
+            'MP - Ms Plate',
+            'PA - Paints',
+            'CH - Chemicals',
+            'MD - Medicines',
+            'FR - Factory Repair',
+            'MA - Maintenance',
+        ];
+
+        if (Schema::hasColumn('tabItem', 'item_group')) {
+            $query->where(function ($q) use ($excludedItemGroups) {
+                $q->whereNull('tabItem.item_group')
+                    ->orWhereNotIn('tabItem.item_group', $excludedItemGroups);
+            });
+            foreach (['item_group_level_1', 'item_group_level_2', 'item_group_level_3', 'item_group_level_4', 'item_group_level_5'] as $col) {
+                if (Schema::hasColumn('tabItem', $col)) {
+                    $query->where(function ($q) use ($excludedItemGroups, $col) {
+                        $q->whereNull('tabItem.'.$col)
+                            ->orWhereNotIn('tabItem.'.$col, $excludedItemGroups);
+                    });
+                }
+            }
+        }
+
+        if (Schema::hasColumn('tabItem', 'item_classification')) {
+            $query->where(function ($q) use ($excludedItemClassifications) {
+                $q->whereNull('tabItem.item_classification')
+                    ->orWhereNotIn('tabItem.item_classification', $excludedItemClassifications);
+            });
+        }
     }
 }
