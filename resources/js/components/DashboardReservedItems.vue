@@ -3,7 +3,7 @@
     <div v-if="loading" class="text-center p-3">
       <div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div>
     </div>
-    <div v-else v-html="html"></div>
+    <div v-else class="dashboard-html-body" v-html="html"></div>
   </div>
 </template>
 
@@ -38,3 +38,17 @@ function onContainerClick(event) {
 
 onMounted(() => load(1));
 </script>
+
+<style scoped>
+.dashboard-html-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.dashboard-html-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+</style>

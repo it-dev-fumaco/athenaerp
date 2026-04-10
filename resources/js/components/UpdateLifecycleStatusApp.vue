@@ -6,10 +6,10 @@
         <header class="border-b border-[#e5e7eb] px-5 sm:px-6 sm:pb-5" style="padding-top: 0.5rem;">
           <div class="flex flex-wrap items-start gap-3">
             <div class="min-w-0 flex-1">
-              <h1 class="text-2xl font-bold leading-snug text-[#1f2937]">
+              <h1 class="ulc-page-title font-bold leading-snug text-[#1f2937]">
                 Mass Update Lifecycle Status
               </h1>
-              <p class="mt-2 text-sm leading-snug text-[#6b7280]">
+              <p class="ulc-page-subtitle mt-2 leading-snug text-[#6b7280]">
                 Select items to update their lifecycle status to &quot;For Phase Out&quot;.
               </p>
             </div>
@@ -88,10 +88,10 @@
                   </select>
                 </div>
               </div>
-              <div class="flex gap-3 border-t border-[#f3f4f6] pt-4">
+              <div class="flex gap-4 border-t border-[#f3f4f6] pt-4">
                 <button
                   type="button"
-                  class="ulc-btn-primary ulc-filter-btn-primary inline-flex min-h-10 min-w-0 flex-1 items-center justify-center px-5"
+                  class="ulc-btn-primary ulc-filter-btn-primary inline-flex min-h-10 min-w-0 flex-1 items-center justify-center px-5 mb-2"
                   :disabled="listLoading"
                   @click="loadItems(1)"
                 >
@@ -118,11 +118,10 @@
                     <span class="tabular-nums text-xl font-bold sm:text-2xl">{{ meta.total }}</span>
                     <span class="text-base font-normal sm:text-lg"> Items found</span>
                   </p>
-                  <label
-                    for="ulc-step1-new-status"
-                    class="ulc-results-top-status flex shrink-0 cursor-pointer flex-col items-end gap-1"
-                  >
-                    <span class="ulc-field-label m-0 whitespace-nowrap text-right">Set New Status</span>
+                  <div class="ulc-results-top-status shrink-0">
+                    <label for="ulc-step1-new-status" class="ulc-field-label m-0 whitespace-nowrap">
+                      Set New Status
+                    </label>
                     <select
                       id="ulc-step1-new-status"
                       v-model="newStatus"
@@ -130,7 +129,7 @@
                     >
                       <option v-for="s in lifecycleStatuses" :key="s" :value="s">{{ s }}</option>
                     </select>
-                  </label>
+                  </div>
                 </template>
               </div>
 
@@ -765,6 +764,14 @@ onBeforeUnmount(() => {
   box-shadow: 0 1px 2px rgba(59, 89, 152, 0.35);
 }
 
+.ulc-page-title {
+  font-size: 26px;
+}
+
+.ulc-page-subtitle {
+  font-size: 13px;
+}
+
 .ulc-main-grid {
   position: relative;
   z-index: 1;
@@ -832,6 +839,17 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.ulc-results-top-status {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.ulc-results-top-status .ulc-status-select {
+  width: 16rem;
 }
 
 .ulc-select-all-above-table {

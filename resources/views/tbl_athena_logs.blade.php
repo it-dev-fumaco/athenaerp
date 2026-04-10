@@ -1,4 +1,4 @@
-<div class="table-responsive p-0" style="height: 650px;">
+<div class="table-responsive p-0">
     <table class="table table-bordered table-hover tbl-athena-logs-table dashboard-table">
         <col class="tbl-athena-logs-tbl-date"><!-- Date -->
         <col class="tbl-athena-logs-tbl-item-description"><!-- Item Description -->
@@ -106,3 +106,9 @@
         </tbody>
     </table>
 </div>
+
+@if (method_exists($list, 'links'))
+<div class="card-footer clearfix" style="font-size: 10pt;">
+    {{ $list->links() }}
+</div>
+@endif
