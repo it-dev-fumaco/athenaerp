@@ -5,7 +5,10 @@
       <a class="nav-pill" href="/consignment_dashboard">Consignment Dashboard</a>
     </div>
 
-    <div class="dashboard-stats-wrap">
+    <div
+      class="dashboard-stats-wrap"
+      :style="{ display: activeTab === 'home' ? 'block' : 'none' }"
+    >
       <DashboardStats />
     </div>
 
@@ -16,7 +19,7 @@
           <a href="/search_item_cost" class="btn-register-cost">Register Item Cost</a>
         </div>
         <div class="dashboard-tabs-content">
-          <div v-show="activeTab === 'home'" class="tab-pane">
+          <div class="tab-pane" :style="{ display: activeTab === 'home' ? 'block' : 'none' }">
             <div class="card-glass">
               <div class="dashboard-widget-header">
                 <h3 class="dashboard-widget-title">Home</h3>
@@ -28,16 +31,22 @@
               </div>
             </div>
           </div>
-          <div v-show="activeTab === 'stock-alert'" class="tab-pane">
+          <div class="tab-pane" :style="{ display: activeTab === 'stock-alert' ? 'block' : 'none' }">
             <DashboardLowStock />
           </div>
-          <div v-show="activeTab === 'movement'" class="tab-pane">
+          <div class="tab-pane" :style="{ display: activeTab === 'movement' ? 'block' : 'none' }">
             <DashboardAthenaLogs />
           </div>
-          <div v-show="activeTab === 'recent'" class="tab-pane overflow-auto">
+          <div
+            class="tab-pane overflow-auto"
+            :style="{ display: activeTab === 'recent' ? 'block' : 'none' }"
+          >
             <DashboardRecentlyReceived />
           </div>
-          <div v-show="activeTab === 'inventory-accuracy'" class="tab-pane">
+          <div
+            class="tab-pane"
+            :style="{ display: activeTab === 'inventory-accuracy' ? 'block' : 'none' }"
+          >
             <div class="card-glass">
               <div class="dashboard-widget-header">
                 <h3 class="dashboard-widget-title">Inventory Accuracy</h3>
@@ -47,7 +56,10 @@
               </div>
             </div>
           </div>
-          <div v-show="activeTab === 'reserved-items'" class="tab-pane">
+          <div
+            class="tab-pane"
+            :style="{ display: activeTab === 'reserved-items' ? 'block' : 'none' }"
+          >
             <div class="card-glass">
               <div class="dashboard-widget-header">
                 <h3 class="dashboard-widget-title">Reserved Items</h3>
@@ -64,7 +76,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import DashboardStats from '@/components/DashboardStats.vue';
 import DashboardLowStock from '@/components/DashboardLowStock.vue';
 import DashboardAthenaLogs from '@/components/DashboardAthenaLogs.vue';
@@ -99,18 +111,106 @@ const initialYear = now.getFullYear();
 const isDirector = computed(() => props.userGroup === 'Director');
 const showItemCostLink = computed(() => ['Manager', 'Director'].includes(props.userGroup));
 
-function syncUrlTab(tab) {
+function syncUrlTab(tab, replace = true) {
   if (typeof window === 'undefined') {
     return;
   }
   const url = new URL(window.location.href);
   url.searchParams.set('tab', tab);
-  window.history.replaceState({}, '', url);
+  if (replace) {
+    window.history.replaceState({}, '', url);
+  } else {
+    window.history.pushState({}, '', url);
+  }
+}
+
+/** Same document path as the dashboard (supports subdirectory installs). */
+const dashboardPathname = ref('');
+
+function syncSidebarNavActive(tab) {
+  if (typeof document === 'undefined') {
+    return;
+  }
+  const nav = document.querySelector('#inventory-sidebar .inventory-sidebar-nav');
+  if (!nav) {
+    return;
+  }
+  nav.querySelectorAll('a.inventory-sidebar__link[href*="tab="]').forEach((el) => {
+    let u;
+    try {
+      u = new URL(el.href);
+    } catch {
+      return;
+    }
+    if (u.pathname !== dashboardPathname.value) {
+      return;
+    }
+    const linkTab = normalizeTab(u.searchParams.get('tab') || 'home');
+    el.classList.toggle('inventory-sidebar__link--active', linkTab === tab);
+  });
+}
+
+function onPopState() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  const url = new URL(window.location.href);
+  if (url.pathname !== dashboardPathname.value) {
+    return;
+  }
+  const tab = normalizeTab(url.searchParams.get('tab') || 'home');
+  activeTab.value = tab;
+  syncSidebarNavActive(tab);
+}
+
+function onDashboardTabLinkClick(e) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  const a = e.target.closest?.('a');
+  if (!a || !a.href) {
+    return;
+  }
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+    return;
+  }
+  if (a.getAttribute('download') != null || a.getAttribute('target') === '_blank') {
+    return;
+  }
+  let url;
+  try {
+    url = new URL(a.href);
+  } catch {
+    return;
+  }
+  if (url.origin !== window.location.origin) {
+    return;
+  }
+  if (url.pathname !== dashboardPathname.value) {
+    return;
+  }
+  if (!url.searchParams.has('tab')) {
+    return;
+  }
+  const tab = normalizeTab(url.searchParams.get('tab') || 'home');
+  e.preventDefault();
+  activeTab.value = tab;
+  syncUrlTab(tab, false);
+  syncSidebarNavActive(tab);
 }
 
 onMounted(() => {
+  dashboardPathname.value = window.location.pathname;
   activeTab.value = normalizeTab(props.initialTab);
   syncUrlTab(activeTab.value);
+  syncSidebarNavActive(activeTab.value);
+  document.addEventListener('click', onDashboardTabLinkClick, true);
+  window.addEventListener('popstate', onPopState);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onDashboardTabLinkClick, true);
+  window.removeEventListener('popstate', onPopState);
 });
 </script>
 
