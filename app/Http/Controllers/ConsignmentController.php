@@ -30,7 +30,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use PhpOffice\PhpSpreadsheet\Reader\Xlsx as XlsxReaderXlsx;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ConsignmentController extends Controller
 {
@@ -942,6 +942,7 @@ class ConsignmentController extends Controller
 
     public function readFile(Request $request)
     {
+        $tempPath = null;
         try {
             $customer = $request->customer;
             $project = $request->project;
@@ -949,9 +950,16 @@ class ConsignmentController extends Controller
             $customerPurchaseOrder = $request->cpo;
             $path = request()->file('selected_file')->storeAs('tmp', \Illuminate\Support\Str::random(40).'-'.SafePath::sanitizeSegment(request()->file('selected_file')->getClientOriginalName() ?: 'file'), 'upcloud');
 
-            $file = Storage::disk('upcloud')->path($path);
-            $reader = new XlsxReaderXlsx;
-            $spreadsheet = $reader->load($file);
+            $upcloud = Storage::disk('upcloud');
+            $binary = $upcloud->get($path);
+            $originalName = request()->file('selected_file')->getClientOriginalName() ?: 'file';
+            $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+            if (! in_array($ext, ['xls', 'xlsx'], true)) {
+                throw new \InvalidArgumentException('Please upload an Excel file with extension .xls or .xlsx.');
+            }
+            $tempPath = sys_get_temp_dir().DIRECTORY_SEPARATOR.uniqid('csg_', true).'.'.$ext;
+            file_put_contents($tempPath, $binary);
+            $spreadsheet = IOFactory::load($tempPath);
 
             $sheet = $spreadsheet->getActiveSheet();
 
@@ -1018,8 +1026,10 @@ class ConsignmentController extends Controller
             }
 
             return view('consignment.supervisor.Import_tool.tbl', compact('items', 'customer', 'project', 'branch', 'customerPurchaseOrder'));
-        } catch (\Throwable $th) {
-            throw $th;
+        } finally {
+            if ($tempPath !== null && is_file($tempPath)) {
+                @unlink($tempPath);
+            }
         }
     }
 
