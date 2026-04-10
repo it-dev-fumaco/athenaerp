@@ -102,10 +102,24 @@ class DeliveryController extends Controller
                 ->union($stockAdjustmentsQuery)
                 ->union($checkinTransactions)
                 ->orderBy('transaction_date', 'desc')
-                ->limit(200)
                 ->get();
 
-            return view('tbl_athena_logs', compact('list'));
+            $currentPage = (int) ($request->input('page') ?? 1);
+            $perPage = (int) ($request->input('per_page') ?? 10);
+            $perPage = max(1, min(100, $perPage));
+
+            $collection = collect($list);
+            $currentPageItems = $collection->slice(($currentPage * $perPage) - $perPage, $perPage)->values()->all();
+
+            $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                $currentPageItems,
+                $collection->count(),
+                $perPage,
+                $currentPage,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+
+            return view('tbl_athena_logs', ['list' => $paginator]);
         } catch (\Throwable $th) {
             Log::error('DeliveryController updatePendingDrItemStatus failed', [
                 'message' => $th->getMessage(),

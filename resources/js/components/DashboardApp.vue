@@ -31,17 +31,35 @@
               </div>
             </div>
           </div>
-          <div class="tab-pane" :style="{ display: activeTab === 'stock-alert' ? 'block' : 'none' }">
-            <DashboardLowStock />
+          <div v-show="activeTab === 'stock-alert'" class="tab-pane">
+            <div class="card-glass">
+              <div class="dashboard-widget-header">
+                <h3 class="dashboard-widget-title">Stock Level Alerts</h3>
+              </div>
+              <div class="dashboard-widget-body">
+                <DashboardLowStock />
+              </div>
+            </div>
           </div>
-          <div class="tab-pane" :style="{ display: activeTab === 'movement' ? 'block' : 'none' }">
-            <DashboardAthenaLogs />
+          <div v-show="activeTab === 'movement'" class="tab-pane">
+            <div class="card-glass">
+              <div class="dashboard-widget-header">
+                <h3 class="dashboard-widget-title">Stock Movement</h3>
+              </div>
+              <div class="dashboard-widget-body">
+                <DashboardAthenaLogs />
+              </div>
+            </div>
           </div>
-          <div
-            class="tab-pane overflow-auto"
-            :style="{ display: activeTab === 'recent' ? 'block' : 'none' }"
-          >
-            <DashboardRecentlyReceived />
+          <div v-show="activeTab === 'recent'" class="tab-pane">
+            <div class="card-glass">
+              <div class="dashboard-widget-header">
+                <h3 class="dashboard-widget-title">Recently Received Items</h3>
+              </div>
+              <div class="dashboard-widget-body">
+                <DashboardRecentlyReceived />
+              </div>
+            </div>
           </div>
           <div
             class="tab-pane"
@@ -217,10 +235,12 @@ onBeforeUnmount(() => {
 <style scoped>
 .dashboard-app {
   padding: 0;
-  min-height: 860px;
+  min-height: 100dvh;
   box-sizing: border-box;
   max-width: 100%;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 .dashboard-nav-pills {
   display: flex;
@@ -250,8 +270,10 @@ onBeforeUnmount(() => {
   padding: 0.75rem 1rem 1rem 1rem;
 }
 .dashboard-main {
-  display: block;
+  display: flex;
+  flex: 1 1 auto;
   min-width: 0;
+  min-height: 0;
 }
 .dashboard-tabs-card {
   min-width: 0;
@@ -262,10 +284,12 @@ onBeforeUnmount(() => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 .dashboard-tabs-card .dashboard-tabs-content {
   overflow-x: auto;
-  overflow-y: visible;
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
 }
 .dashboard-tabs-header {
@@ -301,10 +325,24 @@ onBeforeUnmount(() => {
   padding: 0;
   min-height: 400px;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 .dashboard-tabs-content .tab-pane {
   padding: 0.5rem;
   min-width: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.dashboard-tabs-content .tab-pane > .card-glass {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 .dashboard-recent-layout {
   display: grid;
@@ -348,9 +386,11 @@ onBeforeUnmount(() => {
 .dashboard-widget-body {
   padding: 0.75rem;
   overflow-x: auto;
-  overflow-y: visible;
+  overflow-y: auto;
   min-width: 0;
   word-wrap: break-word;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 </style>

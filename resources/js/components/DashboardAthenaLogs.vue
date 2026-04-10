@@ -1,12 +1,12 @@
 <template>
-  <div class="dashboard-athena-logs">
-    <div class="p-2">
+  <div class="dashboard-athena-logs" @click="onContainerClick">
+    <div class="dashboard-athena-logs__table p-2">
       <div v-if="tableLoading" class="text-center p-3">
         <div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div>
       </div>
       <div v-else v-html="tableHtml"></div>
     </div>
-    <ul class="pagination pagination-month justify-content-center m-2">
+    <ul class="pagination pagination-month justify-content-center m-2 dashboard-athena-logs__months">
       <li
         v-for="month in months"
         :key="month.key"
@@ -30,6 +30,8 @@ import axios from 'axios';
 const tableHtml = ref('');
 const tableLoading = ref(true);
 const activeMonthKey = ref('');
+const activeMonthValue = ref('');
+const currentPage = ref(1);
 
 function buildMonths() {
   const result = [];
@@ -47,12 +49,12 @@ function buildMonths() {
 
 const months = computed(() => buildMonths());
 
-async function loadTable(monthValue) {
+async function loadTable(monthValue, page = 1) {
   if (!monthValue) return;
   tableLoading.value = true;
   try {
     const { data } = await axios.get('/get_athena_logs', {
-      params: { month: monthValue },
+      params: { month: monthValue, page, per_page: 10 },
       responseType: 'text',
     });
     tableHtml.value = data;
@@ -66,14 +68,45 @@ async function loadTable(monthValue) {
 
 function selectMonth(month) {
   activeMonthKey.value = month.key;
-  loadTable(month.value);
+  activeMonthValue.value = month.value;
+  currentPage.value = 1;
+  loadTable(month.value, 1);
+}
+
+function onContainerClick(event) {
+  const link = event.target.closest('a[href*="get_athena_logs"]');
+  if (!link || !link.href) return;
+  event.preventDefault();
+  const url = new URL(link.href, window.location.origin);
+  const page = parseInt(url.searchParams.get('page') || '1', 10);
+  currentPage.value = Number.isFinite(page) && page > 0 ? page : 1;
+  loadTable(activeMonthValue.value, currentPage.value);
 }
 
 onMounted(() => {
   const current = months.value[months.value.length - 1];
   if (current) {
     activeMonthKey.value = current.key;
-    loadTable(current.value);
+    activeMonthValue.value = current.value;
+    currentPage.value = 1;
+    loadTable(current.value, 1);
   }
 });
 </script>
+
+<style scoped>
+.dashboard-athena-logs {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+.dashboard-athena-logs__table {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+.dashboard-athena-logs__months {
+  flex: 0 0 auto;
+}
+</style>
