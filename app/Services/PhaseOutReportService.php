@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Item;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -13,7 +14,7 @@ class PhaseOutReportService
     /**
      * Dashboard summary: counts, stock totals, and per-brand breakdown for phase-out items.
      *
-     * @return array{tagged_count: int, total_units: float, total_stock_value: float, by_brand: array<int, array{brand: string, item_count: int, stock_value: float}>}
+     * @return array{tagged_count: int, total_units: float, total_stock_value: float, by_brand: array<int, array{brand: string, item_count: int, stock_value: float}>, distinct_warehouse_count: int, warehouses: array<int, string>}
      */
     public function getPhaseOutSummary(): array
     {
@@ -31,12 +32,14 @@ class PhaseOutReportService
                 'total_units' => 0.0,
                 'total_stock_value' => 0.0,
                 'by_brand' => [],
+                'distinct_warehouse_count' => 0,
+                'warehouses' => [],
             ];
         }
     }
 
     /**
-     * @return array{tagged_count: int, total_units: float, total_stock_value: float, by_brand: array<int, array{brand: string, item_count: int, stock_value: float}>}
+     * @return array{tagged_count: int, total_units: float, total_stock_value: float, by_brand: array<int, array{brand: string, item_count: int, stock_value: float}>, distinct_warehouse_count: int, warehouses: array<int, string>}
      */
     private function buildPhaseOutSummary(): array
     {
@@ -49,6 +52,8 @@ class PhaseOutReportService
                 'total_units' => 0.0,
                 'total_stock_value' => 0.0,
                 'by_brand' => [],
+                'distinct_warehouse_count' => 0,
+                'warehouses' => [],
             ];
         }
 
@@ -102,19 +107,55 @@ class PhaseOutReportService
             ];
         }
 
+        $warehouses = $this->phaseOutDistinctWarehouses($col);
+        $distinctWarehouseCount = count($warehouses);
+
         return [
             'tagged_count' => $taggedCount,
             'total_units' => $totalUnits,
             'total_stock_value' => $totalStockValue,
             'by_brand' => $byBrand,
+            'distinct_warehouse_count' => $distinctWarehouseCount,
+            'warehouses' => $warehouses,
         ];
     }
 
-    public function paginateTaggedEnriched(int $perPage, int $page): LengthAwarePaginator
+    /**
+     * Distinct warehouse codes that appear on tabBin for items tagged For Phase Out (for filter dropdown + stat card).
+     *
+     * @return array<int, string>
+     */
+    private function phaseOutDistinctWarehouses(string $lifecycleCol): array
+    {
+        if (! Schema::hasTable('tabBin') || ! Schema::hasColumn('tabBin', 'warehouse')) {
+            return [];
+        }
+
+        $status = Item::LIFECYCLE_STATUS_PHASE_OUT;
+
+        return DB::table('tabBin as b')
+            ->join('tabItem as i', 'i.name', '=', 'b.item_code')
+            ->where('i.'.$lifecycleCol, $status)
+            ->whereNotNull('b.warehouse')
+            ->where('b.warehouse', '!=', '')
+            ->distinct()
+            ->orderBy('b.warehouse')
+            ->pluck('b.warehouse')
+            ->map(fn ($w) => (string) $w)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Base query for tagged enriched list (filters applied, no order/pagination).
+     *
+     * @param  array{search?: string, warehouse?: string, brand?: string}  $filters
+     */
+    private function buildTaggedEnrichedBaseQuery(array $filters): ?Builder
     {
         $col = Item::lifecycleStatusColumn();
         if (! Schema::hasTable('tabItem') || ! Schema::hasColumn('tabItem', $col)) {
-            return Item::query()->whereRaw('0 = 1')->paginate($perPage, ['*'], 'page', $page);
+            return null;
         }
 
         $hasBrand = Schema::hasColumn('tabItem', 'brand');
@@ -137,7 +178,7 @@ class PhaseOutReportService
             $select[] = 'tabItem.brand';
         }
 
-        $q = Item::query()
+        return Item::query()
             ->where('tabItem.'.$col, Item::LIFECYCLE_STATUS_PHASE_OUT)
             ->leftJoinSub($binQtySum, 'bq', 'bq.item_code', '=', 'tabItem.name')
             ->select($select)
@@ -146,9 +187,97 @@ class PhaseOutReportService
                 '(SELECT MAX(sle.posting_date) FROM `tabStock Ledger Entry` sle WHERE sle.item_code = tabItem.name'.$ledgerCancelled.') as last_movement_date'
             ))
             ->addSelect(DB::raw('(SELECT b2.warehouse FROM tabBin b2 WHERE b2.item_code = tabItem.name ORDER BY b2.actual_qty DESC LIMIT 1) as primary_warehouse'))
-            ->orderByDesc('tabItem.creation');
+            ->when(! empty($filters['search']), function ($query) use ($filters) {
+                $raw = (string) $filters['search'];
+                $like = '%'.addcslashes($raw, '%_\\').'%';
+                $query->where(function ($q2) use ($like) {
+                    $q2->where('tabItem.name', 'like', $like)
+                        ->orWhere('tabItem.item_name', 'like', $like);
+                });
+            })
+            ->when(! empty($filters['warehouse']), function ($query) use ($filters) {
+                // Matches the "primary warehouse" column (highest actual_qty bin).
+                $query->whereRaw(
+                    '(SELECT b2.warehouse FROM tabBin b2 WHERE b2.item_code = tabItem.name ORDER BY b2.actual_qty DESC LIMIT 1) = ?',
+                    [$filters['warehouse']]
+                );
+            })
+            ->when($hasBrand && ! empty($filters['brand']), function ($query) use ($filters) {
+                $b = (string) $filters['brand'];
+                if ($b === 'Unbranded') {
+                    $query->where(function ($q2) {
+                        $q2->whereNull('tabItem.brand')
+                            ->orWhereRaw("NULLIF(TRIM(tabItem.brand), '') IS NULL");
+                    });
+                } else {
+                    $query->where('tabItem.brand', $b);
+                }
+            });
+    }
 
-        return $q->paginate($perPage, ['*'], 'page', $page);
+    /**
+     * Aggregates for the same filter set as the tagged-items table (all pages).
+     *
+     * @param  array{search?: string, warehouse?: string, brand?: string}  $filters
+     * @return array{total_stock_sum: float, unique_warehouse_count: int, unique_brand_count: int}
+     */
+    public function aggregateTaggedEnriched(array $filters): array
+    {
+        $base = $this->buildTaggedEnrichedBaseQuery($filters);
+        if ($base === null) {
+            return [
+                'total_stock_sum' => 0.0,
+                'unique_warehouse_count' => 0,
+                'unique_brand_count' => 0,
+            ];
+        }
+
+        $hasBrand = Schema::hasColumn('tabItem', 'brand');
+
+        $sumQuery = clone $base;
+        $sumQuery->getQuery()->orders = null;
+        $totalStockSum = (float) $sumQuery->sum(DB::raw('COALESCE(bq.total_actual_qty, 0)'));
+
+        $warehouseExpr = '(SELECT b2.warehouse FROM tabBin b2 WHERE b2.item_code = tabItem.name ORDER BY b2.actual_qty DESC LIMIT 1)';
+        $whSub = $base->clone()->select('tabItem.name')->addSelect(DB::raw($warehouseExpr.' as warehouse_key'));
+        $uniqueWarehouseCount = (int) (DB::query()
+            ->fromSub($whSub->toBase(), 'w')
+            ->whereNotNull('warehouse_key')
+            ->where('warehouse_key', '!=', '')
+            ->selectRaw('COUNT(DISTINCT warehouse_key) as c')
+            ->value('c') ?? 0);
+
+        if ($hasBrand) {
+            $brandSub = $base->clone()
+                ->select('tabItem.brand')
+                ->whereNotNull('tabItem.brand')
+                ->whereRaw("NULLIF(TRIM(tabItem.brand), '') IS NOT NULL");
+            $uniqueBrandCount = (int) (DB::query()
+                ->fromSub($brandSub->toBase(), 'b')
+                ->selectRaw('COUNT(DISTINCT b.brand) as c')
+                ->value('c') ?? 0);
+        } else {
+            $uniqueBrandCount = 0;
+        }
+
+        return [
+            'total_stock_sum' => $totalStockSum,
+            'unique_warehouse_count' => $uniqueWarehouseCount,
+            'unique_brand_count' => $uniqueBrandCount,
+        ];
+    }
+
+    /**
+     * @param  array{search?: string, warehouse?: string, brand?: string}  $filters
+     */
+    public function paginateTaggedEnriched(int $perPage, int $page, array $filters = []): LengthAwarePaginator
+    {
+        $base = $this->buildTaggedEnrichedBaseQuery($filters);
+        if ($base === null) {
+            return Item::query()->whereRaw('0 = 1')->paginate($perPage, ['*'], 'page', $page);
+        }
+
+        return $base->orderByDesc('tabItem.creation')->paginate($perPage, ['*'], 'page', $page);
     }
 
     public function paginateTagged(int $perPage, int $page): LengthAwarePaginator

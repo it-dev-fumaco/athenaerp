@@ -16,6 +16,9 @@ class PhaseOutTaggedItemsRequest extends FormRequest
         return [
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
             'page' => ['nullable', 'integer', 'min:1'],
+            'search' => ['nullable', 'string', 'max:255'],
+            'warehouse' => ['nullable', 'string', 'max:140'],
+            'brand' => ['nullable', 'string', 'max:140'],
         ];
     }
 }

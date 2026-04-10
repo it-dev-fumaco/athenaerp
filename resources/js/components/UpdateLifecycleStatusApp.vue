@@ -111,16 +111,18 @@
             <section class="ulc-panel ulc-panel--right flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-[#d1d5db] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
               <div
                 class="ulc-results-top-row shrink-0 border-b border-[#e5e7eb] bg-white px-5"
-                :class="rows.length ? 'justify-end pt-3 pb-2.5' : 'py-4'"
+                :class="rows.length ? 'justify-between pt-3 pb-2.5' : 'py-4'"
               >
-                <div v-if="rows.length" class="ulc-results-top-right ulc-results-top-rightStack shrink-0">
-                  <p class="ulc-section-title font-normal leading-snug text-[#1f2937]">
-                    <span class="tabular-nums font-bold">{{ meta.total }}</span>
-                    <span class="font-normal"> Items found</span>
+                <template v-if="rows.length">
+                  <p class="ulc-results-top-items-found m-0 leading-snug text-[#1f2937]">
+                    <span class="tabular-nums text-xl font-bold sm:text-2xl">{{ meta.total }}</span>
+                    <span class="text-base font-normal sm:text-lg"> Items found</span>
                   </p>
-
-                  <label for="ulc-step1-new-status" class="inline-flex items-center gap-2 whitespace-nowrap">
-                    <span class="ulc-field-label m-0">Set New Status</span>
+                  <label
+                    for="ulc-step1-new-status"
+                    class="ulc-results-top-status flex shrink-0 cursor-pointer flex-col items-end gap-1"
+                  >
+                    <span class="ulc-field-label m-0 whitespace-nowrap text-right">Set New Status</span>
                     <select
                       id="ulc-step1-new-status"
                       v-model="newStatus"
@@ -129,7 +131,7 @@
                       <option v-for="s in lifecycleStatuses" :key="s" :value="s">{{ s }}</option>
                     </select>
                   </label>
-                </div>
+                </template>
               </div>
 
               <div
@@ -150,7 +152,7 @@
               >
                 No items loaded yet. Set filters and click &quot;Find Items&quot;, or no items match the current filters.
               </div>
-              <div v-else class="ulc-table-with-select-all flex min-h-0 min-w-0 grow-0 flex-col justify-start">
+              <div v-else class="ulc-table-with-select-all flex min-h-0 min-w-0 grow-0 flex-col justify-start gap-0">
                 <div ref="selectAllRowEl" class="ulc-select-all-above-table">
                   <input
                     id="ulc-select-all"
@@ -170,7 +172,7 @@
                   </span>
                 </div>
                 <div class="ulc-table-viewport min-h-0">
-                  <table ref="resultsTableEl" class="ulc-data-table">
+                  <table ref="resultsTableEl" class="ulc-data-table ulc-data-table--step1">
                   <thead class="ulc-table-head-text text-[#374151]">
                     <tr>
                       <th class="ulc-table-th" scope="col" />
@@ -179,7 +181,6 @@
                       <th class="ulc-table-th max-w-[8rem] whitespace-nowrap" scope="col">Item Classification</th>
                       <th class="ulc-table-th ulc-table-th--num" scope="col">Global Stock</th>
                       <th class="ulc-table-th ulc-table-th--num" scope="col">Last Movement</th>
-                      <th class="ulc-table-th" scope="col">Last Purchase</th>
                     </tr>
                   </thead>
                   <tbody class="bg-white">
@@ -212,9 +213,6 @@
                       <td class="ulc-table-td--num whitespace-nowrap text-[#1f2937]">
                         {{ formatDateLong(row.last_movement_date) }}
                       </td>
-                      <td class="whitespace-nowrap text-[#6b7280]">
-                        {{ row.last_purchase != null ? formatDate(row.last_purchase) : '—' }}
-                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -223,14 +221,14 @@
 
               <div
                 v-if="rows.length"
-                class="ulc-step1-table-footer flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-[#e5e7eb] bg-[#f9fafb] px-4 py-3"
+                class="ulc-step1-table-footer flex shrink-0 items-end justify-between gap-4 border-t border-[#e5e7eb] bg-[#f9fafb] px-4 py-3"
               >
-                <div class="flex min-w-0 flex-wrap items-center gap-3">
+                <div class="flex min-w-0 flex-col items-start gap-2">
                   <template v-if="meta.last_page > 1">
-                    <p class="text-xs font-medium text-[#6b7280]">
+                    <p class="m-0 text-xs font-medium text-[#6b7280]">
                       Page {{ meta.current_page }} of {{ meta.last_page }}
                     </p>
-                    <div class="flex gap-2">
+                    <div class="flex flex-wrap gap-2">
                       <button
                         v-if="meta.current_page > 1"
                         type="button"
@@ -799,7 +797,7 @@ onBeforeUnmount(() => {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Results header row (single line) */
+/* Results header row: items found (left) vs status (right) */
 .ulc-results-top-row {
   display: flex;
   flex-wrap: nowrap;
@@ -811,9 +809,12 @@ onBeforeUnmount(() => {
 .ulc-select-all-above-table {
   display: flex;
   align-items: center;
-  gap: 27px;
+  justify-content: flex-start;
+  gap: 12px;
   min-width: 0;
-  margin-left: 10px;
+  margin: 0;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
 }
 
 .ulc-select-all-above-table .ulc-select-all-label {
@@ -825,13 +826,6 @@ onBeforeUnmount(() => {
 .ulc-select-all-above-table .ulc-select-all-count {
   color: #6b7280;
   font-size: 13px;
-}
-
-.ulc-results-top-rightStack {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
 }
 
 .ulc-step1-status-block {
@@ -940,6 +934,16 @@ onBeforeUnmount(() => {
 
 .ulc-data-table tbody td {
   font-size: 0.875rem;
+}
+
+/* Step 1 list: taller rows (more vertical padding), same borders as base table */
+.ulc-data-table--step1 :is(th, td) {
+  padding: 16px 18px;
+}
+
+.ulc-data-table--step1 th:first-child,
+.ulc-data-table--step1 td:first-child {
+  padding: 16px;
 }
 
 @media (max-width: 1024px) {
