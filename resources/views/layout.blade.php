@@ -695,7 +695,7 @@
 					<div class="row w-100 p-0 m-0">
 						<div class="col-xl-9 col-lg-10 col-md-12">
 							<div class="row">
-								<div class="col-10 col-md-9 col-xl-5 col-lg-3 text-md-center text-sm-left">
+								<div class="col-10 col-md-9 col-xl-5 col-lg-3 text-sm-left">
 									<a href="/" class="navbar-brand">
 										<span class="brand-text brand-sm text-white d-sm-block d-md-none d-lg-none" style="font-size: 1.2rem;">Athena<b>ERP </b><span class="d-md-inline-block d-lg-none d-xl-inline-block"> Inventory</span></span>
 										<span class="brand-text text-white d-none d-md-block d-lg-block" style="font-size: 1.7rem;">Athena<b>ERP </b><span class="d-md-inline-block d-lg-none d-xl-inline-block"> Inventory</span></span>
