@@ -508,43 +508,46 @@ class MaterialTransferController extends Controller
             }
 
             if ($stockEntry->material_request) {
-                $mreqIssuedQty = StockEntry::query()
-                    ->from('tabStock Entry as ste')
-                    ->join('tabStock Entry Detail as sted', 'sted.parent', 'ste.name')
-                    ->where('sted.s_warehouse', $stockEntryItem->s_warehouse)
-                    ->where('sted.t_warehouse', $stockEntryItem->t_warehouse)
-                    ->where('ste.material_request', $stockEntry->material_request)
-                    ->where('ste.docstatus', 1)
-                    ->where('purpose', 'Material Transfer')
-                    ->where('sted.item_code', $itemCode)
-                    ->where('sted.status', 'Issued')
-                    ->where('ste.docstatus', '<', 2)
-                    ->sum('issued_qty');
-
                 $mreqResult = $this->resolveMaterialRequestForInternalTransfer(
                     $stockEntry->material_request,
                     $itemCode,
-                    $stockEntry->requested_by ?? null
+                    $stockEntry->requested_by ?? null,
+                    $stockEntry->name
                 );
 
                 if (! $mreqResult['ok']) {
                     throw new MaterialTransferValidationException($mreqResult['message']);
                 }
 
-                $mreqRequestedQty = $mreqResult['requested_qty'];
-                $ownerHint = $mreqResult['owner_contact'];
+                if (! ($mreqResult['skip_mreq_qty_validation'] ?? false)) {
+                    $mreqIssuedQty = StockEntry::query()
+                        ->from('tabStock Entry as ste')
+                        ->join('tabStock Entry Detail as sted', 'sted.parent', 'ste.name')
+                        ->where('sted.s_warehouse', $stockEntryItem->s_warehouse)
+                        ->where('sted.t_warehouse', $stockEntryItem->t_warehouse)
+                        ->where('ste.material_request', $stockEntry->material_request)
+                        ->where('ste.docstatus', 1)
+                        ->where('purpose', 'Material Transfer')
+                        ->where('sted.item_code', $itemCode)
+                        ->where('sted.status', 'Issued')
+                        ->where('ste.docstatus', '<', 2)
+                        ->sum('issued_qty');
 
-                if ($mreqIssuedQty >= $mreqRequestedQty) {
-                    $fmtIssued = number_format($mreqIssuedQty);
-                    $fmtRequested = number_format($mreqRequestedQty);
-                    throw new MaterialTransferValidationException(
-                        "Issued quantity cannot exceed the quantity requested on the Material Request. Total issued: {$fmtIssued}. Requested: {$fmtRequested}.{$ownerHint}"
-                    );
-                }
+                    $mreqRequestedQty = $mreqResult['requested_qty'];
+                    $ownerHint = $mreqResult['owner_contact'];
 
-                if ($request->qty > ($mreqRequestedQty - $mreqIssuedQty)) {
-                    $diff = $mreqRequestedQty - $mreqIssuedQty;
-                    throw new MaterialTransferValidationException("Qty cannot be greater than {$diff}.");
+                    if ($mreqIssuedQty >= $mreqRequestedQty) {
+                        $fmtIssued = number_format($mreqIssuedQty);
+                        $fmtRequested = number_format($mreqRequestedQty);
+                        throw new MaterialTransferValidationException(
+                            "Issued quantity cannot exceed the quantity requested on the Material Request. Total issued: {$fmtIssued}. Requested: {$fmtRequested}.{$ownerHint}"
+                        );
+                    }
+
+                    if ($request->qty > ($mreqRequestedQty - $mreqIssuedQty)) {
+                        $diff = $mreqRequestedQty - $mreqIssuedQty;
+                        throw new MaterialTransferValidationException("Qty cannot be greater than {$diff}.");
+                    }
                 }
             }
 
@@ -1028,16 +1031,24 @@ class MaterialTransferController extends Controller
      * Resolve Material Request line qty for checkout when STE is tied to an MREQ.
      * Prefers local DB; falls back to ERP when the request or line is missing locally (sync lag).
      *
-     * @return array{ok: true, requested_qty: float, owner_contact: string}|array{ok: false, message: string}
+     * If the MREQ exists but does not list this item (STE/MREQ data mismatch), returns ok with
+     * skip_mreq_qty_validation so checkout proceeds using the STE line only (logged).
+     *
+     * @return array{ok: true, requested_qty: float, owner_contact: string, skip_mreq_qty_validation?: bool}|array{ok: false, message: string}
      */
     private function resolveMaterialRequestForInternalTransfer(
         string $materialRequestName,
         string $itemCode,
-        ?string $stockEntryRequestedBy
+        ?string $stockEntryRequestedBy,
+        ?string $stockEntryName = null
     ): array {
+        $itemCodeNorm = trim($itemCode);
+
         $mreqLocal = MaterialRequest::with('items')->find($materialRequestName);
         $mreqItem = $mreqLocal
-            ? collect($mreqLocal->items)->first(fn ($row) => $row->item_code === $itemCode)
+            ? collect($mreqLocal->items)->first(
+                fn ($row) => trim((string) $row->item_code) === $itemCodeNorm
+            )
             : null;
 
         if ($mreqItem) {
@@ -1079,19 +1090,21 @@ class MaterialTransferController extends Controller
 
         $doc = data_get($erpResponse, 'data');
         $erpLine = collect(data_get($doc, 'items', []))->first(
-            fn ($row) => data_get($row, 'item_code') === $itemCode
+            fn ($row) => trim((string) data_get($row, 'item_code')) === $itemCodeNorm
         );
 
         if (! $erpLine) {
+            Log::warning('Material transfer checkout: STE item not listed on linked Material Request; skipping MREQ qty validation (STE line is source of truth)', [
+                'material_request' => $materialRequestName,
+                'item_code' => $itemCode,
+                'stock_entry' => $stockEntryName,
+            ]);
+
             return [
-                'ok' => false,
-                'message' => $this->materialRequestMismatchMessage(
-                    $materialRequestName,
-                    $itemCode,
-                    $stockEntryRequestedBy,
-                    data_get($doc, 'owner'),
-                    'missing_line'
-                ),
+                'ok' => true,
+                'requested_qty' => 0.0,
+                'owner_contact' => '',
+                'skip_mreq_qty_validation' => true,
             ];
         }
 
