@@ -30,7 +30,7 @@ class PhaseOutController extends Controller
     public function massUpdateItems(MassUpdateItemsRequest $request, PhaseOutReportService $phaseOutReportService): JsonResponse
     {
         $data = $request->validated();
-        $perPage = (int) ($data['per_page'] ?? 15);
+        $perPage = (int) ($data['per_page'] ?? 20);
         $page = (int) ($data['page'] ?? 1);
 
         $filters = [];
@@ -42,6 +42,9 @@ class PhaseOutController extends Controller
         }
         if (array_key_exists('last_movement_days', $data) && $data['last_movement_days'] !== null) {
             $filters['last_movement_days'] = (int) $data['last_movement_days'];
+        }
+        if (array_key_exists('entry_year', $data) && $data['entry_year'] !== null) {
+            $filters['entry_year'] = (int) $data['entry_year'];
         }
 
         $paginator = $phaseOutReportService->paginateMassUpdateItems($perPage, $page, $filters);
@@ -59,6 +62,7 @@ class PhaseOutController extends Controller
                     ? (int) $item->days_since_last_movement
                     : null,
                 'last_movement_date' => $item->last_stock_ledger_posting ?? null,
+                'entry_date' => $item->entry_date ?? null,
                 'last_purchase' => $item->last_purchase_receipt_date ?? null,
             ];
         }

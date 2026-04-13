@@ -22,18 +22,6 @@
           <div class="tab-pane" :style="{ display: activeTab === 'home' ? 'block' : 'none' }">
             <div class="card-glass">
               <div class="dashboard-widget-header">
-                <h3 class="dashboard-widget-title">Home</h3>
-              </div>
-              <div class="dashboard-widget-body">
-                <p class="mb-0 text-slate-600">
-                  Welcome to the inventory dashboard. Use the left sidebar to open stock alerts, movement, accuracy, reserved items, and phase-out tools.
-                </p>
-              </div>
-            </div>
-          </div>
-          <div v-show="activeTab === 'stock-alert'" class="tab-pane">
-            <div class="card-glass">
-              <div class="dashboard-widget-header">
                 <h3 class="dashboard-widget-title">Stock Level Alerts</h3>
               </div>
               <div class="dashboard-widget-body">
@@ -104,7 +92,6 @@ import DashboardReservedItems from '@/components/DashboardReservedItems.vue';
 
 const VALID_TABS = [
   'home',
-  'stock-alert',
   'movement',
   'recent',
   'inventory-accuracy',
