@@ -365,7 +365,7 @@ class PhaseOutReportService
     /**
      * Paginate items eligible for mass lifecycle update (Active lifecycle, with stock ledger activity).
      *
-     * @param  array{brand?: string, item_classification?: string, last_movement_days?: int}  $filters
+     * @param  array{brand?: string, item_classification?: string, last_movement_days?: int, entry_year?: int}  $filters
      */
     public function paginateMassUpdateItems(int $perPage, int $page, array $filters = []): LengthAwarePaginator
     {
@@ -406,6 +406,9 @@ class PhaseOutReportService
             ->when(isset($filters['last_movement_days']), function ($q) use ($filters) {
                 $q->whereRaw('DATEDIFF(CURDATE(), sle.last_posting) < ?', [(int) $filters['last_movement_days']]);
             })
+            ->when(isset($filters['entry_year']) && Schema::hasColumn('tabItem', 'creation'), function ($q) use ($filters) {
+                $q->whereYear('tabItem.creation', (int) $filters['entry_year']);
+            })
             ->orderByDesc('sle.last_posting')
             ->select('tabItem.name', 'tabItem.item_name')
             ->addSelect(DB::raw('sle.last_posting as last_stock_ledger_posting'))
@@ -416,6 +419,11 @@ class PhaseOutReportService
         }
         if (Schema::hasColumn('tabItem', 'brand')) {
             $query->addSelect('tabItem.brand');
+        }
+        if (Schema::hasColumn('tabItem', 'creation')) {
+            $query->addSelect(DB::raw('tabItem.creation as entry_date'));
+        } else {
+            $query->addSelect(DB::raw('NULL as entry_date'));
         }
 
         if (Schema::hasTable('tabBin') && Schema::hasColumn('tabBin', 'actual_qty')) {

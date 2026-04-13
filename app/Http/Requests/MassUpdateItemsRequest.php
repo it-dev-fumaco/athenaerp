@@ -20,6 +20,7 @@ class MassUpdateItemsRequest extends FormRequest
             'brand' => ['nullable', 'string', 'max:140'],
             'item_classification' => ['nullable', 'string', 'max:140'],
             'last_movement_days' => ['nullable', 'integer', 'in:30,60,90,120,150,300,365'],
+            'entry_year' => ['nullable', 'integer', 'digits:4', 'min:1900', 'max:2999'],
         ];
     }
 
