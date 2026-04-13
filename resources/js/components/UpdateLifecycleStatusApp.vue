@@ -10,7 +10,7 @@
                 Mass Update Lifecycle Status
               </h1>
               <p class="ulc-page-subtitle mt-2 leading-snug text-[#6b7280]">
-                Select items to update their lifecycle status to &quot;For Phase Out&quot;.
+                Select items to update their lifecycle status.
               </p>
             </div>
           </div>
@@ -21,8 +21,9 @@
           <div class="ulc-stepper">
             <div
               :class="[
-                'ulc-stepper__ribbon',
-                workflowStep === 1 ? 'ulc-stepper__ribbon--active' : 'ulc-stepper__ribbon--done',
+                'ulc-stepper__step',
+                'ulc-stepper__step--first',
+                workflowStep === 1 ? 'is-active' : 'is-inactive',
               ]"
               :aria-current="workflowStep === 1 ? 'step' : undefined"
             >
@@ -30,8 +31,9 @@
             </div>
             <div
               :class="[
-                'ulc-stepper__ribbon',
-                workflowStep === 2 ? 'ulc-stepper__ribbon--active-follow' : 'ulc-stepper__ribbon--next',
+                'ulc-stepper__step',
+                'ulc-stepper__step--second',
+                workflowStep === 2 ? 'is-active' : 'is-inactive',
               ]"
               :aria-current="workflowStep === 2 ? 'step' : undefined"
             >
@@ -86,6 +88,20 @@
                       {{ o.label }}
                     </option>
                   </select>
+                </div>
+                <div class="min-w-0">
+                  <label class="ulc-field-label" for="ulc-entry-year">Entry Date (Year)</label>
+                  <input
+                    id="ulc-entry-year"
+                    v-model="filters.entry_year"
+                    type="number"
+                    inputmode="numeric"
+                    min="1900"
+                    max="2999"
+                    step="1"
+                    placeholder="yyyy"
+                    class="ulc-input mt-1 w-full max-w-full min-w-0"
+                  >
                 </div>
               </div>
               <div class="flex gap-4 border-t border-[#f3f4f6] pt-4">
@@ -180,6 +196,7 @@
                       <th class="ulc-table-th max-w-[8rem] whitespace-nowrap" scope="col">Item Classification</th>
                       <th class="ulc-table-th ulc-table-th--num" scope="col">Global Stock</th>
                       <th class="ulc-table-th ulc-table-th--num" scope="col">Last Movement</th>
+                      <th class="ulc-table-th ulc-table-th--num" scope="col">Entry Date</th>
                     </tr>
                   </thead>
                   <tbody class="bg-white">
@@ -212,6 +229,9 @@
                       <td class="ulc-table-td--num whitespace-nowrap text-[#1f2937]">
                         {{ formatDateLong(row.last_movement_date) }}
                       </td>
+                      <td class="ulc-table-td--num whitespace-nowrap text-[#1f2937]">
+                        {{ formatDateLong(row.entry_date) }}
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -239,7 +259,7 @@
                       </button>
                       <button
                         type="button"
-                        class="rounded-md border border-[#d1d5db] bg-white px-3 py-1.5 text-sm font-medium text-[#1f2937] shadow-sm transition hover:bg-[#f9fafb] disabled:opacity-50"
+                        class="rounded-md border border-[#d1d5db] bg-white px-3 py-1.5 text-sm font-medium text-[#1f2937] shadow-sm transition hover:bg-[#f9fafb] disabled:opacity-50 mb-2 mt-2"
                         :disabled="meta.current_page >= meta.last_page || listLoading"
                         @click="loadItems(meta.current_page + 1)"
                       >
@@ -265,23 +285,33 @@
             v-else
             class="ulc-review-panel col-span-full min-w-0 rounded-lg border border-[#d1d5db] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:p-6"
           >
-            <button
-              type="button"
-              class="ulc-btn-secondary mb-4 inline-flex min-h-9 items-center px-4 text-sm"
-              @click="backToSelection"
-            >
-              ← Back to selection
-            </button>
-            <h2 class="ulc-section-title text-[#1f2937]">
-              <span class="tabular-nums">{{ selectedCount }}</span>
-              {{ selectedCount === 1 ? ' item' : ' items' }} selected
-            </h2>
-            <p class="mt-2 text-sm text-[#6b7280]">
-              <span class="font-semibold text-[#374151]">New status:</span>
-              {{ newStatus }}
+            <div class="ulc-review-top-row">
+              <button
+                type="button"
+                class="ulc-btn-secondary inline-flex min-h-9 items-center px-4 text-sm"
+                @click="backToSelection"
+              >
+                ← Back to selection
+              </button>
+              <h2 class="ulc-section-title m-0 text-[#1f2937]">
+                <span class="tabular-nums">{{ selectedCount }}</span>
+                {{ selectedCount === 1 ? ' item' : ' items' }} selected
+              </h2>
+              <span class="ulc-review-status-badge">
+                <span class="ulc-review-status-label">New status:</span>
+                {{ newStatus }}
+              </span>
+            </div>
+
+            <p class="ulc-review-warning-inline">
+              <span class="ulc-review-warning-inline-icon" aria-hidden="true">⚠️</span>
+              <span>
+                This action will update the lifecycle status of all selected items.
+                This may affect sales and availability.
+              </span>
             </p>
 
-            <div class="ulc-review-table-wrap mt-5 max-h-[min(400px,50vh)] overflow-auto rounded border border-[#e5e7eb]">
+            <div class="ulc-review-table-wrap mt-2 max-h-[min(400px,50vh)] overflow-auto rounded border border-[#e5e7eb]">
               <table class="ulc-data-table">
                 <thead class="ulc-table-head-text text-[#374151]">
                   <tr>
@@ -306,13 +336,6 @@
               </table>
             </div>
 
-            <div class="ulc-review-warning mt-5 flex gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-              <span class="shrink-0 text-lg leading-none" aria-hidden="true">⚠️</span>
-              <p class="m-0 leading-snug">
-                This action will update the lifecycle status of all selected items.
-                This may affect sales and availability.
-              </p>
-            </div>
           </div>
         </div>
 
@@ -423,6 +446,7 @@ const filters = reactive({
   item_classification: '',
   brand: '',
   last_movement_days: '',
+  entry_year: '',
 });
 
 /** Must match PhaseOutReportService::applyMassUpdateDefaultExclusions() — not selectable in this flow. */
@@ -457,7 +481,7 @@ const meta = ref({
   current_page: 1,
   last_page: 1,
   total: 0,
-  per_page: 15,
+  per_page: 20,
 });
 
 const listLoading = ref(false);
@@ -588,8 +612,9 @@ function resetFilters() {
   filters.item_classification = '';
   filters.brand = '';
   filters.last_movement_days = '';
+  filters.entry_year = '';
   rows.value = [];
-  meta.value = { current_page: 1, last_page: 1, total: 0, per_page: 15 };
+  meta.value = { current_page: 1, last_page: 1, total: 0, per_page: 20 };
   listError.value = null;
   clearSelection();
 }
@@ -622,7 +647,7 @@ async function loadItems(page) {
   try {
     const params = {
       page: page || 1,
-      per_page: meta.value.per_page || 15,
+      per_page: meta.value.per_page || 20,
     };
     if (filters.item_classification) {
       params.item_classification = filters.item_classification;
@@ -632,6 +657,9 @@ async function loadItems(page) {
     }
     if (filters.last_movement_days !== '' && filters.last_movement_days != null) {
       params.last_movement_days = Number(filters.last_movement_days);
+    }
+    if (filters.entry_year !== '' && filters.entry_year != null) {
+      params.entry_year = Number(filters.entry_year);
     }
 
     const { data } = await axios.get('/phase-out/mass-update/items', {
@@ -644,7 +672,7 @@ async function loadItems(page) {
       current_page: data.current_page ?? 1,
       last_page: data.last_page ?? 1,
       total: data.total ?? 0,
-      per_page: data.per_page ?? 15,
+      per_page: data.per_page ?? 20,
     };
     queueSelectAllSync();
     // Refresh names for any selected codes visible on this page
@@ -796,6 +824,48 @@ onBeforeUnmount(() => {
   line-height: 1.35;
 }
 
+.ulc-review-top-row {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.ulc-review-status-badge {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 999px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.ulc-review-status-label {
+  font-weight: 700;
+}
+
+.ulc-review-warning-inline {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.375rem;
+  margin: 0.5rem 0 0.75rem;
+  color: #6b7280;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.ulc-review-warning-inline-icon {
+  flex-shrink: 0;
+  line-height: 1;
+}
+
 .ulc-panel--left,
 .ulc-panel--right {
   align-self: start;
@@ -826,9 +896,10 @@ onBeforeUnmount(() => {
 }
 
 .ulc-table-viewport {
-  max-height: min(400px, 55vh);
+  max-height: none;
   min-height: 0;
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: visible;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -1208,7 +1279,7 @@ onBeforeUnmount(() => {
 .ulc-stepper-wrap {
   position: relative;
   z-index: 0;
-  overflow: hidden;
+  overflow: visible;
   background: #fff;
 }
 
@@ -1218,52 +1289,72 @@ onBeforeUnmount(() => {
   width: 100%;
 }
 
-.ulc-stepper__ribbon {
+.ulc-stepper__step {
+  --ulc-stepper-arrow: 1.125rem;
+  --ulc-stepper-bg: #e5e7eb;
   position: relative;
   display: flex;
-  flex: 1;
+  flex: 1 1 0;
   align-items: center;
   justify-content: center;
-  padding: 0.625rem 1.25rem;
-  text-align: center;
-}
-
-.ulc-stepper__ribbon--active {
-  z-index: 2;
-  margin-right: -1.125rem;
-  background: linear-gradient(180deg, #4a6fb5 0%, #3b5998 55%, #334b82 100%);
-  color: #fff;
-  padding-right: 1.75rem;
-  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 50%, calc(100% - 18px) 100%, 0 100%);
-  box-shadow: 2px 0 6px rgba(59, 89, 152, 0.28);
-}
-
-.ulc-stepper__ribbon--done {
-  z-index: 1;
-  margin-right: -1.125rem;
-  padding-right: 1.75rem;
-  background: linear-gradient(180deg, #e5e7eb 0%, #d1d5db 100%);
-  color: #4b5563;
-  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 50%, calc(100% - 18px) 100%, 0 100%);
-}
-
-.ulc-stepper__ribbon--active-follow {
-  z-index: 2;
-  margin-left: 0;
-  padding-left: 2rem;
-  background: linear-gradient(180deg, #4a6fb5 0%, #3b5998 55%, #334b82 100%);
-  color: #fff;
-  clip-path: polygon(18px 0, 100% 0, 100% 100%, 18px 100%, 0 50%);
-  box-shadow: 2px 0 6px rgba(59, 89, 152, 0.28);
-}
-
-.ulc-stepper__ribbon--next {
-  z-index: 1;
-  margin-left: 0;
-  padding-left: 2rem;
-  background: linear-gradient(180deg, #f3f4f6 0%, #e5e7eb 100%);
+  min-height: 3rem;
+  padding: 0.625rem 1rem;
+  background: var(--ulc-stepper-bg);
   color: #6b7280;
-  clip-path: polygon(18px 0, 100% 0, 100% 100%, 18px 100%, 0 50%);
+  text-align: center;
+  border-radius: 0;
+}
+
+.ulc-stepper__step.is-active {
+  --ulc-stepper-bg: #3b52d4;
+  z-index: 2;
+  color: #fff;
+}
+
+.ulc-stepper__step.is-active:not(.ulc-stepper__step--second)::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: calc(-1 * var(--ulc-stepper-arrow));
+  width: 0;
+  height: 0;
+  border-top: 1.5rem solid transparent;
+  border-bottom: 1.5rem solid transparent;
+  border-left: var(--ulc-stepper-arrow) solid var(--ulc-stepper-bg);
+}
+
+.ulc-stepper__step.is-inactive:not(.ulc-stepper__step--first)::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  border-top: 1.5rem solid transparent;
+  border-bottom: 1.5rem solid transparent;
+  border-left: var(--ulc-stepper-arrow) solid #f4f7f9;
+  transform: translateX(-1px);
+  z-index: 3;
+}
+
+.ulc-stepper__step--second {
+  padding-left: 1.5rem;
+}
+
+.ulc-stepper__step--first.is-active {
+  padding-right: 1.5rem;
+}
+
+.ulc-stepper__step--second.is-inactive {
+  z-index: 1;
+}
+
+.ulc-stepper__step--first.is-inactive {
+  z-index: 0;
+}
+
+.ulc-stepper__step--first.is-active::after {
+  z-index: 2;
 }
 
 .ulc-stepper__label {
@@ -1277,16 +1368,24 @@ onBeforeUnmount(() => {
     font-size: 0.75rem;
   }
 
-  .ulc-stepper__ribbon--active,
-  .ulc-stepper__ribbon--done {
-    padding-right: 1.25rem;
-    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%);
+  .ulc-stepper__step {
+    --ulc-stepper-arrow: 0.875rem;
+    padding-inline: 0.75rem;
   }
 
-  .ulc-stepper__ribbon--active-follow,
-  .ulc-stepper__ribbon--next {
-    padding-left: 1.5rem;
-    clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
+  .ulc-stepper__step.is-active:not(.ulc-stepper__step--second)::after,
+  .ulc-stepper__step.is-inactive:not(.ulc-stepper__step--first)::before {
+    border-top-width: 1.5rem;
+    border-bottom-width: 1.5rem;
+    border-left-width: var(--ulc-stepper-arrow);
+  }
+
+  .ulc-stepper__step--second {
+    padding-left: 1.125rem;
+  }
+
+  .ulc-stepper__step--first.is-active {
+    padding-right: 1.125rem;
   }
 }
 

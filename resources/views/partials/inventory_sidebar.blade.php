@@ -1,5 +1,8 @@
 @php
     $dashboardTab = request('tab', 'home');
+    if (! in_array($dashboardTab, ['home', 'movement', 'recent', 'inventory-accuracy', 'reserved-items'], true)) {
+        $dashboardTab = 'home';
+    }
     $isDashboard = request()->is('/');
     $isPhaseOutItems = request()->is('phase-out/items');
     $isPhaseOutUpdateLifecycle = request()->is('phase-out/update-lifecycle-status');
@@ -30,10 +33,6 @@
         <a href="{{ url('/?tab=home') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'home') }}" title="Home">
             <i class="fas fa-home inventory-sidebar__icon" aria-hidden="true"></i>
             <span class="inventory-sidebar-label">Home</span>
-        </a>
-        <a href="{{ url('/?tab=stock-alert') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'stock-alert') }}" title="Stock Levels Alerts">
-            <i class="fas fa-exclamation-triangle inventory-sidebar__icon" aria-hidden="true"></i>
-            <span class="inventory-sidebar-label">Stock Levels Alerts</span>
         </a>
         <a href="{{ url('/?tab=movement') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'movement') }}" title="Stock Movement">
             <i class="fas fa-list-alt inventory-sidebar__icon" aria-hidden="true"></i>
