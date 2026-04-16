@@ -23,7 +23,7 @@
   <style>
     @font-face {
       font-family: 'Poppins';
-      src: url({{ asset('font/Poppins/Poppins-Regular.ttf') }});
+      src: url('/font/Poppins/Poppins-Regular.ttf');
     }
 
     * {

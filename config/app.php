@@ -58,6 +58,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Force HTTPS (live)
+    |--------------------------------------------------------------------------
+    |
+    | When true, all HTTP requests are redirected to HTTPS and generated URLs
+    | use the https scheme. Set FORCE_HTTPS=true on production with APP_URL=https://...
+    |
+    */
+
+    'force_https' => (bool) env('FORCE_HTTPS', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

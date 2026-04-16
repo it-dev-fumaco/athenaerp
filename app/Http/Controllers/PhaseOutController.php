@@ -30,7 +30,7 @@ class PhaseOutController extends Controller
     public function massUpdateItems(MassUpdateItemsRequest $request, PhaseOutReportService $phaseOutReportService): JsonResponse
     {
         $data = $request->validated();
-        $perPage = (int) ($data['per_page'] ?? 20);
+        $perPage = (int) ($data['per_page'] ?? 15);
         $page = (int) ($data['page'] ?? 1);
 
         $filters = [];
