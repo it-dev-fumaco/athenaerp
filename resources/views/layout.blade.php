@@ -135,7 +135,7 @@
 			-webkit-transition: all 0.3s 1s ease-out;  
 			transition: all 0.3s 1s ease-out;
 		}
-		@font-face { font-family: 'Poppins'; src: url({{ asset('font/Poppins/Poppins-Regular.ttf') }}); } 
+		@font-face { font-family: 'Poppins'; src: url('/font/Poppins/Poppins-Regular.ttf'); } 
 		*:not(i):not(.fa){
 			font-family: 'Poppins' !important;
 			letter-spacing: 0.4px;
