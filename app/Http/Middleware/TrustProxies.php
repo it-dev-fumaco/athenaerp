@@ -10,12 +10,9 @@ class TrustProxies extends Middleware
     /**
      * The trusted proxies for this application.
      *
-     * Trust the immediate client (e.g. nginx) for X-Forwarded-* so HTTPS is
-     * detected correctly when TLS terminates at the edge.
-     *
      * @var array<int, string>|string|null
      */
-    protected $proxies = '*';
+    protected $proxies;
 
     /**
      * The headers that should be used to detect proxies.

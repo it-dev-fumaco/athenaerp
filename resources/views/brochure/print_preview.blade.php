@@ -28,7 +28,7 @@
 
         @font-face {
             font-family: 'Poppins';
-            src: url('/font/Poppins/Poppins-Regular.ttf');
+            src: url({{ asset('font/Poppins/Poppins-Regular.ttf') }});
         }
 
         *:not(i):not(.fa) {
