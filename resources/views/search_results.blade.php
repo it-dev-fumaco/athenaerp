@@ -7,10 +7,12 @@
 <style>
 	.search-result-thumb-wrap { overflow: hidden; }
 	.lifecycle-status-tag-blade {
+		position: absolute;
+		top: 6px;
+		left: 6px;
+		z-index: 2;
 		max-width: calc(100% - 8px);
 		display: inline-block;
-		vertical-align: middle;
-		margin-left: 8px;
 		padding: 2px 6px;
 		border-radius: 4px;
 		color: #fff;
@@ -303,6 +305,9 @@
 																	<a href="{{ $row['image'] }}" data-item-code="{{ $row['name'] }}" class="view-images d-block">
 																		<img src="{{ $row['image'] }}" class="img w-100">
 																	</a>
+																	@if ($lifecycleLabel)
+																		<span class="lifecycle-status-tag-blade" style="background-color: {{ $lifecycleBg }};">{{ $lifecycleLabel }}</span>
+																	@endif
 																</div>
 					
 																<div class="text-center mt-2 mb-1">
@@ -322,12 +327,7 @@
 															</div>
 															<div class="col-6 p-1">
 																<div class="col-md-12 m-0 text-justify" >
-																	<span class="font-italic item-class">
-																		{{ $row['item_classification'] }} - {!! $row['item_group'] !!}
-																		@if ($lifecycleLabel)
-																			<span class="lifecycle-status-tag-blade" style="background-color: {{ $lifecycleBg }};">{{ $lifecycleLabel }}</span>
-																		@endif
-																	</span>
+																	<span class="font-italic item-class" >{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span>
 																	@if (in_array($row['name'], $bundledItems))
 																		&nbsp;<span class="badge badge-info font-italic" style="font-size: 8pt;">Product Bundle&nbsp;</span>
 																	@endif
@@ -478,6 +478,9 @@
 																	<a href="{{ $row['image'] }}" data-item-code="{{ $row['name'] }}" class="view-images d-block">
 																		<img src="{{ $row['image'] }}" class="img w-100">
 																	</a>
+																	@if ($lifecycleLabel)
+																		<span class="lifecycle-status-tag-blade" style="background-color: {{ $lifecycleBg }};">{{ $lifecycleLabel }}</span>
+																	@endif
 																</div>
 
 																<a href="/get_item_details/{{ $row['name'] }}">
@@ -487,12 +490,7 @@
 																</a>
 															</div>
 															<div class="col-9 col-lg-10 col-xl-9">
-																<span class="font-italic item-class">
-																	{{ $row['item_classification'] }} - {!! $row['item_group'] !!}
-																	@if ($lifecycleLabel)
-																		<span class="lifecycle-status-tag-blade" style="background-color: {{ $lifecycleBg }};">{{ $lifecycleLabel }}</span>
-																	@endif
-																</span>
+																<span class="font-italic item-class">{{ $row['item_classification'] }} - {!! $row['item_group'] !!}</span>
 																@if (in_array($row['name'], $bundledItems))
 																	&nbsp;<span class="badge badge-info font-italic d-none d-md-inline p-0" style="font-size: 8pt;">&nbsp;Product Bundle&nbsp;</span>
 																@endif

@@ -435,7 +435,6 @@ const lastMovementOptions = [
 ];
 
 const LIFECYCLE_STATUSES = ['Active', 'For Phase Out', 'Discontinued', 'Obsolete'];
-const MASS_UPDATE_ITEMS_PER_PAGE = 15;
 
 const lifecycleStatuses = LIFECYCLE_STATUSES;
 const newStatus = ref('For Phase Out');
@@ -482,7 +481,7 @@ const meta = ref({
   current_page: 1,
   last_page: 1,
   total: 0,
-  per_page: MASS_UPDATE_ITEMS_PER_PAGE,
+  per_page: 20,
 });
 
 const listLoading = ref(false);
@@ -615,7 +614,7 @@ function resetFilters() {
   filters.last_movement_days = '';
   filters.entry_year = '';
   rows.value = [];
-  meta.value = { current_page: 1, last_page: 1, total: 0, per_page: MASS_UPDATE_ITEMS_PER_PAGE };
+  meta.value = { current_page: 1, last_page: 1, total: 0, per_page: 20 };
   listError.value = null;
   clearSelection();
 }
@@ -648,7 +647,7 @@ async function loadItems(page) {
   try {
     const params = {
       page: page || 1,
-      per_page: meta.value.per_page || MASS_UPDATE_ITEMS_PER_PAGE,
+      per_page: meta.value.per_page || 20,
     };
     if (filters.item_classification) {
       params.item_classification = filters.item_classification;
@@ -673,7 +672,7 @@ async function loadItems(page) {
       current_page: data.current_page ?? 1,
       last_page: data.last_page ?? 1,
       total: data.total ?? 0,
-      per_page: data.per_page ?? MASS_UPDATE_ITEMS_PER_PAGE,
+      per_page: data.per_page ?? 20,
     };
     queueSelectAllSync();
     // Refresh names for any selected codes visible on this page
@@ -693,9 +692,7 @@ async function loadItems(page) {
 
 async function loadFilterOptions() {
   try {
-    const { data } = await axios.get('/get_select_filters', {
-      params: { q: '', context: 'mass_update_lifecycle_status' },
-    });
+    const { data } = await axios.get('/get_select_filters', { params: { q: '' } });
     const classes = data.item_classification;
     const filtered = filterMassUpdateClassificationOptions(Array.isArray(classes) ? classes : []);
     classificationOptions.value = filtered;
@@ -1032,11 +1029,7 @@ onBeforeUnmount(() => {
 .ulc-review-table-wrap .ulc-data-table td:first-child {
   width: auto;
   text-align: left;
-  padding: 4px 14px;
-}
-
-.ulc-review-table-wrap .ulc-data-table :is(th, td) {
-  padding: 4px 14px;
+  padding: 10px 14px;
 }
 
 .ulc-table-th {
@@ -1060,14 +1053,14 @@ onBeforeUnmount(() => {
   font-size: 0.875rem;
 }
 
-/* Step 1 list: compact rows with unchanged font sizing */
+/* Step 1 list: taller rows (more vertical padding), same borders as base table */
 .ulc-data-table--step1 :is(th, td) {
-  padding: 4px 18px;
+  padding: 16px 18px;
 }
 
 .ulc-data-table--step1 th:first-child,
 .ulc-data-table--step1 td:first-child {
-  padding: 4px;
+  padding: 16px;
 }
 
 @media (max-width: 1024px) {

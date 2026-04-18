@@ -13,35 +13,12 @@ use App\Models\Warehouse;
 use App\Models\WarehouseAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class SelectFilterController extends Controller
 {
     public function getSelectFilters(Request $request)
     {
-        if ($request->get('context') === 'mass_update_lifecycle_status') {
-            $itemClassification = Cache::remember(
-                'select_filters.mass_update.item_classification.products',
-                now()->addHours(6),
-                fn () => ItemClassification::query()
-                    ->where('custom_is_product', 1)
-                    ->orderBy('name', 'asc')
-                    ->pluck('name')
-            );
-
-            $brandFilter = Brand::query()
-                ->where('name', 'LIKE', '%'.$request->q.'%')
-                ->selectRaw('name as id, name as text')
-                ->orderBy('name', 'asc')
-                ->get();
-
-            return response()->json([
-                'item_classification' => $itemClassification,
-                'brand' => $brandFilter,
-            ]);
-        }
-
         $warehouses = Warehouse::where('is_group', 0)
             ->where('disabled', 0)
             ->whereIn('category', ['Physical', 'Consigned'])
@@ -63,7 +40,6 @@ class SelectFilterController extends Controller
             ->get();
 
         $itemClassification = ItemClassification::query()
-            ->where('custom_is_product', 1)
             ->orderBy('name', 'asc')
             ->pluck('name');
 

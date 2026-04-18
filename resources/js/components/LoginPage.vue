@@ -96,16 +96,7 @@ function onSubmit() {
   loading.value = true;
   // Small delay so user sees loading state, then submit form (Laravel handles redirect/validation)
   setTimeout(() => {
-    if (formRef.value) {
-      try {
-        const currentProto = window?.location?.protocol || '';
-        const action = String(formRef.value.action || '');
-        if (currentProto === 'https:' && action.startsWith('http://')) {
-          formRef.value.action = action.replace(/^http:\/\//, 'https://');
-        }
-      } catch (_) {}
-      formRef.value.submit();
-    }
+    if (formRef.value) formRef.value.submit();
   }, 300);
 }
 </script>
