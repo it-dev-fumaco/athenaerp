@@ -140,9 +140,10 @@ class ConsignmentStockTransferController extends Controller
                 session()->flash('error', $consignmentResponse['exception']);
             }
 
+            $erpWeb = rtrim((string) config('erp.web_base_url'), '/');
             $data = [
                 'stock_entry_name' => $response['name'],
-                'link' => 'http://10.0.0.83/app/stock-entry/'.$response['name'],
+                'link' => $erpWeb !== '' ? $erpWeb.'/app/stock-entry/'.$response['name'] : '',
             ];
 
             return ApiResponse::success('Stock Entry has been created.', $data);

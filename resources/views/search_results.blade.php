@@ -7,12 +7,10 @@
 <style>
 	.search-result-thumb-wrap { overflow: hidden; }
 	.lifecycle-status-tag-blade {
-		position: absolute;
-		top: 6px;
-		left: 6px;
-		z-index: 2;
 		max-width: calc(100% - 8px);
 		display: inline-block;
+		vertical-align: middle;
+		margin-left: 8px;
 		padding: 2px 6px;
 		border-radius: 4px;
 		color: #fff;
@@ -305,9 +303,6 @@
 																	<a href="{{ $row['image'] }}" data-item-code="{{ $row['name'] }}" class="view-images d-block">
 																		<img src="{{ $row['image'] }}" class="img w-100">
 																	</a>
-																	@if ($lifecycleLabel)
-																		<span class="lifecycle-status-tag-blade" style="background-color: {{ $lifecycleBg }};">{{ $lifecycleLabel }}</span>
-																	@endif
 																</div>
 					
 																<div class="text-center mt-2 mb-1">
