@@ -16,6 +16,14 @@ FROM ${ESSEX_APP_IMAGE} AS essex_src
 FROM nginx:1.27-alpine
 WORKDIR /var/www/html
 
+RUN apk add --no-cache openssl \
+    && mkdir -p /etc/nginx/ssl \
+    && openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+        -keyout /etc/nginx/ssl/privkey.pem \
+        -out /etc/nginx/ssl/fullchain.pem \
+        -subj "/CN=athenaerp.local" \
+        -addext "subjectAltName=DNS:athenaerp.local,DNS:localhost,DNS:athena-uat.fumaco.local,IP:127.0.0.1"
+
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 # Athena: same public/ as the FPM container
 COPY --from=app_src /var/www/html/public ./public

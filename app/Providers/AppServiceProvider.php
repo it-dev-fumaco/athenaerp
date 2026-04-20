@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\CutoffDateService;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -26,5 +27,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         Paginator::defaultView('pagination::bootstrap-4');
+
+        $appUrl = (string) config('app.url', '');
+        if (config('app.force_https') || str_starts_with($appUrl, 'https://')) {
+            URL::forceScheme('https');
+        }
     }
 }

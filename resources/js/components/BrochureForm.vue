@@ -210,7 +210,7 @@ async function openPreviewModal() {
           ? data
           : status
             ? `Request failed (${status}). Check the browser console for details.`
-            : 'No response from server. Check your connection and that you are using the same URL (e.g. athenaerp.local) for the page.';
+            : 'No response from server. Check your connection and that you are using the same URL (e.g. https://athenaerp.local:8081) for the page.';
     errorMessage.value = msg;
     console.error('Brochure preview error:', status, data, err.message || err.code);
   } finally {
