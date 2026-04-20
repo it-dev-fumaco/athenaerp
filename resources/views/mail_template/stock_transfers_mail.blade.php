@@ -81,9 +81,7 @@
             </tbody>
         </table>
         
-        @if(config('erp.web_base_url'))
-        <p style="display:block;line-height:8px;">For more details, please log in to <a href="{{ config('erp.web_base_url') }}">{{ config('erp.web_base_url') }}</a></p>
-        @endif
+        <p style="display:block;line-height:8px;">For more details, please log in to http://10.0.0.83</p>
         <p style="display:block;line-height:8px;">Submitted By: <i>{{ $ste['user'] }}</i></p>
         <br>
         <hr>
