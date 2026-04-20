@@ -3,7 +3,14 @@
 
 # Ensure storage subdirs exist and are writable (FPM runs as root in Docker pool)
 if [ -d "storage" ]; then
-    mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache storage/logs bootstrap/cache 2>/dev/null || true
+    mkdir -p \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/framework/cache \
+        storage/framework/cache/data \
+        storage/fonts \
+        storage/logs \
+        bootstrap/cache 2>/dev/null || true
     chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
     chmod -R 775 storage bootstrap/cache 2>/dev/null || true
     chmod -R 777 storage/framework/sessions storage/framework/views storage/framework/cache storage/logs bootstrap/cache 2>/dev/null || true
