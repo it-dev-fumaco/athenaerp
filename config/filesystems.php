@@ -68,7 +68,6 @@ return [
             'secret' => env('UPCLOUD_SECRET_ACCESS_KEY'),
             'region' => env('UPCLOUD_DEFAULT_REGION'),
             'bucket' => env('UPCLOUD_BUCKET'),
-            'url' => env('UPCLOUD_URL'),
             'endpoint' => env('UPCLOUD_ENDPOINT'),
             'visibility' => 'public',
             'use_path_style_endpoint' => env('UPCLOUD_USE_PATH_STYLE_ENDPOINT', true),

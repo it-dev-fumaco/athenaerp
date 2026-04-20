@@ -6,12 +6,12 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Athena Inventory - Login</title>
-    <link rel="icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" href="/icon/favicon.png">
     @vite(['resources/js/login.js'])
     <style>
         @font-face {
             font-family: 'Montserrat';
-            src: url('/font/Montserrat/Montserrat-Bold.ttf');
+            src: url({{ asset('font/Montserrat/Montserrat-Bold.ttf') }});
         }
         *:not(i):not(.fa) {
             font-family: 'Montserrat', system-ui, sans-serif !important;
@@ -41,7 +41,7 @@
         data-csrf="{{ csrf_token() }}"
         data-error="{{ e($errors->first()) }}"
         data-initial-email="{{ e(old('email')) }}"
-        data-login-url="/login_user"
+        data-login-url="{{ url('/login_user') }}"
         data-logo-url="{{ \Illuminate\Support\Facades\Storage::disk('upcloud')->url('logo/fumaco-transparent.png') }}"
     ></div>
 </body>

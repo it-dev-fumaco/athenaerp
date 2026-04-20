@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="{{ asset('/updated/dist/css/adminlte.min.css') }}">
     
     <style>
-      @font-face { font-family: 'Poppins'; src: url('/font/Poppins/Poppins-Regular.ttf'); } 
+      @font-face { font-family: 'Poppins'; src: url({{ asset('font/Poppins/Poppins-Regular.ttf') }}); } 
       * {
         box-sizing: border-box;
         margin: 0;
