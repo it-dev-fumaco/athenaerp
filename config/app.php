@@ -54,19 +54,6 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
-    /*
-    |--------------------------------------------------------------------------
-    | Force HTTPS URL Scheme
-    |--------------------------------------------------------------------------
-    |
-    | When true, generated URLs use https. Set FORCE_HTTPS=true when terminating
-    | TLS (e.g. Docker nginx on 8081) or behind a reverse proxy that sets
-    | X-Forwarded-Proto. See also TrustProxies and SESSION_SECURE_COOKIE.
-    |
-    */
-
-    'force_https' => filter_var(env('FORCE_HTTPS', false), FILTER_VALIDATE_BOOLEAN),
-
     'asset_url' => env('ASSET_URL', null),
 
     /*
