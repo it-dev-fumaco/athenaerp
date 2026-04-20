@@ -45,7 +45,9 @@ return [
          * Times-Roman, Times-Bold, Times-BoldItalic, Times-Italic,
          * Symbol, ZapfDingbats.
          */
-        'font_dir' => storage_path('framework/cache/data'), // advised by dompdf (https://github.com/dompdf/dompdf/pull/782)
+        // Keep Dompdf font metrics separate from Laravel cache store directories.
+        // This directory must exist and be writable by the PHP process (see docker/entrypoint.sh).
+        'font_dir' => storage_path('fonts'),
 
         /**
          * The location of the DOMPDF font cache directory
@@ -55,7 +57,7 @@ return [
          *
          * Note: This directory must exist and be writable by the webserver process.
          */
-        'font_cache' => storage_path('framework/cache/data'),
+        'font_cache' => storage_path('fonts'),
 
         /**
          * The location of a temporary directory.
