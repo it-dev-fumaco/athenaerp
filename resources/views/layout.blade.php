@@ -1212,7 +1212,7 @@
     <div class="float-right d-none d-sm-inline">
     </div>
     <!-- Default to the left -->
-    <strong class="copyright">Copyright &copy; {{ now()->year }} <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
+    <strong class="copyright">Copyright &copy; {{ now()->year }} <a href="https://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
   </footer>
 </div>
 <!-- REQUIRED SCRIPTS -->

@@ -46,7 +46,9 @@
             </tbody>
         </table>
         
-        <p style="display:block;line-height:8px;">For more details, please log in to <a href="http://erp.fumaco.local">http://erp.fumaco.local</a></p>
+        @if(config('erp.web_base_url'))
+        <p style="display:block;line-height:8px;">For more details, please log in to <a href="{{ config('erp.web_base_url') }}">{{ config('erp.web_base_url') }}</a></p>
+        @endif
         <p style="display:block;line-height:8px;">Submitted By: <i>{{ $user }}</i></p>
         <br>
         <hr>

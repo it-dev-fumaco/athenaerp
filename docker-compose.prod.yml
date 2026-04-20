@@ -41,7 +41,8 @@ services:
     container_name: athenaerp-nginx
     restart: unless-stopped
     ports:
-      - "${FORWARD_HTTP_PORT:-80}:80"
+      - "${FORWARD_ATHENA_PORT:-8081}:8081"
+      - "${FORWARD_ESSEX_PORT:-8080}:8080"
     depends_on:
       - app
     networks:
