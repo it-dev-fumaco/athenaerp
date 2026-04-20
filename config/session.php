@@ -168,9 +168,7 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE') !== null
-        ? filter_var(env('SESSION_SECURE_COOKIE'), FILTER_VALIDATE_BOOLEAN)
-        : filter_var(env('FORCE_HTTPS', false), FILTER_VALIDATE_BOOLEAN),
+    'secure' => env('SESSION_SECURE_COOKIE'),
 
     /*
     |--------------------------------------------------------------------------

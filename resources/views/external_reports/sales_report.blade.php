@@ -334,7 +334,7 @@
 		<a href="https://adminlte.io">AdminLTE.io</a></strong> Version 3.1.0
     </div>
     <!-- Default to the left -->
-    <strong>Copyright &copy; 2020 <a href="https://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
+    <strong>Copyright &copy; 2020 <a href="http://fumaco.com">FUMACO Inc</a>.</strong> All rights reserved.
   </footer>
 </div>
 <!-- ./wrapper -->
