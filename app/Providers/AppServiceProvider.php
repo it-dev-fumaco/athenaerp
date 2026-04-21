@@ -2,9 +2,14 @@
 
 namespace App\Providers;
 
+use App\Models\Item;
+use App\Observers\ItemObserver;
 use App\Services\CutoffDateService;
+use App\Services\Typesense\TypesenseCollectionManager;
+use App\Services\Typesense\TypesenseItemIndexer;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
+use Typesense\Client;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -16,6 +21,13 @@ class AppServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->singleton(CutoffDateService::class, fn () => new CutoffDateService);
+
+        $this->app->singleton(Client::class, function () {
+            return new Client(config('typesense.client'));
+        });
+
+        $this->app->singleton(TypesenseCollectionManager::class);
+        $this->app->singleton(TypesenseItemIndexer::class);
     }
 
     /**
@@ -26,5 +38,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         Paginator::defaultView('pagination::bootstrap-4');
+
+        Item::observe(ItemObserver::class);
     }
 }

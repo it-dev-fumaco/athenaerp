@@ -1,6 +1,7 @@
 # AthenaERP - Nginx + PHP-FPM stack (standalone; no merge with base so port 80 goes to nginx only)
 # Use: docker compose -f docker-compose.fpm.yml up -d --build
-# App at http://localhost (port 80). If 80 in use, set FORWARD_HTTP_PORT=8080 in .env.
+# HTTPS: Athena → host FORWARD_ATHENA_PORT (default 8081 → TLS in container only).
+# Set APP_URL to https://athenaerp.local:8081 (or https://127.0.0.1:8081). Essex .env: https://essex.local:8080
 
 services:
   app:
