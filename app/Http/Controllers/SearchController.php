@@ -422,8 +422,6 @@ class SearchController extends Controller
             ]);
         }
 
-        \Illuminate\Support\Facades\View::share('searchResultsTotal', $totalItems);
-
         return view('search_results', compact('itemList', 'items', 'all', 'itemGroups', 'itemGroupArray', 'breadcrumbs', 'totalItems', 'root', 'allowedDepartment', 'userDepartment', 'bundledItems', 'noImgPlaceholder'));
     }
 

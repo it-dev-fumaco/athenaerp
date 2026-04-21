@@ -189,6 +189,17 @@ function syncSearchSummaryFromUrl(url) {
   });
 }
 
+/** Sync "Total result" badge in the card header tab row with JSON meta.total */
+function syncSearchResultsTotalFromMeta(meta) {
+  if (typeof document === 'undefined' || !meta || meta.total == null) return;
+  const n = Number(meta.total);
+  if (Number.isNaN(n)) return;
+  const formatted = n.toLocaleString();
+  document.querySelectorAll('[data-search-results-total]').forEach((el) => {
+    el.textContent = formatted;
+  });
+}
+
 /**
  * Update the search form fields to match the given search results URL so that
  * subsequent pagination (buildSearchUrl) uses the same params.
@@ -234,6 +245,7 @@ async function loadUrl(url) {
     const parsed = parseJsonFromResponse(data);
     if (parsed && Array.isArray(parsed.data) && parsed.meta) {
       apiData.value = parsed;
+      syncSearchResultsTotalFromMeta(parsed.meta);
       syncFormFromUrl(url);
     } else {
       // Only show initial HTML fallback; never show raw response text (headers + body)
