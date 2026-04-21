@@ -22,6 +22,12 @@ services:
       QUEUE_CONNECTION: ${QUEUE_CONNECTION:-redis}
       REDIS_HOST: ${REDIS_HOST:-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
+      TYPESENSE_ENABLED: ${TYPESENSE_ENABLED:-false}
+      TYPESENSE_HOST: ${TYPESENSE_HOST:-typesense}
+      TYPESENSE_PORT: ${TYPESENSE_PORT:-8108}
+      TYPESENSE_PROTOCOL: ${TYPESENSE_PROTOCOL:-http}
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-}
+      TYPESENSE_COLLECTION: ${TYPESENSE_COLLECTION:-items}
     volumes:
       - athenaerp-storage:/var/www/html/storage
     depends_on:
@@ -62,6 +68,12 @@ services:
       QUEUE_CONNECTION: ${QUEUE_CONNECTION:-redis}
       REDIS_HOST: ${REDIS_HOST:-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
+      TYPESENSE_ENABLED: ${TYPESENSE_ENABLED:-false}
+      TYPESENSE_HOST: ${TYPESENSE_HOST:-typesense}
+      TYPESENSE_PORT: ${TYPESENSE_PORT:-8108}
+      TYPESENSE_PROTOCOL: ${TYPESENSE_PROTOCOL:-http}
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-}
+      TYPESENSE_COLLECTION: ${TYPESENSE_COLLECTION:-items}
     command: ["php", "artisan", "queue:work", "--force", "--sleep=3", "--tries=3", "--timeout=120"]
     volumes:
       - athenaerp-storage:/var/www/html/storage
@@ -86,6 +98,12 @@ services:
       QUEUE_CONNECTION: ${QUEUE_CONNECTION:-redis}
       REDIS_HOST: ${REDIS_HOST:-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
+      TYPESENSE_ENABLED: ${TYPESENSE_ENABLED:-false}
+      TYPESENSE_HOST: ${TYPESENSE_HOST:-typesense}
+      TYPESENSE_PORT: ${TYPESENSE_PORT:-8108}
+      TYPESENSE_PROTOCOL: ${TYPESENSE_PROTOCOL:-http}
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-}
+      TYPESENSE_COLLECTION: ${TYPESENSE_COLLECTION:-items}
     command: ["php", "artisan", "schedule:work", "--no-interaction"]
     volumes:
       - athenaerp-storage:/var/www/html/storage
@@ -104,6 +122,19 @@ services:
     networks:
       - athenaerp
 
+  typesense:
+    image: typesense/typesense:26.0
+    container_name: athenaerp-typesense
+    restart: unless-stopped
+    environment:
+      TYPESENSE_DATA_DIR: /data
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-}
+      TYPESENSE_ENABLE_CORS: "true"
+    volumes:
+      - athenaerp-typesense:/data
+    networks:
+      - athenaerp
+
 networks:
   athenaerp:
     driver: bridge
@@ -111,4 +142,4 @@ networks:
 volumes:
   athenaerp-storage:
   athenaerp-redis:
-
+  athenaerp-typesense:
