@@ -65,19 +65,25 @@
 							</div>
 							<div id="accordion" class="col-12 card card-gray card-outline m-0 p-0 search-results-card" style="max-height: 80vh">
 								<div class="card m-0">
-									{{-- Two tabs per design: "+ Advanced Filters" and "Item List" (active) --}}
-									<ul class="nav nav-tabs card-header-tabs m-0 px-2 pt-2" role="tablist" style="border-bottom: 1px solid #dee2e6;">
-										<li class="nav-item">
-											<a class="nav-link collapsed" data-toggle="collapse" data-target="#collapseOne" aria-controls="collapseOne" href="#collapseOne" style="font-size: 11pt;">
-												<i class="fa fa-plus"></i>&nbsp;Advanced Filters
-											</a>
-										</li>
-										<li class="nav-item">
-											<span class="nav-link active" style="font-size: 11pt; cursor: default;">Item List</span>
-										</li>
-									</ul>
+									{{-- Tabs + total on one row (aligned with + Advanced Filters / Item List) --}}
+									<div class="d-flex flex-wrap align-items-end justify-content-between px-2 pt-2 border-bottom" style="border-color: #dee2e6;">
+										<ul class="nav nav-tabs card-header-tabs border-0 m-0 flex-grow-1" role="tablist">
+											<li class="nav-item">
+												<a class="nav-link collapsed" data-toggle="collapse" data-target="#collapseOne" aria-controls="collapseOne" href="#collapseOne" style="font-size: 11pt;">
+													<i class="fa fa-plus"></i>&nbsp;Advanced Filters
+												</a>
+											</li>
+											<li class="nav-item">
+												<span class="nav-link active mb-0" style="font-size: 11pt; cursor: default;">Item List</span>
+											</li>
+										</ul>
+										<div class="d-flex align-items-center flex-shrink-0 pb-2 pl-2 ml-auto" id="search-results-tab-total">
+											<span class="text-muted text-nowrap mr-1" style="font-size: 11pt;">Total result:</span>
+											<span class="badge badge-info text-nowrap px-2 py-1" style="font-size: 11pt;" data-search-results-total>{{ number_format($totalItems) }}</span>
+										</div>
+									</div>
 									<div class="row m-0 p-0 pt-2">
-										<div class="col-8">
+										<div class="col-12 col-xl-8">
 											@php
 												$promodiserRestriction = Auth::user()->user_group == 'Promodiser' ? 1 : 0;
 											@endphp
@@ -143,9 +149,6 @@
 													</div><!-- modal-content -->
 												</div><!-- modal-dialog -->
 											</div><!-- modal -->
-										</div>
-										<div class="col-4 text-right d-none d-xl-block">
-											{{-- TOTAL shown in results area (SearchResultsApp) to match design --}}
 										</div>
 									</div>
 									
@@ -284,7 +287,7 @@
 											</div>
 										</div> --}}
 										<div class="col-12 col-xl-{{ $itemGroups ? '10' : '12' }} order-2">
-										<div id="search-results-app" data-total="{{ (int) $totalItems }}">
+										<div id="search-results-app">
 										<div id="search-results-list">
 										<div class="col-12">
 											<div class="container-fluid m-0">

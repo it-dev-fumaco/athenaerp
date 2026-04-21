@@ -692,9 +692,9 @@
 		<nav class="navbar p-0 navbar-expand-lg navbar-light navbar-navy">
 			<div class="container-fluid">
 				<div class="d-flex flex-grow-1">
-					<div class="row w-100 p-0 m-0">
+					<div class="row w-100 p-0 m-0 align-items-center flex-nowrap">
 						<div class="col-xl-9 col-lg-10 col-md-12">
-							<div class="row">
+							<div class="row align-items-center">
 								<div class="col-10 col-md-9 col-xl-5 col-lg-3 text-sm-left">
 									<a href="/" class="navbar-brand">
 										<span class="brand-text brand-sm text-white d-sm-block d-md-none d-lg-none" style="font-size: 1.2rem;">Athena<b>ERP </b><span class="d-md-inline-block d-lg-none d-xl-inline-block"> Inventory</span></span>
@@ -749,23 +749,12 @@
 											</button>
 										</div>
 									</form>
-									@if (isset($searchResultsTotal) && $activePage === 'search_results')
-									<div class="px-2 pb-1 text-right">
-										<span class="text-white mr-1" style="font-size: 11pt;">TOTAL:</span>
-										<span class="badge px-2 py-1" style="font-size: 11pt; background: rgba(255,255,255,0.25); color: #fff;">
-											{{ number_format($searchResultsTotal) }}
-										</span>
-										<a href="#" class="btn btn-sm ml-1 px-2 py-1" style="background: rgba(255,255,255,0.25); color: #fff; border: none;" title="View options" aria-label="View options">
-											<i class="fas fa-list"></i>
-										</a>
-									</div>
-									@endif
 									<div id="suggesstion-box" class="mr-2 ml-2"></div>
 								</div>
 							</div>
 						</div>
-						<div class="d-none d-lg-block col-xl-3 col-lg-2 col-md-2 align-middle pb-0">
-							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-middle flex-row align-items-center justify-content-end w-100">
+						<div class="d-none d-lg-flex col-xl-3 col-lg-2 col-md-2 align-items-center justify-content-end pb-0">
+							<ul class="order-1 order-md-3 navbar-nav navbar-no-expand mb-0 align-items-center flex-row justify-content-end flex-nowrap w-100">
 								<li class="nav-item dropdown col-xl-10 text-right p-0" style="margin: auto">
 									@if (Auth::check())
 										<span class="d-none brochures-icon" style="position: relative;">

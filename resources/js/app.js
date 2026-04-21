@@ -165,9 +165,7 @@ if (itemProfileLifecycleStatusEl) {
 
 const searchResultsAppEl = document.getElementById('search-results-app');
 if (searchResultsAppEl) {
-    createApp(SearchResultsApp, {
-        totalItems: searchResultsAppEl.dataset.total ?? '0',
-    }).mount('#search-results-app');
+    createApp(SearchResultsApp).mount('#search-results-app');
 }
 
 const stockReservationModalsEl = document.getElementById('stock-reservation-modals-app');
