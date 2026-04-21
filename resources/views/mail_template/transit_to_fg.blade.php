@@ -46,7 +46,10 @@
             </tbody>
         </table>
         
-        <p style="display:block;line-height:8px;">For more details, please log in to <a href="http://erp.fumaco.local">http://erp.fumaco.local</a></p>
+        @php
+            $erpWebBaseUrl = rtrim(config('erp.web_base_url') ?? '', '/');
+        @endphp
+        <p style="display:block;line-height:8px;">For more details, please log in to <a href="{{ $erpWebBaseUrl }}">{{ $erpWebBaseUrl }}</a></p>
         <p style="display:block;line-height:8px;">Submitted By: <i>{{ $user }}</i></p>
         <br>
         <hr>

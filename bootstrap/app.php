@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'sanitation' => \App\Http\Middleware\SanitationMiddleware::class,
             'checkConnection' => \App\Http\Middleware\CheckConnectionMiddleware::class,
+            'inventoryLifecycleSettings' => \App\Http\Middleware\EnsureInventoryLifecycleSettingsAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

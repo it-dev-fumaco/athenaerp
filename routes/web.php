@@ -14,6 +14,7 @@ use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\GuideController;
 use App\Http\Controllers\ItemAttributeController;
 use App\Http\Controllers\ItemController;
+use App\Http\Controllers\ItemLifecycleStatusController;
 use App\Http\Controllers\ItemProfileController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MainController;
@@ -92,10 +93,18 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
         Route::post('/updateParentItem/{item_code}', [ItemAttributeController::class, 'updateParentItem']);
 
         Route::get('/', [MainController::class, 'index']);
-        Route::get('/phase-out/dashboard', [PhaseOutController::class, 'dashboard']);
-        Route::get('/phase-out/items', [PhaseOutController::class, 'items']);
-        Route::get('/phase-out/update-lifecycle-status', [PhaseOutController::class, 'updateLifecycleStatus']);
-        Route::get('/phase-out/mass-update/items', [PhaseOutController::class, 'massUpdateItems']);
+        Route::middleware('inventoryLifecycleSettings')->group(function () {
+            Route::get('/phase-out/dashboard', [PhaseOutController::class, 'dashboard']);
+            Route::get('/phase-out/items', [PhaseOutController::class, 'items']);
+            Route::get('/phase-out/update-lifecycle-status', [PhaseOutController::class, 'updateLifecycleStatus']);
+            Route::get('/phase-out/mass-update/items', [PhaseOutController::class, 'massUpdateItems']);
+            Route::post('/items/bulk-tag', BulkTagItemsController::class);
+            Route::post('/items/{item_code}/lifecycle-status', ItemLifecycleStatusController::class);
+            Route::get('/items/by-lifecycle-status', RetrieveItemsByLifecycleStatusController::class);
+            Route::get('/phase-out/report', [PhaseOutController::class, 'report']);
+            Route::get('/phase-out/summary', [PhaseOutController::class, 'summary']);
+            Route::get('/phase-out/tagged-items', [PhaseOutController::class, 'taggedItems']);
+        });
         Route::get('/search_results', [SearchController::class, 'searchResults']);
         Route::get('/search_results_images', [SearchController::class, 'searchResultsImages']);
         Route::get('/dashboard_data', [MainController::class, 'dashboardData']);
@@ -333,11 +342,6 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
         Route::get('/get_item_list', [ConsignmentController::class, 'getErpItems']);
         Route::get('/consignment_stock_movement/{item_code}', [ConsignmentController::class, 'consignmentStockMovement']);
 
-        Route::post('/items/bulk-tag', BulkTagItemsController::class);
-        Route::get('/items/by-lifecycle-status', RetrieveItemsByLifecycleStatusController::class);
-        Route::get('/phase-out/report', [PhaseOutController::class, 'report']);
-        Route::get('/phase-out/summary', [PhaseOutController::class, 'summary']);
-        Route::get('/phase-out/tagged-items', [PhaseOutController::class, 'taggedItems']);
     });
 
     Route::get('/brochure', [BrochureController::class, 'viewForm'])->name('brochure');

@@ -11,9 +11,11 @@
             <div class="border border-outline-secondary">
               <div class="row m-0">
                 <div class="col-1 p-1">
-                  <a :href="row.image" :data-item-code="row.name" class="view-images">
-                    <img :src="row.image" class="img w-100" alt="">
-                  </a>
+                  <div class="search-result-thumb-wrap position-relative">
+                    <a :href="row.image" :data-item-code="row.name" class="view-images d-block">
+                      <img :src="row.image" class="img w-100" alt="">
+                    </a>
+                  </div>
                   <div class="text-center mt-2 mb-1 d-flex flex-row justify-content-center flex-wrap gap-1">
                     <a :href="'/get_item_details/' + row.name" class="btn btn-primary btn-xs" title="View Item Details">
                       <i class="fa fa-search"></i>
@@ -25,10 +27,15 @@
                 </div>
                 <div class="col-6 p-1">
                   <div class="col-md-12 m-0 text-justify">
-                    <span class="font-italic item-class">{{ row.item_classification }} - {{ row.item_group }}</span>
+                    <span class="font-italic item-class">
+                      {{ row.item_classification }} - {{ row.item_group }}
+                      <LifecycleStatusTag :status="row.lifecycleStatus" class="search-result-status-inline" />
+                    </span>
                     <span v-if="bundledItems.includes(row.name)" class="badge badge-info font-italic ml-1" style="font-size: 8pt;">Product Bundle</span>
                     <br/>
-                    <span class="text-justify item-name" style="font-size: 10pt !important;"><b>{{ row.name }}</b> - <span v-html="row.description"></span></span>
+                    <span class="text-justify item-name" style="font-size: 10pt !important;">
+                      <b>{{ row.name }}</b> - <span v-html="row.description"></span>
+                    </span>
                     <template v-if="row.package_dimension">
                       <dl class="mt-3 mb-0">
                         <dt style="font-size: 9pt;" class="text-muted">Package Dimension</dt>
@@ -104,6 +111,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
+import LifecycleStatusTag from '@/components/LifecycleStatusTag.vue';
 
 const initialHtml = ref(typeof window !== 'undefined' && window.__SEARCH_RESULTS_INITIAL_HTML__ ? window.__SEARCH_RESULTS_INITIAL_HTML__ : '');
 const apiData = ref(null);
@@ -181,6 +189,17 @@ function syncSearchSummaryFromUrl(url) {
   });
 }
 
+/** Sync "Total result" badge in the card header tab row with JSON meta.total */
+function syncSearchResultsTotalFromMeta(meta) {
+  if (typeof document === 'undefined' || !meta || meta.total == null) return;
+  const n = Number(meta.total);
+  if (Number.isNaN(n)) return;
+  const formatted = n.toLocaleString();
+  document.querySelectorAll('[data-search-results-total]').forEach((el) => {
+    el.textContent = formatted;
+  });
+}
+
 /**
  * Update the search form fields to match the given search results URL so that
  * subsequent pagination (buildSearchUrl) uses the same params.
@@ -226,6 +245,7 @@ async function loadUrl(url) {
     const parsed = parseJsonFromResponse(data);
     if (parsed && Array.isArray(parsed.data) && parsed.meta) {
       apiData.value = parsed;
+      syncSearchResultsTotalFromMeta(parsed.meta);
       syncFormFromUrl(url);
     } else {
       // Only show initial HTML fallback; never show raw response text (headers + body)
@@ -296,3 +316,16 @@ onUnmounted(() => {
   document.removeEventListener('click', handleDocumentClick, true);
 });
 </script>
+
+<style scoped>
+.search-result-status-inline {
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.search-result-thumb-wrap {
+  overflow: hidden;
+}
+</style>

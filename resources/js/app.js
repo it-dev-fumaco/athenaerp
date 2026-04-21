@@ -30,6 +30,7 @@ import ItemAttributeUpdateForm from './components/ItemAttributeUpdateForm.vue';
 import PhaseOutDashboardApp from './components/PhaseOutDashboardApp.vue';
 import PhaseOutItemsApp from './components/PhaseOutItemsApp.vue';
 import UpdateLifecycleStatusApp from './components/UpdateLifecycleStatusApp.vue';
+import ItemProfileLifecycleStatusApp from './components/item-profile/ItemProfileLifecycleStatusApp.vue';
 
 const dashboardAppEl = document.getElementById('dashboard-app');
 if (dashboardAppEl) {
@@ -139,11 +140,32 @@ if (itemProfileConsignmentStockMovementEl) {
     }).mount('#item-profile-consignment-stock-movement');
 }
 
+const itemProfileLifecycleStatusEl = document.getElementById('item-profile-lifecycle-status-app');
+if (itemProfileLifecycleStatusEl) {
+    let statusOptions = [];
+    try {
+        statusOptions = JSON.parse(itemProfileLifecycleStatusEl.dataset.statusOptions || '[]');
+    } catch (e) {
+        statusOptions = [];
+    }
+
+    createApp(ItemProfileLifecycleStatusApp, {
+        itemCode: itemProfileLifecycleStatusEl.dataset.itemCode || '',
+        itemName: itemProfileLifecycleStatusEl.dataset.itemName || '',
+        itemTag: itemProfileLifecycleStatusEl.dataset.itemTag || '',
+        currentStock: Number(itemProfileLifecycleStatusEl.dataset.currentStock || 0),
+        lastMovement: itemProfileLifecycleStatusEl.dataset.lastMovement || '—',
+        lastPurchase: itemProfileLifecycleStatusEl.dataset.lastPurchase || '—',
+        currentStatus: itemProfileLifecycleStatusEl.dataset.currentStatus || '',
+        lastUpdatedLabel: itemProfileLifecycleStatusEl.dataset.lastUpdatedLabel || 'Last updated',
+        lastUpdatedDetail: itemProfileLifecycleStatusEl.dataset.lastUpdatedDetail || '—',
+        statusOptions,
+    }).mount('#item-profile-lifecycle-status-app');
+}
+
 const searchResultsAppEl = document.getElementById('search-results-app');
 if (searchResultsAppEl) {
-    createApp(SearchResultsApp, {
-        totalItems: searchResultsAppEl.dataset.total ?? '0',
-    }).mount('#search-results-app');
+    createApp(SearchResultsApp).mount('#search-results-app');
 }
 
 const stockReservationModalsEl = document.getElementById('stock-reservation-modals-app');

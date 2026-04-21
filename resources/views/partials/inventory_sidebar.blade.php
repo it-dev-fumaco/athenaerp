@@ -1,7 +1,9 @@
 @php
     $dashboardTab = request('tab', 'home');
+    if (! in_array($dashboardTab, ['home', 'movement', 'recent', 'inventory-accuracy', 'reserved-items'], true)) {
+        $dashboardTab = 'home';
+    }
     $isDashboard = request()->is('/');
-    $isPhaseOutDashboard = request()->is('phase-out/dashboard');
     $isPhaseOutItems = request()->is('phase-out/items');
     $isPhaseOutUpdateLifecycle = request()->is('phase-out/update-lifecycle-status');
 
@@ -32,10 +34,6 @@
             <i class="fas fa-home inventory-sidebar__icon" aria-hidden="true"></i>
             <span class="inventory-sidebar-label">Home</span>
         </a>
-        <a href="{{ url('/?tab=stock-alert') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'stock-alert') }}" title="Stock Levels Alerts">
-            <i class="fas fa-exclamation-triangle inventory-sidebar__icon" aria-hidden="true"></i>
-            <span class="inventory-sidebar-label">Stock Levels Alerts</span>
-        </a>
         <a href="{{ url('/?tab=movement') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'movement') }}" title="Stock Movement">
             <i class="fas fa-list-alt inventory-sidebar__icon" aria-hidden="true"></i>
             <span class="inventory-sidebar-label">Stock Movement</span>
@@ -53,21 +51,21 @@
             <span class="inventory-sidebar-label">Reserved Items</span>
         </a>
 
-        <div class="inventory-sidebar__divider inventory-sidebar-label" role="separator"></div>
-        <p class="inventory-sidebar__section-label inventory-sidebar-label">Item Lifecycle Settings</p>
+        @auth
+            @if(in_array(Auth::user()->user_group, \App\Http\Middleware\EnsureInventoryLifecycleSettingsAccess::ALLOWED_USER_GROUPS))
+                <div class="inventory-sidebar__divider inventory-sidebar-label" role="separator"></div>
+                <p class="inventory-sidebar__section-label inventory-sidebar-label">Item Lifecycle Settings</p>
 
-        <a href="{{ url('/phase-out/dashboard') }}" class="{{ $navClasses($isPhaseOutDashboard) }}" title="Phase-Out Dashboard">
-            <i class="fas fa-chart-pie inventory-sidebar__icon" aria-hidden="true"></i>
-            <span class="inventory-sidebar-label">Phase-Out Dashboard</span>
-        </a>
-        <a href="{{ url('/phase-out/items') }}" class="{{ $navClasses($isPhaseOutItems) }}" title="Phase-Out Items">
-            <i class="fas fa-box-open inventory-sidebar__icon" aria-hidden="true"></i>
-            <span class="inventory-sidebar-label">Phase-Out Items</span>
-        </a>
-        <a href="{{ url('/phase-out/update-lifecycle-status') }}" class="{{ $navClasses($isPhaseOutUpdateLifecycle) }}" title="Update Lifecycle Status">
-            <i class="fas fa-arrows-rotate inventory-sidebar__icon" aria-hidden="true"></i>
-            <span class="inventory-sidebar-label">Update Lifecycle Status</span>
-        </a>
+                <a href="{{ url('/phase-out/items') }}" class="{{ $navClasses($isPhaseOutItems) }}" title="Phase-Out Items">
+                    <i class="fas fa-box-open inventory-sidebar__icon" aria-hidden="true"></i>
+                    <span class="inventory-sidebar-label">Phase-Out Items</span>
+                </a>
+                <a href="{{ url('/phase-out/update-lifecycle-status') }}" class="{{ $navClasses($isPhaseOutUpdateLifecycle) }}" title="Update Lifecycle Status">
+                    <i class="fas fa-arrows-rotate inventory-sidebar__icon" aria-hidden="true"></i>
+                    <span class="inventory-sidebar-label">Update Lifecycle Status</span>
+                </a>
+            @endif
+        @endauth
     </nav>
 
     <div class="inventory-sidebar__footer">

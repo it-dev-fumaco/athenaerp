@@ -346,6 +346,9 @@ class SearchController extends Controller
                 $packageDimension .= '<span class="text-muted">Height:</span> <b>'.(data_get($row, 'package_height', 0) > 0 ? (float) data_get($row, 'package_height').' '.data_get($row, 'package_dimension_uom') : '-').'</b>';
             }
 
+            $lifecycleRaw = data_get($row, 'lifecycle_status');
+            $lifecycleStatus = filled($lifecycleRaw) ? trim((string) $lifecycleRaw) : null;
+
             $itemList[] = [
                 'name' => $itemCode,
                 'description' => data_get($row, 'description'),
@@ -358,6 +361,7 @@ class SearchController extends Controller
                 'consignment_warehouses' => $consignmentWarehouses,
                 'default_price' => $defaultPrice,
                 'package_dimension' => $packageDimension,
+                'lifecycleStatus' => $lifecycleStatus,
             ];
         }
 
@@ -417,8 +421,6 @@ class SearchController extends Controller
                 'show_price' => $showPrice,
             ]);
         }
-
-        \Illuminate\Support\Facades\View::share('searchResultsTotal', $totalItems);
 
         return view('search_results', compact('itemList', 'items', 'all', 'itemGroups', 'itemGroupArray', 'breadcrumbs', 'totalItems', 'root', 'allowedDepartment', 'userDepartment', 'bundledItems', 'noImgPlaceholder'));
     }

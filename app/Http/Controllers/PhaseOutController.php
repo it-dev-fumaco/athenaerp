@@ -30,7 +30,7 @@ class PhaseOutController extends Controller
     public function massUpdateItems(MassUpdateItemsRequest $request, PhaseOutReportService $phaseOutReportService): JsonResponse
     {
         $data = $request->validated();
-        $perPage = (int) ($data['per_page'] ?? 15);
+        $perPage = (int) ($data['per_page'] ?? 20);
         $page = (int) ($data['page'] ?? 1);
 
         $filters = [];
@@ -40,11 +40,11 @@ class PhaseOutController extends Controller
         if (! empty($data['item_classification'])) {
             $filters['item_classification'] = $data['item_classification'];
         }
-        if (array_key_exists('last_movement_days_min', $data) && $data['last_movement_days_min'] !== null) {
-            $filters['last_movement_days_min'] = (int) $data['last_movement_days_min'];
+        if (array_key_exists('last_movement_days', $data) && $data['last_movement_days'] !== null) {
+            $filters['last_movement_days'] = (int) $data['last_movement_days'];
         }
-        if (array_key_exists('last_movement_days_max', $data) && $data['last_movement_days_max'] !== null) {
-            $filters['last_movement_days_max'] = (int) $data['last_movement_days_max'];
+        if (array_key_exists('entry_year', $data) && $data['entry_year'] !== null) {
+            $filters['entry_year'] = (int) $data['entry_year'];
         }
 
         $paginator = $phaseOutReportService->paginateMassUpdateItems($perPage, $page, $filters);
@@ -62,7 +62,8 @@ class PhaseOutController extends Controller
                     ? (int) $item->days_since_last_movement
                     : null,
                 'last_movement_date' => $item->last_stock_ledger_posting ?? null,
-                'last_purchase' => null,
+                'entry_date' => $item->entry_date ?? null,
+                'last_purchase' => $item->last_purchase_receipt_date ?? null,
             ];
         }
 
@@ -93,18 +94,34 @@ class PhaseOutController extends Controller
                 'total_units' => 0.0,
                 'total_stock_value' => 0.0,
                 'by_brand' => [],
+                'distinct_warehouse_count' => 0,
+                'warehouses' => [],
             ]);
         }
     }
 
     public function taggedItems(PhaseOutTaggedItemsRequest $request, PhaseOutReportService $phaseOutReportService): JsonResponse
     {
-        $perPage = (int) ($request->input('per_page') ?? config('phase_out.tagged_per_page'));
-        $page = (int) ($request->input('page') ?? 1);
+        $data = $request->validated();
+        $perPage = (int) ($data['per_page'] ?? config('phase_out.tagged_per_page'));
+        $page = (int) ($data['page'] ?? 1);
 
-        return response()->json(
-            $phaseOutReportService->paginateTaggedEnriched($perPage, $page)
+        $filters = array_filter(
+            [
+                'search' => isset($data['search']) ? trim((string) $data['search']) : null,
+                'warehouse' => isset($data['warehouse']) ? trim((string) $data['warehouse']) : null,
+                'brand' => isset($data['brand']) ? trim((string) $data['brand']) : null,
+            ],
+            fn ($v) => $v !== null && $v !== ''
         );
+
+        $paginator = $phaseOutReportService->paginateTaggedEnriched($perPage, $page, $filters);
+        $aggregates = $phaseOutReportService->aggregateTaggedEnriched($filters);
+
+        return response()->json(array_merge(
+            $paginator->toArray(),
+            ['aggregates' => $aggregates]
+        ));
     }
 
     public function report(PhaseOutReportRequest $request, PhaseOutReportService $phaseOutReportService): JsonResponse

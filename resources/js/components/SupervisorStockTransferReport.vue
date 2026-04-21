@@ -157,6 +157,13 @@ const counts = reactive({
   'Item Return': '0',
 });
 
+const REPORT_CACHE_TTL_MS = 10 * 60 * 1000;
+const COUNTS_CACHE_TTL_MS = 5 * 60 * 1000;
+
+/** @type {Map<string, { html: string, fetchedAt: number }>} */
+const reportCache = new Map();
+const countsFetchedAt = ref(0);
+
 const filters = reactive({
   storeTransfer: { q: '', source_warehouse: '', target_warehouse: '', status: '' },
   pullOut: { q: '', source_warehouse: '', status: '' },
@@ -173,7 +180,11 @@ async function fetchStores() {
   }
 }
 
-async function fetchCounts() {
+async function fetchCounts({ forceRefresh = false } = {}) {
+  const now = Date.now();
+  if (!forceRefresh && countsFetchedAt.value && now - countsFetchedAt.value < COUNTS_CACHE_TTL_MS) {
+    return;
+  }
   const purposes = ['Store Transfer', 'Pull Out', 'Item Return'];
   for (const purpose of purposes) {
     try {
@@ -183,6 +194,7 @@ async function fetchCounts() {
       counts[purpose] = '0';
     }
   }
+  countsFetchedAt.value = now;
 }
 
 function getFilterParams(purpose) {
@@ -214,7 +226,23 @@ function getFilterParams(purpose) {
   return {};
 }
 
-async function loadReport(purpose, page = 1) {
+function cacheKey(purpose, page) {
+  return JSON.stringify({ purpose, page, filters: getFilterParams(purpose) });
+}
+
+function isFresh(entry, ttlMs) {
+  return entry && typeof entry.fetchedAt === 'number' && (Date.now() - entry.fetchedAt) < ttlMs;
+}
+
+async function loadReport(purpose, page = 1, { forceRefresh = false } = {}) {
+  const key = cacheKey(purpose, page);
+  const cached = reportCache.get(key);
+  if (!forceRefresh && isFresh(cached, REPORT_CACHE_TTL_MS)) {
+    tableHtml.value = cached.html;
+    loading.value = false;
+    return;
+  }
+
   loading.value = true;
   try {
     const params = { page, ...getFilterParams(purpose) };
@@ -226,6 +254,7 @@ async function loadReport(purpose, page = 1) {
       const { data } = await axios.get(`/stocks_report/list?${query}`, { responseType: 'text' });
       tableHtml.value = data;
     }
+    reportCache.set(key, { html: tableHtml.value, fetchedAt: Date.now() });
   } catch (err) {
     const message = err.response?.data?.message || 'Failed to load.';
     tableHtml.value = `<div class="alert alert-danger m-2">${message}</div>`;
@@ -235,7 +264,7 @@ async function loadReport(purpose, page = 1) {
 }
 
 function applyFilters(purpose) {
-  loadReport(purpose, 1);
+  loadReport(purpose, 1, { forceRefresh: true });
 }
 
 function switchTab(purpose) {
@@ -264,7 +293,7 @@ function onContentClick(event) {
 
 onMounted(async () => {
   await fetchStores();
-  await fetchCounts();
+  await fetchCounts({ forceRefresh: true });
   await loadReport(activeTab.value, 1);
 });
 </script>
