@@ -69,6 +69,27 @@
             </span>
           </button>
         </form>
+
+        <template v-if="showMicrosoftLogin">
+          <div class="divider" role="presentation">
+            <span>or</span>
+          </div>
+
+          <a
+            v-if="microsoftLoginUrl"
+            class="btn-microsoft"
+            :href="microsoftLoginUrl"
+            :aria-disabled="loading ? 'true' : 'false'"
+          >
+            <span class="ms-icon" aria-hidden="true">
+              <span class="sq red"></span>
+              <span class="sq green"></span>
+              <span class="sq blue"></span>
+              <span class="sq yellow"></span>
+            </span>
+            Sign in with Microsoft
+          </a>
+        </template>
       </div>
     </section>
   </div>
@@ -82,7 +103,9 @@ const props = defineProps({
   initialError: { type: String, default: '' },
   initialEmail: { type: String, default: '' },
   loginUrl: { type: String, default: '/login_user' },
+  microsoftLoginUrl: { type: String, default: '/auth/microsoft/redirect' },
   logoUrl: { type: String, default: '' },
+  showMicrosoftLogin: { type: Boolean, default: true },
 });
 
 const formRef = ref(null);
@@ -251,6 +274,58 @@ function onSubmit() {
   cursor: wait;
   opacity: 0.9;
 }
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+  opacity: 0.85;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  height: 1px;
+  flex: 1;
+  background: rgba(255, 255, 255, 0.18);
+}
+.divider span {
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.btn-microsoft {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 0.9rem 1.1rem;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+  color: #111827;
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+.btn-microsoft:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+.ms-icon {
+  display: grid;
+  grid-template-columns: repeat(2, 10px);
+  grid-template-rows: repeat(2, 10px);
+  gap: 2px;
+}
+.sq {
+  width: 10px;
+  height: 10px;
+  display: block;
+}
+.sq.red { background: #f25022; }
+.sq.green { background: #7fba00; }
+.sq.blue { background: #00a4ef; }
+.sq.yellow { background: #ffb900; }
 .btn-loading {
   display: inline-flex;
   align-items: center;

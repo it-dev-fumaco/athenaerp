@@ -13,7 +13,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-C9VsESvZ.js",
+    "file": "assets/app-B_Kss0NV.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -22,7 +22,7 @@
       "__plugin-vue_export-helper-DlAUqK2U.js"
     ],
     "css": [
-      "assets/app-V_DctJP9.css"
+      "assets/app-CaBkm1SR.css"
     ]
   },
   "resources/js/brochure.js": {
@@ -35,7 +35,7 @@
     ]
   },
   "resources/js/login.js": {
-    "file": "assets/login-B8HTAikm.js",
+    "file": "assets/login-ChyLgZTd.js",
     "name": "login",
     "src": "resources/js/login.js",
     "isEntry": true,
@@ -44,7 +44,7 @@
       "__plugin-vue_export-helper-DlAUqK2U.js"
     ],
     "css": [
-      "assets/login-DPObMFL2.css"
+      "assets/login-CXIK-lsD.css"
     ]
   }
 }
