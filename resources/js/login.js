@@ -12,6 +12,8 @@ if (loginEl) {
     initialError: loginEl.dataset.error || '',
     initialEmail: loginEl.dataset.initialEmail || '',
     loginUrl: loginEl.dataset.loginUrl || '/login_user',
+    microsoftLoginUrl: loginEl.dataset.microsoftLoginUrl || '/auth/microsoft/redirect',
     logoUrl: loginEl.dataset.logoUrl || '',
+    showMicrosoftLogin: loginEl.dataset.showMicrosoft !== '0',
   }).mount('#login-app');
 }

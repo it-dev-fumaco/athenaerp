@@ -16,7 +16,14 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'wh_user', 'frappe_userid', 'full_name', 'email', 'password',
+        'name',
+        'wh_user',
+        'frappe_userid',
+        'full_name',
+        'password',
+        'microsoft_id',
+        'microsoft_email',
+        'microsoft_name',
     ];
 
     /**
@@ -33,9 +40,7 @@ class User extends Authenticatable
      *
      * @var array
      */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
+    protected $casts = [];
 
     protected $table = 'tabWarehouse Users';
 

@@ -108,4 +108,17 @@ return [
 
     'password_timeout' => 10800,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Login UI by host
+    |--------------------------------------------------------------------------
+    |
+    | Used by the login view to show Microsoft SSO-only vs email/password login.
+    |
+    */
+
+    'sso_domain' => env('AUTH_SSO_DOMAIN', 'athena.fumaco.net'),
+
+    'password_login_domain' => env('AUTH_PASSWORD_LOGIN_DOMAIN', 'athena.fumaco.com'),
+
 ];

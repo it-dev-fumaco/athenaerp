@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\MicrosoftAuthController;
 use App\Http\Controllers\BrochureController;
 use App\Http\Controllers\BulkTagItemsController;
 use App\Http\Controllers\Consignment\ConsignmentBeginningInventoryController;
@@ -46,6 +47,11 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
         return redirect('/login');
     });
     Route::post('/login_user', [LoginController::class, 'login']);
+
+    Route::get('/auth/microsoft/redirect', [MicrosoftAuthController::class, 'redirect'])->name('auth.microsoft.redirect');
+    // Same handler for with/without trailing slash — do NOT 302 between them or nginx slash rules can cause ERR_TOO_MANY_REDIRECTS.
+    Route::get('/auth/microsoft/callback', [MicrosoftAuthController::class, 'callback'])->name('auth.microsoft.callback');
+    Route::get('/auth/microsoft/callback/', [MicrosoftAuthController::class, 'callback']);
 
     Route::get('/update', [ItemAttributeController::class, 'updateLogin'])->name('update_login');
     Route::post('/U_login_user', [ItemAttributeController::class, 'login']);

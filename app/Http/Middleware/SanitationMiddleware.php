@@ -15,6 +15,11 @@ class SanitationMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
+        // OAuth query params (code, state) must not be passed through strip_tags — it can corrupt tokens.
+        if ($request->is('auth/microsoft/*')) {
+            return $next($request);
+        }
+
         $input = $request->all();
 
         array_walk_recursive($input, function (&$input) {
