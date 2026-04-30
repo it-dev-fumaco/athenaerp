@@ -28,6 +28,11 @@ services:
       TYPESENSE_PROTOCOL: ${TYPESENSE_PROTOCOL:-http}
       TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-}
       TYPESENSE_COLLECTION: ${TYPESENSE_COLLECTION:-items}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-athenaERP-staging}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://10.0.0.53:4318}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_INSTRUMENTATION_DB_ENABLED: ${OTEL_INSTRUMENTATION_DB_ENABLED:-true}
+      OTEL_INSTRUMENTATION_REDIS_ENABLED: ${OTEL_INSTRUMENTATION_REDIS_ENABLED:-true}
     volumes:
       - athenaerp-storage:/var/www/html/storage
     depends_on:
@@ -43,11 +48,16 @@ services:
       dockerfile: docker/nginx/Dockerfile
       args:
         APP_IMAGE: ${ATHENAERP_APP_IMAGE:-athenaerp-app-fpm:latest}
-        ESSEX_APP_IMAGE: ${ESSEX_APP_IMAGE:-devfumaco/essex-app:essexV4}
+        ESSEX_APP_IMAGE: ${ESSEX_APP_IMAGE:-devfumaco/essex-app:v4}
+        LMS_APP_IMAGE: ${LMS_APP_IMAGE:-devfumaco/lms-app:staging}
     container_name: athenaerp-nginx
     restart: unless-stopped
     ports:
       - "${FORWARD_HTTP_PORT:-80}:80"
+      - "8081:80"
+      - "${FORWARD_LMS_HTTP_PORT:-8082}:8082"
+    volumes:
+      - lms_storage_public:/var/www/lms/public/storage:ro
     depends_on:
       - app
     networks:
@@ -143,3 +153,6 @@ volumes:
   athenaerp-storage:
   athenaerp-redis:
   athenaerp-typesense:
+  # LMS `storage/app/public` (symlink target) for nginx to serve /storage/*. Fixed name so a separate LMS compose can use the same volume.
+  lms_storage_public:
+    name: lms_storage_public

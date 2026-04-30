@@ -2,6 +2,8 @@
 # Use: docker compose -f docker-compose.fpm.yml up -d --build
 # HTTPS: Athena → host FORWARD_ATHENA_PORT (default 8081 → TLS in container only).
 # Set APP_URL to https://athenaerp.local:8081 (or https://127.0.0.1:8081). Essex .env: https://essex.local:8080
+#
+# Laravel LMS (lms.local): same pattern as Essex — Nginx mounts LMS repo; PHP runs in `lms-app` from laravel-lms/docker-compose.yml on network `athenaerp`.
 
 services:
   app:
@@ -48,6 +50,11 @@ services:
       MAIL_USERNAME: null
       MAIL_PASSWORD: null
       MAIL_ENCRYPTION: null
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-my-laravel-app}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://10.0.0.53:4318}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_INSTRUMENTATION_DB_ENABLED: ${OTEL_INSTRUMENTATION_DB_ENABLED:-true}
+      OTEL_INSTRUMENTATION_REDIS_ENABLED: ${OTEL_INSTRUMENTATION_REDIS_ENABLED:-true}
     depends_on:
       mysql:
         condition: service_healthy
@@ -66,6 +73,9 @@ services:
       - .:/var/www/html:ro,delegated
       # Essex (essex.local): nginx serves public/ from host; PHP runs in essex-app container.
       - ${ESSEX_PATH:-../essex}:/var/www/essex:ro
+      # LMS (lms.local): static from host; PHP in lms-app (start from laravel-lms repo).
+      # If lms.local returns nginx 404, mount is often wrong/empty: set LMS_PATH in .env (Windows: LMS_PATH=C:/Users/.../laravel-lms) then docker compose up -d nginx
+      - ${LMS_PATH:-../laravel-lms}:/var/www/lms:ro
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - app
@@ -141,7 +151,9 @@ services:
       - athenaerp
 
 networks:
+  # Fixed name so other compose files (e.g. laravel-lms) can attach with `external: true`.
   athenaerp:
+    name: athenaerp
     driver: bridge
 
 volumes:

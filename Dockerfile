@@ -17,6 +17,9 @@ ENV TZ=UTC
 RUN apt-get update && apt-get install -y \
     git \
     curl \
+    autoconf \
+    gcc \
+    make \
     libpng-dev \
     libzip-dev \
     libonig-dev \
@@ -40,6 +43,8 @@ RUN apt-get update && apt-get install -y \
         ldap \
     && pecl install redis \
     && docker-php-ext-enable redis \
+    && pecl install opentelemetry \
+    && docker-php-ext-enable opentelemetry \
     && ( [ "$XDEBUG_ENABLED" = "0" ] || ( pecl install xdebug && docker-php-ext-enable xdebug ) ) \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -51,6 +56,8 @@ RUN echo "memory_limit=256M" >> /usr/local/etc/php/conf.d/app.ini \
     && echo "upload_max_filesize=100M" >> /usr/local/etc/php/conf.d/app.ini \
     && echo "post_max_size=100M" >> /usr/local/etc/php/conf.d/app.ini \
     && echo "variables_order=EGPCS" >> /usr/local/etc/php/conf.d/app.ini
+
+RUN echo "opentelemetry.auto_trace=1" > /usr/local/etc/php/conf.d/opentelemetry.ini
 
 # Xdebug: only when XDEBUG_ENABLED=1 (Cursor/VS Code on port 9003). Disable for performance.
 ARG XDEBUG_ENABLED
