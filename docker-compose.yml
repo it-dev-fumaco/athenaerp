@@ -62,6 +62,11 @@ services:
       MAIL_USERNAME: null
       MAIL_PASSWORD: null
       MAIL_ENCRYPTION: null
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-my-laravel-app}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://10.0.0.53:4318}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_INSTRUMENTATION_DB_ENABLED: ${OTEL_INSTRUMENTATION_DB_ENABLED:-true}
+      OTEL_INSTRUMENTATION_REDIS_ENABLED: ${OTEL_INSTRUMENTATION_REDIS_ENABLED:-true}
     depends_on:
       mysql:
         condition: service_healthy
@@ -156,6 +161,7 @@ services:
 
 networks:
   athenaerp:
+    name: athenaerp
     driver: bridge
 
 volumes:
