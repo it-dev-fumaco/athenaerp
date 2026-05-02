@@ -10,6 +10,8 @@ use App\Models\ItemAttribute;
 use App\Models\ItemAttributeValue;
 use App\Models\ItemVariantAttribute;
 use App\Models\User;
+use App\Models\UserLoginActivity;
+use App\Services\UserLoginActivityLogger;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,6 +21,10 @@ use Illuminate\Support\Str;
 
 class ItemAttributeController extends Controller
 {
+    public function __construct(
+        protected UserLoginActivityLogger $loginActivityLogger
+    ) {}
+
     public function updateLogin()
     {
         if (Auth::user()) {
@@ -40,6 +46,13 @@ class ItemAttributeController extends Controller
 
             // if the validator fails, redirect back to the form
             if ($validator->fails()) {
+                $this->loginActivityLogger->record(
+                    $request,
+                    UserLoginActivity::STATUS_FAILED,
+                    (string) $request->input('email', ''),
+                    null
+                );
+
                 return redirect()
                     ->back()
                     ->withErrors($validator)
@@ -47,19 +60,47 @@ class ItemAttributeController extends Controller
             } else {
                 $adldap = new adLDAP;
                 $authUser = $adldap->user()->authenticate($request->email, $request->password);
+                $legacyUsername = (string) $request->input('email', '').'@fumaco.local';
 
                 if ($authUser == true) {
-                    $user = User::where('wh_user', $request->email.'@fumaco.local')->first();
+                    $user = User::where('wh_user', $legacyUsername)->first();
 
                     if ($user) {
                         // attempt to do the login
                         if (Auth::loginUsingId($user->frappe_userid)) {
+                            $this->loginActivityLogger->record(
+                                $request,
+                                UserLoginActivity::STATUS_SUCCESS,
+                                $legacyUsername,
+                                $user
+                            );
+
                             return redirect('/search');
                         }
+                        $this->loginActivityLogger->record(
+                            $request,
+                            UserLoginActivity::STATUS_FAILED,
+                            $legacyUsername,
+                            $user
+                        );
                     } else {
+                        $this->loginActivityLogger->record(
+                            $request,
+                            UserLoginActivity::STATUS_FAILED,
+                            $legacyUsername,
+                            null
+                        );
+
                         // validation not successful, send back to form
                         return redirect()->back()->withErrors('<span class="blink_text">Incorrect Username or Password</span>');
                     }
+                } else {
+                    $this->loginActivityLogger->record(
+                        $request,
+                        UserLoginActivity::STATUS_FAILED,
+                        $legacyUsername,
+                        null
+                    );
                 }
 
                 return redirect()
@@ -68,6 +109,13 @@ class ItemAttributeController extends Controller
                     ->withErrors('<span class="blink_text">Incorrect Username or Password</span>');
             }
         } catch (adLDAPException $e) {
+            $this->loginActivityLogger->record(
+                $request,
+                UserLoginActivity::STATUS_FAILED,
+                (string) $request->input('email', ''),
+                null
+            );
+
             return $e;
         }
     }

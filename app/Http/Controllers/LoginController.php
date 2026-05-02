@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
+use App\Models\User;
+use App\Models\UserLoginActivity;
 use App\Pipelines\LoginPipeline;
+use App\Services\UserLoginActivityLogger;
 use App\Traits\GeneralTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,7 +16,8 @@ class LoginController extends Controller
     use GeneralTrait;
 
     public function __construct(
-        protected LoginPipeline $loginPipeline
+        protected LoginPipeline $loginPipeline,
+        protected UserLoginActivityLogger $loginActivityLogger
     ) {}
 
     public function viewLogin()
@@ -30,6 +34,14 @@ class LoginController extends Controller
         try {
             return $this->loginPipeline->run($request);
         } catch (\Throwable $th) {
+            $pipelineUser = $request->pipelineUser ?? null;
+            $this->loginActivityLogger->record(
+                $request,
+                UserLoginActivity::STATUS_FAILED,
+                (string) $request->input('email', ''),
+                $pipelineUser instanceof User ? $pipelineUser : null
+            );
+
             return redirect()->back()->withInput($request->except('password'))->withErrors($th->getMessage());
         }
     }

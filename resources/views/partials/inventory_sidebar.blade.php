@@ -6,6 +6,7 @@
     $isDashboard = request()->is('/');
     $isPhaseOutItems = request()->is('phase-out/items');
     $isPhaseOutUpdateLifecycle = request()->is('phase-out/update-lifecycle-status');
+    $isLoginActivity = request()->is('admin/login-activity');
 
     $navClasses = function (bool $active): string {
         return 'inventory-sidebar__link'.($active ? ' inventory-sidebar__link--active' : '');
@@ -63,6 +64,14 @@
                 <a href="{{ url('/phase-out/update-lifecycle-status') }}" class="{{ $navClasses($isPhaseOutUpdateLifecycle) }}" title="Update Lifecycle Status">
                     <i class="fas fa-arrows-rotate inventory-sidebar__icon" aria-hidden="true"></i>
                     <span class="inventory-sidebar-label">Update Lifecycle Status</span>
+                </a>
+            @endif
+            @if(in_array(Auth::user()->user_group ?? '', config('login_activity.allowed_user_groups', []), true))
+                <div class="inventory-sidebar__divider inventory-sidebar-label" role="separator"></div>
+                <p class="inventory-sidebar__section-label inventory-sidebar-label">Security</p>
+                <a href="{{ url('/admin/login-activity') }}" class="{{ $navClasses($isLoginActivity) }}" title="Login activity">
+                    <i class="fas fa-right-to-bracket inventory-sidebar__icon" aria-hidden="true"></i>
+                    <span class="inventory-sidebar-label">Login activity</span>
                 </a>
             @endif
         @endauth

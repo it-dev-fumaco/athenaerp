@@ -31,6 +31,7 @@ import PhaseOutDashboardApp from './components/PhaseOutDashboardApp.vue';
 import PhaseOutItemsApp from './components/PhaseOutItemsApp.vue';
 import UpdateLifecycleStatusApp from './components/UpdateLifecycleStatusApp.vue';
 import ItemProfileLifecycleStatusApp from './components/item-profile/ItemProfileLifecycleStatusApp.vue';
+import LoginActivityApp from './components/LoginActivityApp.vue';
 
 const dashboardAppEl = document.getElementById('dashboard-app');
 if (dashboardAppEl) {
@@ -196,4 +197,9 @@ if (phaseOutItemsEl) {
 const updateLifecycleStatusEl = document.getElementById('update-lifecycle-status-app');
 if (updateLifecycleStatusEl) {
     createApp(UpdateLifecycleStatusApp).mount('#update-lifecycle-status-app');
+}
+
+const loginActivityEl = document.getElementById('login-activity-app');
+if (loginActivityEl) {
+    createApp(LoginActivityApp).mount('#login-activity-app');
 }
