@@ -295,7 +295,6 @@
 			transform: scale(1.2);
 		}
 		.mob-dropdown-container{
-			position: absolute !important;
 			right: 0 !important;
 			top: 5 !important;
 		}

@@ -78,35 +78,124 @@
 
 <script>
 (function () {
-    var shell = document.querySelector('[data-inventory-shell]');
-    if (!shell) return;
-    var aside = document.getElementById('inventory-sidebar');
-    var btn = shell.querySelector('[data-sidebar-toggle]');
-    var KEY = 'inventory-sidebar-collapsed';
+    /*
+     * This partial is included before inventory-shell__main and the backdrop in the DOM.
+     * Querying for the hamburger here at parse time returns null. Defer until DOM is ready.
+     */
+    function initInventoryShellNav() {
+        var shell = document.querySelector('[data-inventory-shell]');
+        if (!shell) return;
+        var aside = document.getElementById('inventory-sidebar');
+        var btn = shell.querySelector('[data-sidebar-toggle]');
+        var mobileToggle = shell.querySelector('[data-mobile-nav-toggle]');
+        var backdrop = shell.querySelector('[data-mobile-nav-backdrop]');
+        var KEY = 'inventory-sidebar-collapsed';
+        var mq = typeof window.matchMedia === 'function' ? window.matchMedia('(min-width: 1367px)') : null;
 
-    function applyCollapsed(collapsed) {
-        shell.classList.toggle('inventory-shell--collapsed', collapsed);
-        if (aside) {
-            aside.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        function applyCollapsed(collapsed) {
+            shell.classList.toggle('inventory-shell--collapsed', collapsed);
+            if (aside) {
+                aside.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            }
+            if (btn) {
+                btn.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+            }
+            try {
+                localStorage.setItem(KEY, collapsed ? '1' : '0');
+            } catch (e) {}
         }
-        if (btn) {
-            btn.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+
+        function setMobileNavOpen(open) {
+            shell.classList.toggle('inventory-shell--mobile-nav-open', open);
+            document.body.classList.toggle('inventory-shell-mobile-nav-lock', open);
+            if (mobileToggle) {
+                mobileToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                mobileToggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+            }
+            if (backdrop) {
+                backdrop.setAttribute('aria-hidden', open ? 'false' : 'true');
+            }
         }
+
+        function closeMobileNav() {
+            setMobileNavOpen(false);
+        }
+
+        /* Reset drawer on load (avoids stuck-open class after navigation or bfcache). */
+        setMobileNavOpen(false);
+
+        function isDesktop() {
+            return mq ? mq.matches : window.innerWidth >= 1367;
+        }
+
+        var initial = false;
         try {
-            localStorage.setItem(KEY, collapsed ? '1' : '0');
+            initial = localStorage.getItem(KEY) === '1';
         } catch (e) {}
+        applyCollapsed(initial);
+
+        if (btn) {
+            btn.addEventListener('click', function () {
+                applyCollapsed(!shell.classList.contains('inventory-shell--collapsed'));
+            });
+        }
+
+        if (mobileToggle) {
+            mobileToggle.addEventListener('click', function () {
+                setMobileNavOpen(!shell.classList.contains('inventory-shell--mobile-nav-open'));
+            });
+        }
+
+        if (backdrop) {
+            backdrop.addEventListener('click', function () {
+                closeMobileNav();
+            });
+        }
+
+        var searchInput = document.getElementById('searchid');
+        function closeMobileNavIfOpenOnSearchInteract() {
+            if (shell.classList.contains('inventory-shell--mobile-nav-open')) {
+                closeMobileNav();
+            }
+        }
+        if (searchInput) {
+            searchInput.addEventListener('focus', closeMobileNavIfOpenOnSearchInteract);
+            searchInput.addEventListener('click', closeMobileNavIfOpenOnSearchInteract);
+        }
+
+        if (aside) {
+            aside.querySelectorAll('a.inventory-sidebar__link').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    if (!isDesktop()) {
+                        closeMobileNav();
+                    }
+                });
+            });
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && shell.classList.contains('inventory-shell--mobile-nav-open')) {
+                closeMobileNav();
+            }
+        });
+
+        function onViewportChange() {
+            if (isDesktop()) {
+                closeMobileNav();
+            }
+        }
+
+        if (mq && typeof mq.addEventListener === 'function') {
+            mq.addEventListener('change', onViewportChange);
+        } else if (mq && typeof mq.addListener === 'function') {
+            mq.addListener(onViewportChange);
+        }
     }
 
-    var initial = false;
-    try {
-        initial = localStorage.getItem(KEY) === '1';
-    } catch (e) {}
-    applyCollapsed(initial);
-
-    if (btn) {
-        btn.addEventListener('click', function () {
-            applyCollapsed(!shell.classList.contains('inventory-shell--collapsed'));
-        });
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initInventoryShellNav);
+    } else {
+        initInventoryShellNav();
     }
 })();
 </script>

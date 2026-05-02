@@ -1,9 +1,9 @@
-@extends('layout', [
+@extends('layouts.inventory_shell', [
     'namePage' => 'Search Result(s)',
     'activePage' => 'search_results',
 ])
 
-@section('content')
+@section('inventory_main')
 <style>
 	.search-result-thumb-wrap { overflow: hidden; }
 	.lifecycle-status-tag-blade {
@@ -25,7 +25,7 @@
 		pointer-events: none;
 	}
 </style>
-<div class="content p-0 m-0">
+<div class="content border-0 bg-transparent shadow-none p-0 m-0 w-100 min-width-0 search-results-page">
 	<div class="content-header p-0 m-0">
 		<div class="container-fluid">
 			<div class="row">
@@ -299,10 +299,10 @@
 														$lifecycleBg = $lifecycleLabel ? ($lifecycleColors[$lifecycleLabel] ?? $lifecycleUnknown) : null;
 													@endphp
 													<div class="mb-1"></div>
-													<div class="d-none d-xl-block border border-outline-secondary"><!-- Desktop -->
-														<div class="row m-0">
-															<div class="col-1 p-1">
-																<div class="search-result-thumb-wrap position-relative">
+													<div class="d-none d-xl-block border border-outline-secondary search-result-row-card"><!-- Desktop -->
+														<div class="row m-0 align-items-start">
+															<div class="col-12 col-sm-4 col-md-3 col-lg-2 p-1 text-center text-md-left">
+																<div class="search-result-thumb-wrap position-relative mx-auto mx-md-0" style="max-width: 140px">
 																	<a href="{{ $row['image'] }}" data-item-code="{{ $row['name'] }}" class="view-images d-block">
 																		<img src="{{ $row['image'] }}" class="img w-100">
 																	</a>
@@ -323,8 +323,8 @@
 																	</div>
 																</div>
 															</div>
-															<div class="col-6 p-1">
-																<div class="col-md-12 m-0 text-justify" >
+															<div class="col-12 col-sm-8 col-md-6 col-lg-5 p-1 min-width-0">
+																<div class="col-md-12 m-0 text-left search-result-detail-col" >
 																	<span class="font-italic item-class">
 																		{{ $row['item_classification'] }} - {!! $row['item_group'] !!}
 																		@if ($lifecycleLabel)
@@ -363,7 +363,7 @@
 																	@endif
 																</div>
 															</div>
-															<div class="col-5 p-1">
+															<div class="col-12 col-md-3 col-lg-5 p-1 min-width-0">
 																@if ($row['item_inventory'])
 																	<table class="table table-sm table-bordered warehouse-table table-hover">
 																		<thead>
@@ -807,9 +807,16 @@
 		border-radius: 0;
 	}
 	/* Avoid overflow-x: hidden on html/body so wide tables can scroll; contain only the search page content */
-	.content.p-0.m-0 {
+	.content.p-0.m-0,
+	.search-results-page.content {
 		overflow-x: clip;
 		position: relative;
+		min-width: 0;
+		width: 100%;
+	}
+	.search-results-page .row.flex-xl-nowrap > .col-xl-2,
+	.search-results-page .row.flex-xl-nowrap > .col-xl-10 {
+		min-width: 0;
 	}
 	.itemClassContainer{
 		min-height: 1px;
@@ -889,6 +896,12 @@
 	}
 	.item-name, .warehouse-table{
 		font-size: 13px;
+	}
+	.search-results-page .item-name {
+		display: block;
+		white-space: normal;
+		word-break: normal;
+		overflow-wrap: break-word;
 	}
 	.wh-cell{
 		width: 50%;

@@ -8,10 +8,10 @@
         <div class="container-fluid m-0">
           <template v-for="(row, index) in apiData.data" :key="row.name">
             <div class="mb-1"></div>
-            <div class="border border-outline-secondary">
-              <div class="row m-0">
-                <div class="col-1 p-1">
-                  <div class="search-result-thumb-wrap position-relative">
+            <div class="border border-outline-secondary search-result-row-card">
+              <div class="row m-0 align-items-start">
+                <div class="col-12 col-sm-4 col-md-3 col-lg-2 p-1 text-center text-md-left">
+                  <div class="search-result-thumb-wrap position-relative mx-auto mx-md-0" style="max-width: 140px">
                     <a :href="row.image" :data-item-code="row.name" class="view-images d-block">
                       <img :src="row.image" class="img w-100" alt="">
                     </a>
@@ -25,8 +25,8 @@
                     </a>
                   </div>
                 </div>
-                <div class="col-6 p-1">
-                  <div class="col-md-12 m-0 text-justify">
+                <div class="col-12 col-sm-8 col-md-6 col-lg-5 p-1 min-width-0">
+                  <div class="col-md-12 m-0 text-left search-result-detail-col">
                     <span class="font-italic item-class">
                       {{ row.item_classification }} - {{ row.item_group }}
                       <LifecycleStatusTag :status="row.lifecycleStatus" class="search-result-status-inline" />
@@ -50,7 +50,7 @@
                     </p>
                   </div>
                 </div>
-                <div class="col-5 p-1">
+                <div class="col-12 col-md-3 col-lg-5 p-1 min-width-0">
                   <table v-if="row.item_inventory && row.item_inventory.length" class="table table-sm table-bordered warehouse-table table-hover">
                     <thead>
                       <tr>
@@ -327,5 +327,21 @@ onUnmounted(() => {
 
 .search-result-thumb-wrap {
   overflow: hidden;
+}
+
+.search-result-detail-col {
+  min-width: 0;
+}
+
+.search-result-detail-col .item-name {
+  display: block;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+.search-result-row-card .warehouse-table {
+  width: 100%;
+  table-layout: auto;
 }
 </style>
