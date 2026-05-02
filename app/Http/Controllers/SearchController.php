@@ -265,12 +265,18 @@ class SearchController extends Controller
                 $reservedQty = $reservedQty > 0 ? $reservedQty : 0;
 
                 $actualQty = data_get($value, 'actual_qty');
+                $actualQtyKnown = $actualQty !== null && $actualQty !== '';
 
                 $warehouseReorderLevel = data_get($lowLevelStock, "{$binKey}.0.total_warehouse_reorder_level", 0);
 
                 $issuedReservedQty = $reservedQty + $issuedQty;
 
-                $availableQty = ($actualQty > $issuedReservedQty) ? $actualQty - $issuedReservedQty : 0;
+                if (! $actualQtyKnown) {
+                    $availableQty = null;
+                } else {
+                    $actualQty = (float) $actualQty;
+                    $availableQty = ($actualQty > $issuedReservedQty) ? $actualQty - $issuedReservedQty : 0;
+                }
                 if (data_get($value, 'parent_warehouse') == 'P2 Consignment Warehouse - FI' && ! $isPromodiser) {
                     $consignmentWarehouses[] = [
                         'warehouse' => data_get($value, 'warehouse'),
