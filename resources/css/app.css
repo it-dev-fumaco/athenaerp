@@ -202,6 +202,55 @@
 	min-height: 0;
 }
 
+/* Desktop: host wraps the sticky sidebar column */
+.inventory-shell__sidebar-host {
+	flex-shrink: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	min-height: 0;
+}
+
+/* Mobile top bar + backdrop (hidden on desktop) */
+.inventory-shell__mobile-bar {
+	display: none;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.5rem 0.75rem;
+	background: #ffffff;
+	border-bottom: 1px solid rgba(51, 65, 85, 0.15);
+	flex-shrink: 0;
+}
+.inventory-shell__mobile-menu-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	padding: 0;
+	border: none;
+	border-radius: 0.5rem;
+	background: rgba(30, 64, 175, 0.12);
+	color: #1e3a5f;
+	cursor: pointer;
+	transition: background-color 0.2s ease, color 0.2s ease;
+}
+.inventory-shell__mobile-menu-btn:hover {
+	background: rgba(30, 64, 175, 0.2);
+	color: #0f172a;
+}
+.inventory-shell__mobile-menu-btn i {
+	font-size: 1.125rem;
+}
+.inventory-shell__mobile-bar-title {
+	font-size: 0.9375rem;
+	font-weight: 600;
+	color: #334155;
+}
+.inventory-shell__nav-backdrop {
+	display: none;
+}
+
 /* Sidebar column */
 aside#inventory-sidebar.inventory-sidebar {
 	position: sticky;
@@ -386,6 +435,143 @@ aside#inventory-sidebar.inventory-sidebar {
 }
 .inventory-shell--collapsed .inventory-shell-collapse-icon {
 	transform: rotate(180deg);
+}
+
+/*
+ * Inventory shell: drawer for phones + tablets up to largest iPad Pro landscape (~1366px).
+ * Below 769px the old "phone-only" window used fixed nav without shifting main — iPad Air/Pro
+ * sit above 768px and were still on sticky desktop chrome, which overlapped the results list.
+ */
+@media (max-width: 1366.98px) {
+	[data-inventory-shell] {
+		--inventory-drawer-w: min(16rem, 85vw);
+	}
+
+	.inventory-shell__sidebar-host {
+		flex: 0 0 0;
+		width: 0;
+		min-width: 0;
+		overflow: visible;
+		position: relative;
+	}
+
+	.inventory-shell__mobile-bar {
+		display: flex;
+		position: sticky;
+		top: 0;
+		z-index: 1020;
+	}
+
+	[data-inventory-shell] .inventory-shell__main {
+		transition: transform 0.3s ease;
+		transform: translate3d(0, 0, 0);
+	}
+
+	[data-inventory-shell].inventory-shell--mobile-nav-open .inventory-shell__main {
+		transform: translate3d(var(--inventory-drawer-w), 0, 0) !important;
+	}
+
+	[data-inventory-shell].inventory-shell--mobile-nav-open {
+		overflow-x: hidden;
+	}
+
+	/* Full dimmer on small phones only; on tablet it would cover the Menu bar — close via toggle / Escape / nav links. */
+	.inventory-shell__nav-backdrop {
+		display: none !important;
+	}
+
+	@media (max-width: 768px) {
+		.inventory-shell__nav-backdrop {
+			display: block !important;
+			position: fixed;
+			inset: 0;
+			z-index: 1040;
+			background: rgba(15, 23, 42, 0.45);
+			opacity: 0;
+			visibility: hidden;
+			pointer-events: none;
+			transition: opacity 0.25s ease, visibility 0.25s ease;
+		}
+
+		[data-inventory-shell].inventory-shell--mobile-nav-open .inventory-shell__nav-backdrop {
+			opacity: 1;
+			visibility: visible;
+			pointer-events: auto;
+		}
+	}
+
+	aside#inventory-sidebar.inventory-sidebar {
+		position: fixed !important;
+		top: 0;
+		left: 0;
+		height: 100dvh;
+		min-height: 100dvh;
+		width: min(16rem, 85vw);
+		max-width: 85vw;
+		min-width: 0 !important;
+		flex-shrink: 0;
+		-webkit-transform: translate3d(-100%, 0, 0);
+		transform: translate3d(-100%, 0, 0) !important;
+		transition:
+			transform 0.3s ease,
+			visibility 0s linear 0.3s,
+			box-shadow 0.3s ease,
+			width 0.3s ease,
+			min-width 0.3s ease;
+		box-shadow: none;
+		z-index: 1045;
+		visibility: hidden;
+		pointer-events: none;
+	}
+
+	[data-inventory-shell].inventory-shell--mobile-nav-open aside#inventory-sidebar.inventory-sidebar {
+		-webkit-transform: translate3d(0, 0, 0);
+		transform: translate3d(0, 0, 0) !important;
+		box-shadow: 4px 0 24px rgba(15, 23, 42, 0.45);
+		visibility: visible;
+		pointer-events: auto;
+		transition:
+			transform 0.3s ease,
+			visibility 0s linear 0s,
+			box-shadow 0.3s ease,
+			width 0.3s ease,
+			min-width 0.3s ease;
+	}
+
+	/* Drawer always shows full labels; ignore desktop collapsed rail */
+	.inventory-shell--collapsed #inventory-sidebar.inventory-sidebar {
+		width: min(16rem, 85vw);
+		min-width: 0 !important;
+	}
+
+	.inventory-shell--collapsed .inventory-sidebar-label {
+		display: inline !important;
+	}
+
+	.inventory-shell--collapsed .inventory-sidebar-nav .inventory-sidebar__link,
+	.inventory-shell--collapsed .inventory-sidebar__footer .inventory-sidebar__link {
+		justify-content: flex-start;
+		padding-left: 0.75rem;
+		padding-right: 0.75rem;
+	}
+
+	.inventory-shell--collapsed .inventory-sidebar__link--active {
+		padding-left: calc(0.75rem - 3px);
+	}
+
+	.inventory-shell--collapsed .inventory-sidebar__header {
+		flex-wrap: nowrap;
+		justify-content: flex-end;
+		padding: 0.75rem 0.5rem;
+	}
+
+	.inventory-sidebar__collapse-btn {
+		display: none !important;
+	}
+}
+
+body.inventory-shell-mobile-nav-lock {
+	overflow: hidden;
 }
 
 /* Phase-out bulk-tag modal: teleported to <body>. Stack above layout loader (99999+) and sidebars. */

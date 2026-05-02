@@ -16,11 +16,15 @@ import SearchResultsList from '@/components/SearchResultsList.vue';
   border-radius: 14px;
   border: 1px solid rgba(13, 58, 110, 0.1);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: visible;
+  min-width: 0;
+  width: 100%;
   padding: 0.75rem 1rem 1rem;
 }
 .search-results-list-wrap {
   min-height: 200px;
+  min-width: 0;
 }
 .search-results-list-wrap :deep(.border-outline-secondary) {
   border-radius: 10px;

@@ -174,17 +174,26 @@ onMounted(loadCounts);
 .dashboard-stats__grid .dashboard-metric-card-link {
   min-width: 0;
 }
-@media (max-width: 768px) {
+/* Tablets / narrow inventory main: stack sections and cards (sidebar still visible above 768) */
+@media (max-width: 1024px) {
   .dashboard-stats {
     grid-template-columns: 1fr;
   }
   .dashboard-stats__grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 }
-@media (max-width: 480px) {
-  .dashboard-stats__grid {
-    grid-template-columns: 1fr;
+@media (max-width: 768px) {
+  .dashboard-metric-card__icon {
+    width: 3.5rem;
+    min-width: 3.5rem;
+    max-width: 3.5rem;
+  }
+  .dashboard-metric-card__content {
+    padding: 0.55rem 0.65rem;
+  }
+  .dashboard-metric-card__number {
+    font-size: clamp(1.25rem, 6vw, 1.6rem);
   }
 }
 .dashboard-metric-card-link {
@@ -233,12 +242,16 @@ onMounted(loadCounts);
   pointer-events: none;
 }
 .dashboard-metric-card__title {
+  display: block;
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
   color: #fff;
   letter-spacing: 0.02em;
   margin-bottom: 0.15rem;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 .dashboard-metric-card__number {
   font-size: 1.6rem;
@@ -246,11 +259,16 @@ onMounted(loadCounts);
   color: #fff;
   line-height: 1.2;
   font-family: Arial, sans-serif;
+  min-width: 0;
 }
 .dashboard-metric-card__status {
+  display: block;
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.95);
   margin-top: 0.1rem;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 /* Solid left strip + gradient right with pattern */
