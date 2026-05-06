@@ -30,7 +30,9 @@ class LoginController extends Controller
         try {
             return $this->loginPipeline->run($request);
         } catch (\Throwable $th) {
-            return redirect()->back()->withInput($request->except('password'))->withErrors($th->getMessage());
+            $message = strip_tags($th->getMessage());
+
+            return redirect()->back()->withInput($request->except('password'))->withErrors($message);
         }
     }
 
