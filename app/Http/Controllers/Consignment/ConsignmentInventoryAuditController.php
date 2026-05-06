@@ -120,8 +120,12 @@ class ConsignmentInventoryAuditController extends Controller
 
         $consignedStocks = Bin::whereIn('item_code', $itemCodes)->where('warehouse', $branch)->pluck('consigned_qty', 'item_code')->toArray();
 
-        $itemImages = ItemImages::whereIn('parent', $itemCodes)->select('parent', 'image_path')->orderBy('idx', 'asc')->get();
-        $itemImages = collect($itemImages)->groupBy('parent')->toArray();
+        $itemImages = ItemImages::query()
+            ->whereIn('parent', $itemCodes)
+            ->select('parent', 'image_path')
+            ->orderBy('idx', 'asc')
+            ->get()
+            ->groupBy('parent');
 
         $itemClassification = collect($items)->groupBy('item_classification');
 

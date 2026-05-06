@@ -15,7 +15,7 @@ class LoginUserPipe implements Pipe
         $user = $passable->pipelineUser;
 
         if (! Auth::loginUsingId($user->frappe_userid)) {
-            throw new Exception('<span class="blink_text">Login failed. Please try again.</span>');
+            throw new Exception(__('auth.unable_to_login'));
         }
 
         User::where('name', $user->name)->update(['last_login' => now()->toDateTimeString()]);
