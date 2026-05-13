@@ -15,7 +15,8 @@ class EnsureBrochureDirectoryAndFilenamePipe implements Pipe
             return $passable;
         }
 
-        $project = $passable->project;
+        $project = trim(preg_replace('/\s+/', ' ', (string) $passable->project));
+        $passable->project = $project;
         $projectPath = 'brochures/'.strtoupper($project);
 
         if (! Storage::disk('upcloud')->exists($projectPath)) {
