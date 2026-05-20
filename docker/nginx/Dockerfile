@@ -5,19 +5,24 @@
 #   ESSEX_APP_IMAGE   - Essex PHP-FPM image (source of /var/www/html/public for Essex vhost).
 #                      Hub tag is case-sensitive (use v4 not V4).
 #   LMS_APP_IMAGE     - Laravel LMS PHP-FPM image (same layout: /var/www/html/public → /var/www/lms/public in nginx)
+#   LMS_KIOSK_APP_IMAGE - LMSForProduction PHP-FPM image → /var/www/lms-kiosk/public in nginx
 #
-# CI: build/push ATHENAERP_APP_IMAGE; pull ESSEX_APP_IMAGE; build/tag LMS_APP_IMAGE from laravel-lms Dockerfile.fpm; then build nginx.
+# CI: build/push ATHENAERP_APP_IMAGE; pull ESSEX_APP_IMAGE; pull/build LMS_APP_IMAGE; build/tag LMS_KIOSK_APP_IMAGE from LMSForProduction/Dockerfile.fpm; then build nginx.
+# Local: `docker compose -f docker-compose.prod.yml build lms-kiosk-image nginx` (tag is not on Docker Hub by default).
 # Do not copy LMS from essex_src — the Essex image has no LMS tree.
 
 ARG APP_IMAGE=athenaerp-app-fpm:latest
 ARG ESSEX_APP_IMAGE=devfumaco/essex-app:v4
 ARG LMS_APP_IMAGE=lms-app-fpm:latest
+ARG LMS_KIOSK_APP_IMAGE=lms-kiosk-app-fpm:latest
 
 FROM ${APP_IMAGE} AS app_src
 
 FROM ${ESSEX_APP_IMAGE} AS essex_src
 
 FROM ${LMS_APP_IMAGE} AS lms_src
+
+FROM ${LMS_KIOSK_APP_IMAGE} AS lms_kiosk_src
 
 FROM nginx:1.27-alpine
 WORKDIR /var/www/html
@@ -29,5 +34,10 @@ COPY --from=app_src /var/www/html/public ./public
 COPY --from=essex_src /var/www/html/public /var/www/essex/public
 # LMS: same public/ as the LMS container
 COPY --from=lms_src /var/www/html/public /var/www/lms/public
+# LMS kiosk: full public/ (index.php + css/js assets) from FPM image at nginx build time
+COPY --from=lms_kiosk_src /var/www/html/public /var/www/lms-kiosk/public
+RUN test -f /var/www/lms-kiosk/public/css/app.css \
+    && test -f /var/www/lms-kiosk/public/js/app.js \
+    || (echo "ERROR: lms-kiosk public/css/app.css or public/js/app.js missing — rebuild: docker compose -f docker-compose.prod.yml build lms-kiosk-image && docker compose -f docker-compose.prod.yml build nginx" && exit 1)
 
 CMD ["nginx", "-g", "daemon off;"]
