@@ -1,4 +1,21 @@
+# LMS kiosk PHP-FPM runs from LMSForProduction compose (container_name `lms-kiosk`) — not started here (name conflict).
+# Build (order matters): docker compose -f docker-compose.prod.yml build lms-kiosk-image nginx
+# Then: cd ../LMSForProduction && docker compose up -d
+
 services:
+  lms-kiosk-image:
+    image: ${LMS_KIOSK_APP_IMAGE:-lms-kiosk-app-fpm:latest}
+    build:
+      context: ${LMS_KIOSK_PATH:-../LMSForProduction}
+      dockerfile: Dockerfile.fpm
+      args:
+        COMPOSER_INSTALL_FLAGS: "--no-dev"
+        XDEBUG_ENABLED: "0"
+        OPCACHE_REVALIDATE_FREQ: "0"
+        OPCACHE_VALIDATE_TIMESTAMPS: "0"
+    entrypoint: ["/bin/true"]
+    restart: "no"
+
   app:
     image: ${ATHENAERP_APP_IMAGE:-athenaerp-app-fpm:latest}
     build:
@@ -50,14 +67,20 @@ services:
         APP_IMAGE: ${ATHENAERP_APP_IMAGE:-athenaerp-app-fpm:latest}
         ESSEX_APP_IMAGE: ${ESSEX_APP_IMAGE:-devfumaco/essex-app:v4}
         LMS_APP_IMAGE: ${LMS_APP_IMAGE:-devfumaco/lms-app:staging}
+        LMS_KIOSK_APP_IMAGE: ${LMS_KIOSK_APP_IMAGE:-lms-kiosk-app-fpm:latest}
     container_name: athenaerp-nginx
     restart: unless-stopped
     ports:
       - "${FORWARD_HTTP_PORT:-80}:80"
       - "8081:80"
       - "${FORWARD_LMS_HTTP_PORT:-8082}:8082"
+      - "${FORWARD_LMS_KIOSK_HTTP_PORT:-8083}:8083"
     volumes:
       - lms_storage_public:/var/www/lms/public/storage:ro
+      - lms_kiosk_storage_public:/var/www/lms-kiosk/public/storage:ro
+      # Do NOT bind-mount public/build here for image-based deploys: an empty/missing LMS_KIOSK_PATH
+      # masks assets baked into this image (COPY --from=lms_kiosk_src) and causes 404 on /build/assets/*.
+      # For host-mounted assets on staging, use docker-compose.fpm.yml or docker-compose.staging-kiosk.yml.
     depends_on:
       - app
     networks:
@@ -156,3 +179,5 @@ volumes:
   # LMS `storage/app/public` (symlink target) for nginx to serve /storage/*. Fixed name so a separate LMS compose can use the same volume.
   lms_storage_public:
     name: lms_storage_public
+  lms_kiosk_storage_public:
+    name: lms_kiosk_storage_public
