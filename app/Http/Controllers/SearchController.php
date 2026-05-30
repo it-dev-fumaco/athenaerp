@@ -185,11 +185,15 @@ class SearchController extends Controller
             ->get();
         $lowLevelStock = collect($lowLevelStock)->groupBy('item');
 
-        $itemImages = ItemImages::whereIn('parent', $itemCodes)->orderBy('idx', 'asc')->pluck('image_path', 'parent');
+        $itemImages = ItemImages::whereIn('parent', $itemCodes)
+            ->orderBy('idx', 'asc')
+            ->get()
+            ->unique('parent')
+            ->pluck('image_path', 'parent');
         $itemImages = collect($itemImages)->map(function ($image) {
-            return $this->base64Image("/img/$image");
+            return $this->itemImageModalUrl($image);
         });
-        $noImgPlaceholder = $this->base64Image('/icon/no-img.png');
+        $noImgPlaceholder = $this->buildItemImageUrl(null);
 
         $partNosQuery = ItemSupplier::whereIn('parent', $itemCodes)
             ->select('parent', DB::raw('GROUP_CONCAT(supplier_part_no) as supplier_part_nos'))
@@ -558,12 +562,16 @@ class SearchController extends Controller
 
         $bundledItems = ProductBundle::query()->whereIn('name', $itemCodes)->pluck('name')->toArray();
 
-        $imageCollection = ItemImages::whereIn('parent', $itemCodes)->orderBy('idx', 'asc')->pluck('image_path', 'parent');
+        $imageCollection = ItemImages::whereIn('parent', $itemCodes)
+            ->orderBy('idx', 'asc')
+            ->get()
+            ->unique('parent')
+            ->pluck('image_path', 'parent');
         $imageCollection = collect($imageCollection)->map(function ($image) {
-            return $this->base64Image("/img/$image");
+            return $this->itemImageModalUrl($image);
         });
 
-        $noImg = $this->base64Image('/icon/no-img.png');
+        $noImg = $this->buildItemImageUrl(null);
 
         return view('suggestion_box', compact('itemsPaginator', 'imageCollection', 'bundledItems', 'noImg'));
     }
