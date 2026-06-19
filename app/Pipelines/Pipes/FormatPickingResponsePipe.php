@@ -43,6 +43,7 @@ class FormatPickingResponsePipe implements Pipe
                 'classification' => $d->transfer_as ?? 'Customer Order',
                 'delivery_date' => $d->delivery_date ? Carbon::parse($d->delivery_date)->format('M-d-Y') : null,
                 'delivery_status' => $d->delivery_date && Carbon::parse($d->delivery_date) < now() ? 'late' : null,
+                'docstatus' => (int) ($d->docstatus ?? 0),
             ];
         }
 
