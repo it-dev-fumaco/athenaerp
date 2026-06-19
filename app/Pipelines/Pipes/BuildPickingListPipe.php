@@ -2,6 +2,7 @@
 
 namespace App\Pipelines\Pipes;
 
+use App\Constants\DocStatus;
 use App\Constants\StockEntryConstants;
 use App\Contracts\Pipeline\Pipe;
 use App\Models\PackingSlip;
@@ -12,6 +13,9 @@ use Illuminate\Support\Facades\DB;
 
 class BuildPickingListPipe implements Pipe
 {
+    /** @var list<string> */
+    private const EXCLUDED_SALES_ORDER_STATUSES = ['Cancelled', 'Closed', 'Completed'];
+
     public function handle(mixed $passable, Closure $next): mixed
     {
         $allowedWarehouses = $passable->allowedWarehouses;
@@ -40,7 +44,8 @@ class BuildPickingListPipe implements Pipe
                     ->on('dri.item_code', '=', 'psi.item_code');
             })
             ->leftJoin('tabDelivery Note as dr', 'dri.parent', '=', 'dr.name')
-            ->whereIn('ps.docstatus', [0, 1])
+            ->leftJoin('tabSales Order as so', 'so.name', '=', 'ps.sales_order')
+            ->where('ps.docstatus', DocStatus::DRAFT)
             ->where('ps.creation', '>=', $creationFrom)
             ->where(function ($query) {
                 $query->where( 'psi.status', StockEntryConstants::STATUS_FOR_CHECKING)
@@ -57,6 +62,10 @@ class BuildPickingListPipe implements Pipe
             ->where(function ($query) {
                 $query->whereNull('dr.name')
                     ->orWhereIn('dr.docstatus', [0, 1]);
+            })
+            ->where(function ($query) {
+                $query->whereNull('so.name')
+                    ->orWhereNotIn('so.status', self::EXCLUDED_SALES_ORDER_STATUSES);
             })
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
@@ -90,6 +99,7 @@ class BuildPickingListPipe implements Pipe
                 DB::raw('NULL as piQty'),
                 DB::raw('NULL as piWarehouse'),
                 DB::raw('NULL as piUom'),
+                DB::raw('MAX(ps.docstatus) as docstatus'),
                 DB::raw('"picking_slip" as type'),
             ])
             ->groupBy(['ps.sales_order', 'psi.name', 'psi.status', 'ps.name', 'ps.delivery_note', 'psi.item_code', 'psi.description', 'psi.qty', 'psi.stock_uom', 'psi.owner', 'ps.creation'])
@@ -98,7 +108,8 @@ class BuildPickingListPipe implements Pipe
         $stockEntryQuery = StockEntry::query()
             ->from('tabStock Entry as ste')
             ->join('tabStock Entry Detail as sted', 'ste.name', '=', 'sted.parent')
-            ->where('ste.docstatus', 0)
+            ->leftJoin('tabSales Order as so', 'so.name', '=', 'ste.sales_order_no')
+            ->where('ste.docstatus', DocStatus::DRAFT)
             ->where('purpose', 'Material Transfer')
             ->whereIn('s_warehouse', $warehouseIds)
             ->whereIn('transfer_as', ['Consignment', 'Sample Item'])
@@ -113,6 +124,10 @@ class BuildPickingListPipe implements Pipe
                                     ->where('sted_sibling.status', StockEntryConstants::STATUS_FOR_CHECKING);
                             });
                     });
+            })
+            ->where(function ($query) {
+                $query->whereNull('so.name')
+                    ->orWhereNotIn('so.status', self::EXCLUDED_SALES_ORDER_STATUSES);
             })
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
@@ -130,6 +145,7 @@ class BuildPickingListPipe implements Pipe
                 DB::raw('NULL as delivery_note'), 'sted.item_code', 'sted.description', 'sted.qty', 'sted.uom', 'sted.s_warehouse as warehouse',
                 'sted.owner', 'ste.customer_1 as customer', 'ste.creation',
                 DB::raw('NULL as parent_item'), DB::raw('NULL as piName'), DB::raw('NULL as piQty'), DB::raw('NULL as piWarehouse'), DB::raw('NULL as piUom'),
+                'ste.docstatus',
                 DB::raw('"stock_entry" as type'),
             ])
             ->orderByRaw("FIELD(sted.status, 'For Checking', 'Issued') ASC");
@@ -140,8 +156,9 @@ class BuildPickingListPipe implements Pipe
             ->join('tabDelivery Note Item as dri', 'dri.parent', '=', 'ps.delivery_note')
             ->join('tabDelivery Note as dr', 'dri.parent', '=', 'dr.name')
             ->join('tabPacked Item as pi', 'pi.name', '=', 'psi.pi_detail')
+            ->leftJoin('tabSales Order as so', 'so.name', '=', 'ps.sales_order')
             ->whereIn('dr.docstatus', [0, 1])
-            ->whereIn('ps.docstatus', [0, 1])
+            ->where('ps.docstatus', DocStatus::DRAFT)
             ->where('ps.creation', '>=', $creationFrom)
             ->whereIn('dri.warehouse', $warehouseIds)
             ->where(function ($query) {
@@ -155,6 +172,10 @@ class BuildPickingListPipe implements Pipe
                                     ->where('psi_sibling.status', StockEntryConstants::STATUS_FOR_CHECKING);
                             });
                     });
+            })
+            ->where(function ($query) {
+                $query->whereNull('so.name')
+                    ->orWhereNotIn('so.status', self::EXCLUDED_SALES_ORDER_STATUSES);
             })
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
@@ -171,6 +192,7 @@ class BuildPickingListPipe implements Pipe
                 'dr.delivery_date', 'ps.sales_order', DB::raw('NULL as sales_order_no'), 'psi.name AS id', 'psi.status', 'ps.name', 'ps.delivery_note',
                 'pi.item_code', 'pi.description', 'pi.qty as qty', 'pi.uom', 'pi.warehouse', 'psi.owner', 'dr.customer', 'ps.creation',
                 'pi.parent_item', 'pi.name as piName', 'pi.qty as piQty', 'pi.warehouse as piWarehouse', 'pi.uom as piUom',
+                'ps.docstatus',
                 DB::raw('"packed_item" as type'),
             ])
             ->orderByRaw("FIELD(psi.status, 'For Checking', 'Issued') ASC");

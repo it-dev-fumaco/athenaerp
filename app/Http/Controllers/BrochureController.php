@@ -225,7 +225,7 @@ class BrochureController extends Controller
 
                 return null;
             })->filter()->values()->all();
-            $projectFromFile = trim((string) $fileContents['project']);
+            $projectFromFile = trim(preg_replace('/\s+/', ' ', (string) $fileContents['project']));
             $project = $projectFromFile ?: $projectParam;
             $tableOfContents = $fileContents['table_of_contents'];
 

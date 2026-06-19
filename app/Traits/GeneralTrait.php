@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 trait GeneralTrait
 {
@@ -238,6 +239,79 @@ trait GeneralTrait
     }
 
     /**
+     * Build public URL for an item image (same rules as the image modal).
+     * Prefers webp when it exists under img/, otherwise returns the original storage key URL.
+     */
+    public function buildItemImageUrl(?string $path): string
+    {
+        if (! $path) {
+            return Storage::disk('upcloud')->url('icon/no-img.png');
+        }
+        if (Str::startsWith($path, ['http://', 'https://'])) {
+            return $path;
+        }
+        if (Str::contains($path, '://')) {
+            $scheme = Str::contains($path, 'https://') ? 'https://' : 'http://';
+
+            return $scheme.Str::after($path, $scheme);
+        }
+        $disk = Storage::disk('upcloud');
+        $storageKey = str_contains($path, '/') ? ltrim($path, '/') : 'img/'.$path;
+
+        if (str_starts_with($storageKey, 'img/')) {
+            $baseName = pathinfo($storageKey, PATHINFO_FILENAME);
+            $dir = dirname($storageKey);
+            $webpKey = ($dir === '.' || $dir === 'img') ? 'img/'.$baseName.'.webp' : $dir.'/'.$baseName.'.webp';
+            if ($disk->exists($webpKey)) {
+                return $disk->url($webpKey);
+            }
+        }
+
+        return $disk->url($storageKey);
+    }
+
+    /**
+     * Resolve storage key for the webp version of an image (same directory as original).
+     */
+    protected function itemImageStorageKey(string $originalPath, string $webpFilename): string
+    {
+        if (Str::contains($originalPath, '://')) {
+            return 'img/'.basename($webpFilename);
+        }
+        if (str_contains($originalPath, '/')) {
+            return dirname($originalPath).'/'.basename($webpFilename);
+        }
+
+        return 'img/'.$webpFilename;
+    }
+
+    /**
+     * URL shown in the item image modal — list thumbnails should use this for a exact match.
+     */
+    public function itemImageModalUrl(?string $path): string
+    {
+        if (! $path || ! trim((string) $path)) {
+            return $this->buildItemImageUrl(null);
+        }
+
+        $originalPath = trim((string) $path);
+        $url = $this->buildItemImageUrl($originalPath);
+
+        $isFullUrl = Str::startsWith($originalPath, ['http://', 'https://']) || Str::contains($originalPath, '://');
+        if ($isFullUrl) {
+            return $url;
+        }
+
+        $webpFilename = explode('.', basename($originalPath))[0].'.webp';
+        $webpStorageKey = $this->itemImageStorageKey($originalPath, $webpFilename);
+        if (Storage::disk('upcloud')->exists($webpStorageKey)) {
+            return Storage::disk('upcloud')->url($webpStorageKey);
+        }
+
+        return $url;
+    }
+
+    /**
      * Return public URL for an image. Avoids Storage::exists() when $skipExistsCheck is true (faster; use for lists/thumbnails).
      *
      * @param  mixed  $file  Storage key or path (leading slash stripped). Filename-only is treated as img/ prefix.
@@ -249,13 +323,31 @@ trait GeneralTrait
         if (! $file) {
             return Storage::disk('upcloud')->url('icon/no-img.png');
         }
+
+        $path = trim((string) $file);
+
+        if (Str::startsWith($path, ['http://', 'https://'])) {
+            return $path;
+        }
+
+        if (Str::contains($path, '://')) {
+            $scheme = Str::contains($path, 'https://') ? 'https://' : 'http://';
+
+            return $scheme.Str::after($path, $scheme);
+        }
+
         $disk = Storage::disk('upcloud');
-        // Storage keys must not have leading slash (S3/compat)
-        $key = ltrim((string) $file, '/');
-        // If path is filename-only, use img/ prefix for item images
+        $key = ltrim($path, '/');
+
+        // Some callers prefix "/img/" onto paths that already include "img/".
+        while (str_starts_with($key, 'img/img/')) {
+            $key = substr($key, 4);
+        }
+
         if (! str_contains($key, '/')) {
             $key = 'img/'.$key;
         }
+
         // Prefer webp when it exists, otherwise use original (skip existence check when optimizing for speed)
         if (! $original && ! $skipExistsCheck && str_starts_with($key, 'img/')) {
             $baseName = pathinfo($key, PATHINFO_FILENAME);
@@ -265,6 +357,7 @@ trait GeneralTrait
                 return $disk->url($webpKey);
             }
         }
+
         return $disk->url($key);
         // if(!$file){
         //     return null;

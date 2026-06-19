@@ -18,7 +18,7 @@ class ReadBrochureSpreadsheetPipe implements Pipe
         $passable->fileContents = $fileContents;
         $passable->content = $fileContents['content'];
         $passable->project = isset($fileContents['project']) && $fileContents['project']
-            ? trim(str_replace('/', '-', $fileContents['project']))
+            ? trim(preg_replace('/\s+/', ' ', str_replace('/', '-', $fileContents['project'])))
             : '-';
         $passable->customer = $fileContents['customer'];
         $passable->headers = $fileContents['headers'];

@@ -1,0 +1,11 @@
+# Optional overlay when the LMSForProduction repo lives on the staging host (edit public/css|js without rebuilding nginx).
+# Usage (set LMS_KIOSK_PATH in .env to the repo root on the server):
+#   docker compose -f docker-compose.prod.yml -f docker-compose.staging-kiosk.yml up -d nginx --force-recreate
+#
+# Also restart lms-kiosk from LMSForProduction if PHP-served routes (/lms-styles, /lms-app) need the same files.
+
+services:
+  nginx:
+    volumes:
+      - ${LMS_KIOSK_PATH:?Set LMS_KIOSK_PATH in .env}/public/css:/var/www/lms-kiosk/public/css:ro
+      - ${LMS_KIOSK_PATH:?Set LMS_KIOSK_PATH in .env}/public/js:/var/www/lms-kiosk/public/js:ro

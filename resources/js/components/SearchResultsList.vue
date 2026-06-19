@@ -66,10 +66,12 @@
                           <small v-if="inv.location" class="text-muted font-italic"> - {{ inv.location }}</small>
                         </td>
                         <td class="text-center">
-                          <span class="badge search-reserved-badge" :class="inv.reserved_qty > 0 ? 'badge-success' : 'badge-secondary'">{{ inv.reserved_qty * 1 }} {{ inv.stock_uom }}</span>
+                          <template v-if="isSearchQtyHidden(inv.reserved_qty)"><span class="text-muted">&mdash;</span></template>
+                          <span v-else class="badge search-reserved-badge" :class="inv.reserved_qty > 0 ? 'badge-success' : 'badge-secondary'">{{ fmtQty(inv.reserved_qty) }} {{ inv.stock_uom }}</span>
                         </td>
                         <td class="text-center">
-                          <span class="badge" :class="invBadgeClass(inv)" style="font-size: 14px;">{{ inv.available_qty * 1 }} <small>{{ inv.stock_uom }}</small></span>
+                          <template v-if="isSearchQtyHidden(inv.available_qty)"><span class="text-muted">&mdash;</span></template>
+                          <span v-else class="badge" :class="invBadgeClass(inv)" style="font-size: 14px;">{{ fmtQty(inv.available_qty) }} <small>{{ inv.stock_uom }}</small></span>
                         </td>
                       </tr>
                     </tbody>
@@ -141,6 +143,21 @@ function stripTags(html) {
 
 function formatPrice(num) {
   return Number(num).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function isMissing(v) {
+  return v === null || v === undefined || v === '';
+}
+
+/** Search results: hide null/empty and numeric zero (same as Blade `dashWhenZero` on this page). */
+function isSearchQtyHidden(v) {
+  if (isMissing(v)) return true;
+  const n = Number(v);
+  return !Number.isFinite(n) || n === 0;
+}
+
+function fmtQty(v) {
+  return Number(v) * 1;
 }
 
 function invBadgeClass(inv) {

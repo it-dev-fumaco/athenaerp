@@ -382,19 +382,18 @@
 																					@endif
 																				</td>
 																				<td class="text-center">
-																					<small class="text-muted">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</small>
+																					@include('partials.qty_cell', ['qty' => $inv['reserved_qty'] ?? null, 'uom' => $inv['stock_uom'], 'style' => 'muted', 'dashWhenZero' => true])
 																				</td>
 																				<td class="text-center">
-																					@php
-																						if($inv['available_qty'] == 0){
-																							$uomBadge = 'secondary';
-																						}else if($inv['available_qty'] <= $inv['warehouse_reorder_level']){
-																							$uomBadge = 'warning';
-																						}else{
-																							$uomBadge = 'success';
-																						}
-																					@endphp
-																					<span class="badge badge-{{ $uomBadge }}" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 }} <small>{{ $inv['stock_uom'] }}</small></span>
+																					@include('partials.qty_cell', [
+																						'qty' => $inv['available_qty'] ?? null,
+																						'uom' => $inv['stock_uom'],
+																						'reorderLevel' => $inv['warehouse_reorder_level'] ?? 0,
+																						'style' => 'badge',
+																						'badgeMode' => 'reorder',
+																						'badgeFontSize' => '14px',
+																						'dashWhenZero' => true,
+																					])
 																				</td>
 																			</tr>
 																		@endforeach
@@ -445,10 +444,17 @@
 																										@endif
 																									</td>
 																									<td class="text-center p-2">
-																										<small class="text-muted">{{ $con['actual_qty'] * 1 }} {{ $con['stock_uom'] }}</small>
+																										@include('partials.qty_cell', ['qty' => $con['actual_qty'] ?? null, 'uom' => $con['stock_uom'], 'style' => 'muted', 'dashWhenZero' => true])
 																									</td>
 																									<td class="text-center p-2">
-																										<span class="badge badge-{{ ($con['consigned_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 10pt; margin: 0 auto;">{{ $con['consigned_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
+																										@include('partials.qty_cell', [
+																											'qty' => $con['consigned_qty'] ?? null,
+																											'uom' => $con['stock_uom'],
+																											'style' => 'badge',
+																											'badgeMode' => 'binary',
+																											'badgeFontSize' => '10pt',
+																											'dashWhenZero' => true,
+																										])
 																									</td>
 																								</tr>
 																							@else
@@ -550,19 +556,18 @@
 																						@endif
 																					</td>
 																					<td class="text-center">
-																						<small class="text-muted">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</small>
+																						@include('partials.qty_cell', ['qty' => $inv['reserved_qty'] ?? null, 'uom' => $inv['stock_uom'], 'style' => 'muted', 'dashWhenZero' => true])
 																					</td>
 																					<td class="text-center">
-																						@php
-																							if($inv['available_qty'] == 0){
-																								$uomBadge = 'secondary';
-																							}else if($inv['available_qty'] <= $inv['warehouse_reorder_level']){
-																								$uomBadge = 'warning';
-																							}else{
-																								$uomBadge = 'success';
-																							}
-																						@endphp
-																						<span class="badge badge-{{ $uomBadge }}" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 }} <small>{{ $inv['stock_uom'] }}</small></span>
+																						@include('partials.qty_cell', [
+																							'qty' => $inv['available_qty'] ?? null,
+																							'uom' => $inv['stock_uom'],
+																							'reorderLevel' => $inv['warehouse_reorder_level'] ?? 0,
+																							'style' => 'badge',
+																							'badgeMode' => 'reorder',
+																							'badgeFontSize' => '14px',
+																							'dashWhenZero' => true,
+																						])
 																					</td>
 																				</tr>
 																			@endforeach
@@ -614,10 +619,17 @@
 																											@endif
 																										</td>
 																										<td class="text-center p-2">
-																											<small class="text-muted">{{ $con['actual_qty'] * 1 }} {{ $con['stock_uom'] }}</small>
+																											@include('partials.qty_cell', ['qty' => $con['actual_qty'] ?? null, 'uom' => $con['stock_uom'], 'style' => 'muted', 'dashWhenZero' => true])
 																										</td>
 																										<td class="text-center p-2">
-																											<span class="badge badge-{{ ($con['consigned_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 10pt; margin: 0 auto;">{{ $con['consigned_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
+																											@include('partials.qty_cell', [
+																												'qty' => $con['consigned_qty'] ?? null,
+																												'uom' => $con['stock_uom'],
+																												'style' => 'badge',
+																												'badgeMode' => 'binary',
+																												'badgeFontSize' => '10pt',
+																												'dashWhenZero' => true,
+																											])
 																										</td>
 																									</tr>
 																								@else
@@ -663,19 +675,18 @@
 																					@endif
 																				</td>
 																				<td class="text-center">
-																					<small class="text-muted">{{ $inv['reserved_qty'] * 1 }}  {{ $inv['stock_uom'] }}</small>
+																					@include('partials.qty_cell', ['qty' => $inv['reserved_qty'] ?? null, 'uom' => $inv['stock_uom'], 'style' => 'muted', 'dashWhenZero' => true])
 																				</td>
 																				<td class="text-center">
-																					@php
-																						if($inv['available_qty'] == 0){
-																							$uomBadge = 'secondary';
-																						}else if($inv['available_qty'] <= $inv['warehouse_reorder_level']){
-																							$uomBadge = 'warning';
-																						}else{
-																							$uomBadge = 'success';
-																						}
-																					@endphp
-																					<span class="badge badge-{{ $uomBadge }}" style="font-size: 14px; margin: 0 auto;">{{ $inv['available_qty'] * 1 }} <small>{{ $inv['stock_uom'] }}</small></span>
+																					@include('partials.qty_cell', [
+																						'qty' => $inv['available_qty'] ?? null,
+																						'uom' => $inv['stock_uom'],
+																						'reorderLevel' => $inv['warehouse_reorder_level'] ?? 0,
+																						'style' => 'badge',
+																						'badgeMode' => 'reorder',
+																						'badgeFontSize' => '14px',
+																						'dashWhenZero' => true,
+																					])
 																				</td>
 																			</tr>
 																		@endforeach
@@ -725,10 +736,17 @@
 																										@endif
 																									</td>
 																									<td class="text-center p-2">
-																										<small class="text-muted">{{ $con['actual_qty'] * 1 }} {{ $con['stock_uom'] }}</small>
+																										@include('partials.qty_cell', ['qty' => $con['actual_qty'] ?? null, 'uom' => $con['stock_uom'], 'style' => 'muted', 'dashWhenZero' => true])
 																									</td>
 																									<td class="text-center p-2">
-																										<span class="badge badge-{{ ($con['consigned_qty'] > 0) ? 'success' : 'secondary' }}" style="font-size: 10pt; margin: 0 auto;">{{ $con['consigned_qty'] * 1 }} <small>{{ $con['stock_uom'] }}</small></span>
+																										@include('partials.qty_cell', [
+																											'qty' => $con['consigned_qty'] ?? null,
+																											'uom' => $con['stock_uom'],
+																											'style' => 'badge',
+																											'badgeMode' => 'binary',
+																											'badgeFontSize' => '10pt',
+																											'dashWhenZero' => true,
+																										])
 																									</td>
 																								</tr>
 																							@else

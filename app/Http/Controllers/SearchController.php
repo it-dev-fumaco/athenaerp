@@ -185,11 +185,15 @@ class SearchController extends Controller
             ->get();
         $lowLevelStock = collect($lowLevelStock)->groupBy('item');
 
-        $itemImages = ItemImages::whereIn('parent', $itemCodes)->orderBy('idx', 'asc')->pluck('image_path', 'parent');
+        $itemImages = ItemImages::whereIn('parent', $itemCodes)
+            ->orderBy('idx', 'asc')
+            ->get()
+            ->unique('parent')
+            ->pluck('image_path', 'parent');
         $itemImages = collect($itemImages)->map(function ($image) {
-            return $this->base64Image("/img/$image");
+            return $this->itemImageModalUrl($image);
         });
-        $noImgPlaceholder = $this->base64Image('/icon/no-img.png');
+        $noImgPlaceholder = $this->buildItemImageUrl(null);
 
         $partNosQuery = ItemSupplier::whereIn('parent', $itemCodes)
             ->select('parent', DB::raw('GROUP_CONCAT(supplier_part_no) as supplier_part_nos'))
@@ -265,12 +269,18 @@ class SearchController extends Controller
                 $reservedQty = $reservedQty > 0 ? $reservedQty : 0;
 
                 $actualQty = data_get($value, 'actual_qty');
+                $actualQtyKnown = $actualQty !== null && $actualQty !== '';
 
                 $warehouseReorderLevel = data_get($lowLevelStock, "{$binKey}.0.total_warehouse_reorder_level", 0);
 
                 $issuedReservedQty = $reservedQty + $issuedQty;
 
-                $availableQty = ($actualQty > $issuedReservedQty) ? $actualQty - $issuedReservedQty : 0;
+                if (! $actualQtyKnown) {
+                    $availableQty = null;
+                } else {
+                    $actualQty = (float) $actualQty;
+                    $availableQty = ($actualQty > $issuedReservedQty) ? $actualQty - $issuedReservedQty : 0;
+                }
                 if (data_get($value, 'parent_warehouse') == 'P2 Consignment Warehouse - FI' && ! $isPromodiser) {
                     $consignmentWarehouses[] = [
                         'warehouse' => data_get($value, 'warehouse'),
@@ -552,12 +562,16 @@ class SearchController extends Controller
 
         $bundledItems = ProductBundle::query()->whereIn('name', $itemCodes)->pluck('name')->toArray();
 
-        $imageCollection = ItemImages::whereIn('parent', $itemCodes)->orderBy('idx', 'asc')->pluck('image_path', 'parent');
+        $imageCollection = ItemImages::whereIn('parent', $itemCodes)
+            ->orderBy('idx', 'asc')
+            ->get()
+            ->unique('parent')
+            ->pluck('image_path', 'parent');
         $imageCollection = collect($imageCollection)->map(function ($image) {
-            return $this->base64Image("/img/$image");
+            return $this->itemImageModalUrl($image);
         });
 
-        $noImg = $this->base64Image('/icon/no-img.png');
+        $noImg = $this->buildItemImageUrl(null);
 
         return view('suggestion_box', compact('itemsPaginator', 'imageCollection', 'bundledItems', 'noImg'));
     }

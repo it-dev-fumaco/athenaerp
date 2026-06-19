@@ -92,7 +92,7 @@ class ItemAttributeController extends Controller
                         );
 
                         // validation not successful, send back to form
-                        return redirect()->back()->withErrors('<span class="blink_text">Incorrect Username or Password</span>');
+                        return redirect()->back()->withErrors(__('auth.failed'));
                     }
                 } else {
                     $this->loginActivityLogger->record(
@@ -106,7 +106,7 @@ class ItemAttributeController extends Controller
                 return redirect()
                     ->back()
                     ->withInput($request->except('password'))
-                    ->withErrors('<span class="blink_text">Incorrect Username or Password</span>');
+                    ->withErrors(__('auth.failed'));
             }
         } catch (adLDAPException $e) {
             $this->loginActivityLogger->record(

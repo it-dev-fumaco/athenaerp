@@ -36,20 +36,38 @@
                         @endif
                     </td>
                     <td class="text-center p-1 font-responsive align-middle">
-                        <span class="text-muted">
-                            {{ number_format((float)$stock['reserved_qty'], 2, '.', '') }}<br/>
-                            {{ $stock['stock_uom'] }}
-                        </span>
+                        @include('partials.qty_cell', [
+                            'qty' => $stock['reserved_qty'] ?? null,
+                            'uom' => $stock['stock_uom'],
+                            'style' => 'muted',
+                            'multiline' => true,
+                            'decimals' => 2,
+                            'dashWhenZero' => true,
+                        ])
                     </td>
                     <td class="text-center p-1 font-responsive align-middle">
-                        {{ number_format((float)$stock['actual_qty'], 2, '.', '') }} <br/>
-                        {{ $stock['stock_uom'] }}
+                        @include('partials.qty_cell', [
+                            'qty' => $stock['actual_qty'] ?? null,
+                            'uom' => $stock['stock_uom'],
+                            'style' => 'plain',
+                            'multiline' => true,
+                            'decimals' => 2,
+                            'dashWhenZero' => true,
+                        ])
                     </td>
                     <td class="text-center p-1 align-middle">
-                        <span class="badge badge-{{ ($stock['available_qty'] > 0) ? 'success' : 'secondary' }} responsive-description" style="font-size: 10pt;">
-                            {{ number_format((float)$stock['available_qty'], 2, '.', '') }} <br/>
-                            {{ $stock['stock_uom'] }}
-                        </span>
+                        @include('partials.qty_cell', [
+                            'qty' => $stock['available_qty'] ?? null,
+                            'uom' => $stock['stock_uom'],
+                            'style' => 'badge',
+                            'badgeMode' => 'binary',
+                            'multiline' => true,
+                            'decimals' => 2,
+                            'badgeFontSize' => '10pt',
+                            'badgeExtraClass' => 'responsive-description',
+                            'badgeWrapUomInSmall' => false,
+                            'dashWhenZero' => true,
+                        ])
                     </td>
                 </tr>
             @endforeach

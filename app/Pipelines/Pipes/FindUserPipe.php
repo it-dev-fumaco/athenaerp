@@ -20,7 +20,7 @@ class FindUserPipe implements Pipe
         ])->first();
 
         if (! $user) {
-            throw new Exception('<span class="blink_text">Incorrect Username or Password</span>');
+            throw new Exception(__('auth.failed'));
         }
 
         $passable->pipelineUser = $user;
