@@ -4,12 +4,18 @@ namespace App\Pipelines\Pipes;
 
 use App\Contracts\Pipeline\Pipe;
 use App\Models\User;
+use App\Models\UserLoginActivity;
+use App\Services\UserLoginActivityLogger;
 use Closure;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 
 class LoginUserPipe implements Pipe
 {
+    public function __construct(
+        protected UserLoginActivityLogger $loginActivityLogger
+    ) {}
+
     public function handle(mixed $passable, Closure $next): mixed
     {
         $user = $passable->pipelineUser;
@@ -19,6 +25,13 @@ class LoginUserPipe implements Pipe
         }
 
         User::where('name', $user->name)->update(['last_login' => now()->toDateTimeString()]);
+
+        $this->loginActivityLogger->record(
+            $passable,
+            UserLoginActivity::STATUS_SUCCESS,
+            null,
+            $user
+        );
 
         return $next($passable);
     }

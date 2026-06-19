@@ -28,6 +28,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SelectFilterController;
 use App\Http\Controllers\StockReservationController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\UserLoginActivityLogController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -110,6 +111,10 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
             Route::get('/phase-out/report', [PhaseOutController::class, 'report']);
             Route::get('/phase-out/summary', [PhaseOutController::class, 'summary']);
             Route::get('/phase-out/tagged-items', [PhaseOutController::class, 'taggedItems']);
+        });
+        Route::middleware('loginActivityLog')->group(function () {
+            Route::get('/admin/login-activity', [UserLoginActivityLogController::class, 'page']);
+            Route::get('/admin/login-activity/logs', [UserLoginActivityLogController::class, 'index']);
         });
         Route::get('/search_results', [SearchController::class, 'searchResults']);
         Route::get('/search_results_images', [SearchController::class, 'searchResultsImages']);
