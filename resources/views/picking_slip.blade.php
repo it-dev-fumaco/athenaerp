@@ -66,8 +66,8 @@
 												<span class="d-block font-weight-bold">@{{ x.creation }}</span>
 												<small class="d-block mt-1">@{{ x.name }}</small>
 												<div class="d-block d-lg-none">
-													<img src="dist/img/icon.png" ng-if="x.type == 'picking_slip'" class="img-circle checkout update-ps" data-id="@{{ x.id }}">
-													<img src="dist/img/icon.png" ng-if="x.type == 'stock_entry'" class="img-circle update-item checkout" data-id="@{{ x.id }}">
+													<img src="dist/img/icon.png" ng-if="['picking_slip', 'packed_item'].includes(x.type) && !x.docstatus && x.status === 'For Checking'" class="img-circle checkout update-ps" data-id="@{{ x.id }}" data-type="@{{ x.type }}">
+													<img src="dist/img/icon.png" ng-if="x.type == 'stock_entry' && !x.docstatus && x.status === 'For Checking'" class="img-circle update-item checkout" data-id="@{{ x.id }}">
 												</div>
 											</td>
 											<td class="text-justify">
@@ -95,8 +95,8 @@
 												<small class="d-block mt-3">@{{ x.classification }}</small>
 											</td>
 											<td class="text-center d-none d-lg-table-cell">
-												<img src="dist/img/icon.png" ng-if="['picking_slip', 'packed_item'].includes(x.type)" class="img-circle checkout update-ps" data-id="@{{ x.id }}" data-type="@{{ x.type }}">
-												<img src="dist/img/icon.png" ng-if="x.type == 'stock_entry'" class="img-circle update-item checkout" data-id="@{{ x.id }}">
+												<img src="dist/img/icon.png" ng-if="['picking_slip', 'packed_item'].includes(x.type) && !x.docstatus && x.status === 'For Checking'" class="img-circle checkout update-ps" data-id="@{{ x.id }}" data-type="@{{ x.type }}">
+												<img src="dist/img/icon.png" ng-if="x.type == 'stock_entry' && !x.docstatus && x.status === 'For Checking'" class="img-circle update-item checkout" data-id="@{{ x.id }}">
 											</td>
 										</tr>
 									</tbody>
