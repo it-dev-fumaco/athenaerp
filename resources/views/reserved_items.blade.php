@@ -1,3 +1,12 @@
+<div class="reserved-items-filters d-flex align-items-center flex-wrap mb-2 px-1">
+    <label for="reserved-warehouse-filter" class="mb-0 mr-2 font-weight-bold" style="font-size: 0.85rem;">Warehouse:</label>
+    <select id="reserved-warehouse-filter" class="form-control form-control-sm" style="max-width: 280px;">
+        <option value="" @selected($selectedWarehouse === '')>All Warehouses</option>
+        @foreach ($warehouses as $warehouse)
+            <option value="{{ $warehouse }}" @selected($selectedWarehouse === $warehouse)>{{ $warehouse }}</option>
+        @endforeach
+    </select>
+</div>
 <table class="table table-bordered table-hover m-0">
     <col class="low-lvl-stk-tbl-item-desc"><!-- Item Description -->
     <col style="width: 12%;"><!-- Warehouse -->
