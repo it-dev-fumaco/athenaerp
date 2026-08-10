@@ -219,6 +219,40 @@
                                             <span class="ip-price-value">{{ '₱ ' . number_format($minimumSellingPrice, 2, '.', ',') }}</span>
                                         </div>
                                     @endif
+                                    {{-- #region agent log --}}
+                                    @php
+                                        try {
+                                            file_put_contents(base_path('debug-1cf719.log'), json_encode([
+                                                'sessionId' => '1cf719',
+                                                'runId' => 'post-fix',
+                                                'hypothesisId' => 'B',
+                                                'location' => 'item_profile_item_info.blade.php:pricing',
+                                                'message' => 'Pricing/Key Dates card render after ASP/LastOrder wiring',
+                                                'data' => [
+                                                    'issetAvgSellingPrice' => isset($avgSellingPrice),
+                                                    'avgSellingPrice' => $avgSellingPrice ?? null,
+                                                    'issetLastOrderDate' => isset($lastOrderDate),
+                                                    'lastOrderDate' => $lastOrderDate ?? null,
+                                                    'lifecycleLastOrderLabel' => $lifecycleLastOrderLabel ?? null,
+                                                    'willRenderAvgSellingRow' => isset($avgSellingPrice),
+                                                    'willRenderLastOrderRow' => true,
+                                                ],
+                                                'timestamp' => (int) (microtime(true) * 1000),
+                                            ])."\n", FILE_APPEND);
+                                        } catch (\Throwable $e) {}
+                                    @endphp
+                                    {{-- #endregion --}}
+                                    @if (! empty($avgSellingPrice) && $avgSellingPrice > 0)
+                                        <div class="ip-price-row">
+                                            <span class="ip-price-label">Average Selling Price (Sales Orders)</span>
+                                            <span class="ip-price-value">{{ '₱ ' . number_format($avgSellingPrice, 2, '.', ',') }}</span>
+                                        </div>
+                                    @else
+                                        <div class="ip-price-row">
+                                            <span class="ip-price-label">Average Selling Price (Sales Orders)</span>
+                                            <span class="ip-price-value">—</span>
+                                        </div>
+                                    @endif
                                     @if ($lastPurchaseRate > 0)
                                         <div class="ip-price-row">
                                             <span class="ip-price-label">Last Purchase Rate</span>
@@ -255,6 +289,18 @@
                                 </div>
                                 <div class="ip-date-row">
                                     <span class="ip-date-icon"><i class="fas fa-shopping-cart"></i></span>
+                                    <div>
+                                        <div class="ip-meta-label">Last Order Date</div>
+                                        <div class="ip-meta-value">
+                                            {{ $lifecycleLastOrderLabel ?? '—' }}
+                                            @if (! empty($lastOrderDate))
+                                                <small class="text-muted d-block">{{ $lastOrderDate }}</small>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ip-date-row">
+                                    <span class="ip-date-icon"><i class="fas fa-warehouse"></i></span>
                                     <div>
                                         <div class="ip-meta-label">Last Purchase</div>
                                         <div class="ip-meta-value">{{ $lifecycleLastPurchaseLabel ?? '—' }}</div>
