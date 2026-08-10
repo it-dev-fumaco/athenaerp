@@ -1510,10 +1510,16 @@ class MainController extends Controller
     {
         $user = Auth::user()->frappe_userid;
         $allowedWarehouses = $this->getAllowedWarehouseIds();
+        $warehouses = collect($allowedWarehouses)->filter()->sort()->values();
+        $requestedWarehouse = (string) $request->input('warehouse', '');
+        $selectedWarehouse = $warehouses->contains($requestedWarehouse) ? $requestedWarehouse : '';
 
         $q = DB::table('tabStock Reservation as sr')
             ->join('tabItem as ti', 'sr.item_code', 'ti.name')
             ->whereIn('sr.warehouse', $allowedWarehouses)
+            ->when($selectedWarehouse !== '', function ($query) use ($selectedWarehouse) {
+                return $query->where('sr.warehouse', $selectedWarehouse);
+            })
             ->whereNotIn('sr.status', ['Cancelled', 'Expired'])
             ->orderBy('sr.creation', 'desc')
             ->select(
@@ -1567,10 +1573,11 @@ class MainController extends Controller
         $paginatedItems = new LengthAwarePaginator($currentPageItems, count($itemCollection), $perPage);
         // set url path for generted links
         $paginatedItems->setPath($request->url());
+        $paginatedItems->appends(['warehouse' => $selectedWarehouse]);
 
         $list = $paginatedItems;
 
-        return view('reserved_items', compact('list'));  // reserved items
+        return view('reserved_items', compact('list', 'warehouses', 'selectedWarehouse'));
     }
 
     public function invAccuracyChart($year)
