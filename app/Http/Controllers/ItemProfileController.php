@@ -110,6 +110,7 @@ class ItemProfileController extends Controller
             'stock_uom',
             'custom_item_cost',
             'item_classification',
+            'item_group',
             'variant_of',
             'has_variants',
             'disabled',

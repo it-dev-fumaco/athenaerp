@@ -1,4 +1,4 @@
-<table class="table table-striped table-bordered table-hover responsive-description" style="font-size: 11pt;">
+<table class="table table-striped table-bordered table-hover responsive-description ip-stock-table" style="font-size: 11pt;">
     <thead>
         <tr>
             <th scope="col" rowspan="2" class="font-responsive text-center p-1 align-middle">Warehouse</th>
@@ -54,7 +54,7 @@
                 'badgeMode' => 'binary',
                 'decimals' => 2,
                 'badgeFontSize' => '10pt',
-                'badgeExtraClass' => 'responsive-description',
+                'badgeExtraClass' => 'responsive-description ip-available-badge',
                 'badgeWrapUomInSmall' => false,
                 'dashWhenZero' => true,
             ])
