@@ -147,6 +147,43 @@
 	left: auto;
 	right: 0;
 }
+.item-profile-actions-buttons .ip-action-btn {
+	display: flex;
+	align-items: center;
+	gap: 0.55rem;
+	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
+	margin: 0.4rem 0;
+	padding: 0.7rem 0.8rem;
+	background: #fff;
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	color: #1f2937;
+	font-size: 9pt;
+	font-weight: 600;
+	text-align: left;
+	text-decoration: none;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+	cursor: pointer;
+	white-space: normal;
+	word-break: break-word;
+}
+.item-profile-actions-buttons .ip-action-btn:hover {
+	background: #f9fafb;
+	color: #111827;
+	text-decoration: none;
+	border-color: #d1d5db;
+}
+.item-profile-actions-buttons .ip-action-btn i {
+	width: 1.1rem;
+	text-align: center;
+	color: #4b5563;
+	flex-shrink: 0;
+}
+.item-profile-actions-buttons .ip-action-btn.dropdown-toggle::after {
+	margin-left: auto;
+}
 
 /* Item Alternatives: horizontal scroll so cards aren’t clipped */
 .item-alternatives-section {

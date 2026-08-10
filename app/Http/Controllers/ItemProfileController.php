@@ -110,6 +110,7 @@ class ItemProfileController extends Controller
             'stock_uom',
             'custom_item_cost',
             'item_classification',
+            'item_group',
             'variant_of',
             'has_variants',
             'disabled',
@@ -232,6 +233,81 @@ class ItemProfileController extends Controller
         } catch (\Throwable $e) {
             $lifecycleLastUpdatedDetail = '—';
         }
+
+        // Average Selling Price + Last Order Date from submitted Sales Orders.
+        $avgSellingPrice = null;
+        $lastOrderDate = null;
+        $lifecycleLastOrderLabel = '—';
+        try {
+            $soBase = DB::table('tabSales Order Item as soi')
+                ->join('tabSales Order as so', 'so.name', '=', 'soi.parent')
+                ->where('soi.item_code', $itemCode)
+                ->where('so.docstatus', 1);
+
+            $avgRate = (clone $soBase)->avg('soi.rate');
+            if ($avgRate !== null && (float) $avgRate > 0) {
+                $avgSellingPrice = (float) $avgRate;
+            }
+
+            $lastOrderRaw = (clone $soBase)->max('so.transaction_date');
+            if ($lastOrderRaw) {
+                $lastOrderCarbon = \Carbon\Carbon::parse($lastOrderRaw)->startOfDay();
+                $lastOrderDate = $lastOrderCarbon->format('M j, Y');
+                $days = (int) abs(now()->startOfDay()->diffInDays($lastOrderCarbon));
+                $lifecycleLastOrderLabel = $days.' days ago';
+            }
+        } catch (\Throwable $e) {
+            $avgSellingPrice = null;
+            $lastOrderDate = null;
+            $lifecycleLastOrderLabel = '—';
+        }
+
+        // #region agent log
+        try {
+            $soProbe = ['tableExists' => Schema::hasTable('tabSales Order Item'), 'avgRate' => null, 'lastOrderDate' => null, 'soCount' => 0, 'error' => null];
+            if ($soProbe['tableExists']) {
+                $soBaseLog = DB::table('tabSales Order Item as soi')
+                    ->join('tabSales Order as so', 'so.name', '=', 'soi.parent')
+                    ->where('soi.item_code', $itemCode)
+                    ->where('so.docstatus', 1);
+                $soProbe['soCount'] = (clone $soBaseLog)->count();
+                $soProbe['avgRate'] = (clone $soBaseLog)->avg('soi.rate');
+                $soProbe['lastOrderDate'] = (clone $soBaseLog)->max('so.transaction_date');
+                $soProbe['orphanSoiCount'] = DB::table('tabSales Order Item')->where('item_code', $itemCode)->count();
+            }
+            $payload = [
+                'sessionId' => '1cf719',
+                'runId' => 'post-fix',
+                'hypothesisId' => 'A',
+                'location' => 'ItemProfileController.php:getItemDetails',
+                'message' => 'Item profile price/date payload after ASP/LastOrder wiring',
+                'data' => [
+                    'itemCode' => $itemCode,
+                    'priceDataKeys' => array_keys($priceData),
+                    'avgSellingPrice' => $avgSellingPrice,
+                    'lastOrderDate' => $lastOrderDate,
+                    'lifecycleLastOrderLabel' => $lifecycleLastOrderLabel,
+                    'defaultPrice' => $defaultPrice,
+                    'avgPurchaseRate' => $avgPurchaseRate,
+                    'lastPurchaseDate' => $lastPurchaseDate,
+                    'lifecycleLastMovementLabel' => $lifecycleLastMovementLabel,
+                    'lifecycleLastPurchaseLabel' => $lifecycleLastPurchaseLabel,
+                    'salesOrderProbe' => $soProbe,
+                ],
+                'timestamp' => (int) (microtime(true) * 1000),
+            ];
+            file_put_contents(base_path('debug-1cf719.log'), json_encode($payload)."\n", FILE_APPEND);
+        } catch (\Throwable $e) {
+            file_put_contents(base_path('debug-1cf719.log'), json_encode([
+                'sessionId' => '1cf719',
+                'hypothesisId' => 'A',
+                'location' => 'ItemProfileController.php:getItemDetails',
+                'message' => 'debug log failed',
+                'data' => ['error' => $e->getMessage()],
+                'timestamp' => (int) (microtime(true) * 1000),
+            ])."\n", FILE_APPEND);
+        }
+        // #endregion
 
         // images are eager-loaded on the main item query above.
         $itemImagesRaw = $itemDetails->images?->pluck('image_path') ?? collect();
@@ -545,6 +621,9 @@ class ItemProfileController extends Controller
             'lifecycleCurrentStatus',
             'lifecycleLastMovementLabel',
             'lifecycleLastPurchaseLabel',
+            'lifecycleLastOrderLabel',
+            'avgSellingPrice',
+            'lastOrderDate',
             'lifecycleLastUpdatedLabel',
             'lifecycleLastUpdatedDetail'
         ));
