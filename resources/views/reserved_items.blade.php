@@ -1,10 +1,12 @@
 <table class="table table-bordered table-hover m-0">
     <col class="low-lvl-stk-tbl-item-desc"><!-- Item Description -->
-    <col style="width: 14%;"><!-- Warehouse -->
-    <col style="width: 10%;"><!-- Reserved Qty -->
-    <col style="width: 12%;"><!-- Reservation Type -->
-    <col style="width: 14%;"><!-- Sales Person -->
-    <col style="width: 16%;"><!-- Project -->
+    <col style="width: 12%;"><!-- Warehouse -->
+    <col style="width: 8%;"><!-- Reserved Qty -->
+    <col style="width: 10%;"><!-- Reservation Type -->
+    <col style="width: 12%;"><!-- Sales Person -->
+    <col style="width: 12%;"><!-- Project -->
+    <col style="width: 10%;"><!-- Validity -->
+    <col style="width: 10%;"><!-- Status -->
     <thead style="font-size: 0.82rem;">
         <th class="text-center align-middle">Item Description</th>
         <th class="text-center align-middle d-none d-lg-table-cell">Warehouse</th>
@@ -12,9 +14,26 @@
         <th class="text-center align-middle d-none d-lg-table-cell">Reservation Type</th>
         <th class="text-center align-middle d-none d-lg-table-cell">Sales Person</th>
         <th class="text-center align-middle d-none d-lg-table-cell">Project</th>
+        <th class="text-center align-middle d-none d-lg-table-cell">Validity</th>
+        <th class="text-center align-middle d-none d-lg-table-cell">Status</th>
     </thead>
     <tbody>
         @forelse ($list as $item)
+            @php
+                $status = $item['status'] ?? '';
+                $badge = 'secondary';
+                if ($status === 'Active') {
+                    $badge = 'primary';
+                } elseif ($status === 'Partially Issued') {
+                    $badge = 'info';
+                } elseif ($status === 'Issued') {
+                    $badge = 'success';
+                }
+
+                $validity = ! empty($item['valid_until'])
+                    ? \Carbon\Carbon::parse($item['valid_until'])->format('d M Y')
+                    : '--';
+            @endphp
             <tr>
                 <td class="text-justify p-2 align-middle font-responsive">
                     <div class="row">
@@ -36,6 +55,8 @@
                                 <div><b>Type:</b> <small>{{ $item['reservation_type'] ?? '--' }}</small></div>
                                 <div><b>Sales Person:</b> <small>{{ $item['sales_person'] ?? '--' }}</small></div>
                                 <div><b>Project:</b> <small>{{ $item['project'] ?? '--' }}</small></div>
+                                <div><b>Validity:</b> <small>{{ $validity }}</small></div>
+                                <div><b>Status:</b> <span class="badge badge-{{ $badge }}">{{ $status ?: '--' }}</span></div>
                             </div>
                         </div>
                     </div>
@@ -55,10 +76,16 @@
                 <td class="text-center p-1 align-middle d-none d-lg-table-cell">
                     <small>{{ $item['project'] ?? '--' }}</small>
                 </td>
+                <td class="text-center p-1 align-middle d-none d-lg-table-cell">
+                    <small>{{ $validity }}</small>
+                </td>
+                <td class="text-center p-1 align-middle d-none d-lg-table-cell">
+                    <span class="badge badge-{{ $badge }}" style="font-size: 9pt;">{{ $status ?: '--' }}</span>
+                </td>
             </tr>
         @empty
             <tr>
-                <td colspan="6" class="text-center font-weight-bold">No Record(s) found.</td>
+                <td colspan="8" class="text-center font-weight-bold">No Record(s) found.</td>
             </tr>
         @endforelse
     </tbody>
