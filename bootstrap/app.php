@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -11,6 +12,12 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    ->withSchedule(function (Schedule $schedule) {
+        $schedule->command('update:pullout')->everyMinute();
+        $schedule->command('email:hr')->daily();
+        $schedule->command('email:stock_reservation_expiry')->daily();
+        $schedule->command('update:stock_reservation')->everyMinute();
+    })
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'sanitation' => \App\Http\Middleware\SanitationMiddleware::class,

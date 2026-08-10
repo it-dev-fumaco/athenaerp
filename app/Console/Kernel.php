@@ -17,6 +17,7 @@ class Kernel extends ConsoleKernel
         // $schedule->command('inspire')->hourly();
         $schedule->command('update:pullout')->everyMinute();
         $schedule->command('email:hr')->daily();
+        $schedule->command('email:stock_reservation_expiry')->daily();
         $schedule->command('update:stock_reservation')->everyMinute();
     }
 
