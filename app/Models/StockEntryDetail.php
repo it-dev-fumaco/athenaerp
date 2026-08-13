@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -27,6 +28,17 @@ class StockEntryDetail extends Model
     public function parentDoctype()
     {
         return $this->belongsTo(StockEntry::class, 'parent', 'name');
+    }
+
+    /**
+     * Issued child lines whose parent Stock Entry is still draft.
+     * Child docstatus can stay 0 after submit, so pending-issued qty must use the parent.
+     */
+    public function scopeIssuedOnDraftStockEntry(Builder $query): Builder
+    {
+        return $query->join('tabStock Entry as ste', 'ste.name', '=', $this->getTable().'.parent')
+            ->where('ste.docstatus', 0)
+            ->where($this->getTable().'.status', 'Issued');
     }
 
     public function defaultImage()

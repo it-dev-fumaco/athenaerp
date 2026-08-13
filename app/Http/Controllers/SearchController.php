@@ -149,8 +149,8 @@ class SearchController extends Controller
             ->get();
         $stockReservation = collect($stockReservation)->groupBy('item');
 
-        $steTotalIssued = StockEntryDetail::where('docstatus', 0)
-            ->where('status', 'Issued')
+        $steTotalIssued = StockEntryDetail::query()
+            ->issuedOnDraftStockEntry()
             ->whereIn('item_code', $itemCodes)
             ->whereIn('s_warehouse', $itemWarehouses)
             ->selectRaw('SUM(qty) as total_issued, CONCAT(item_code, "-", s_warehouse) as item')

@@ -157,8 +157,8 @@ class MaterialTransferController extends Controller
      */
     private function getSteTotalIssuedLookup(array $itemCodes, array $warehouses): array
     {
-        return StockEntryDetail::where('docstatus', 0)
-            ->where('status', 'Issued')
+        return StockEntryDetail::query()
+            ->issuedOnDraftStockEntry()
             ->whereIn('item_code', $itemCodes)
             ->whereIn('s_warehouse', $warehouses)
             ->selectRaw('SUM(qty) as total_issued, CONCAT(item_code, "-", s_warehouse) as item')
@@ -337,8 +337,8 @@ class MaterialTransferController extends Controller
                 ->select(DB::raw('CONCAT(item_code, REPLACE(warehouse, " ", "")) as id'), 'actual_qty')
                 ->pluck('actual_qty', 'id');
 
-            $totalIssuedSte = StockEntryDetail::where('docstatus', 0)
-                ->where('status', 'Issued')
+            $totalIssuedSte = StockEntryDetail::query()
+                ->issuedOnDraftStockEntry()
                 ->whereIn('item_code', $itemCodes)
                 ->whereIn('s_warehouse', $sourceWarehouses)
                 ->select(DB::raw('CONCAT(item_code, REPLACE(s_warehouse, " ", "")) as id'), DB::raw('sum(qty) as qty'))

@@ -339,7 +339,12 @@ class ItemProfileController extends Controller
             $stockReservesQuery = StockReservation::whereIn('item_code', $alternativeItemCodes)->whereIn('status', ['Active', 'Partially Issued'])->selectRaw('SUM(reserve_qty) as reserved_qty, SUM(consumed_qty) as consumed_qty, item_code')->groupBy('item_code')->get();
             $alternativeReserves = collect($stockReservesQuery)->groupBy('item_code');
 
-            $steIssuedQuery = StockEntryDetail::query()->where('docstatus', 0)->whereIn('item_code', $alternativeItemCodes)->where('status', 'Issued')->selectRaw('SUM(qty) as qty, item_code')->groupBy('item_code')->get();
+            $steIssuedQuery = StockEntryDetail::query()
+                ->issuedOnDraftStockEntry()
+                ->whereIn('item_code', $alternativeItemCodes)
+                ->selectRaw('SUM(qty) as qty, item_code')
+                ->groupBy('item_code')
+                ->get();
             $alternativesIssuedSte = collect($steIssuedQuery)->groupBy('item_code');
 
             $atIssuedQuery = AthenaTransaction::query()
@@ -1035,8 +1040,7 @@ class ItemProfileController extends Controller
             }
 
             $steRows = StockEntryDetail::query()
-                ->where('docstatus', 0)
-                ->where('status', 'Issued')
+                ->issuedOnDraftStockEntry()
                 ->whereIn('item_code', $itemCodes)
                 ->whereIn('s_warehouse', $allWarehouses)
                 ->selectRaw('item_code, s_warehouse, SUM(qty) as qty')
