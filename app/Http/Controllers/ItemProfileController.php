@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\WarehouseConstants;
 use App\Http\Helpers\ApiResponse;
 use App\Http\Helpers\SafePath;
 use App\Http\Resources\ItemResource;
@@ -163,6 +164,7 @@ class ItemProfileController extends Controller
         $lastPurchaseRate = $priceData['lastPurchaseRate'];
         $manualRate = $priceData['manualRate'];
         $lastPurchaseDate = $priceData['lastPurchaseDate'];
+        $lastPurchaseAt = $priceData['lastPurchaseAt'] ?? null;
         $websitePrice = $priceData['websitePrice'];
         $avgPurchaseRate = $priceData['avgPurchaseRate'];
         $isTaxIncludedInRate = $priceData['isTaxIncludedInRate'];
@@ -179,10 +181,9 @@ class ItemProfileController extends Controller
             $bundledStocks = $this->buildBundledStockLevels($request, $itemCode);
         }
 
-        $itemStockAvailable = collect($consignmentWarehouses)->sum('available_qty');
-        if ($itemStockAvailable <= 0) {
-            $itemStockAvailable = collect($siteWarehouses)->sum('available_qty');
-        }
+        $sellableSiteWarehouses = $this->sellableSiteWarehouses($siteWarehouses);
+        $itemStockAvailable = $sellableSiteWarehouses->sum('available_qty');
+        $itemStockOnHand = $sellableSiteWarehouses->sum('actual_qty');
 
         $lifecycleCurrentStatus = null;
         if (Schema::hasTable('tabItem') && Schema::hasColumn('tabItem', $lifecycleCol)) {
@@ -194,6 +195,7 @@ class ItemProfileController extends Controller
 
         // Last movement: compute days since last stock ledger posting_date (non-cancelled when column exists).
         $lifecycleLastMovementLabel = '—';
+        $lastPosting = null;
         try {
             $sle = DB::table('tabStock Ledger Entry')->where('item_code', $itemCode);
             if (Schema::hasColumn('tabStock Ledger Entry', 'is_cancelled')) {
@@ -201,20 +203,17 @@ class ItemProfileController extends Controller
             }
             $lastPosting = $sle->max('posting_date');
             if ($lastPosting) {
-                $days = (int) now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($lastPosting)->startOfDay());
-                $lifecycleLastMovementLabel = $days.' days ago';
+                $lifecycleLastMovementLabel = $this->formatDaysAgoLabel($lastPosting);
             }
         } catch (\Throwable $e) {
             $lifecycleLastMovementLabel = '—';
         }
 
-        // Last purchase: derive from $lastPurchaseDate (string) if parseable.
+        // Last purchase: use raw timestamp from price service (not the display string).
         $lifecycleLastPurchaseLabel = '—';
         try {
-            if ($lastPurchaseDate) {
-                $d = \Carbon\Carbon::parse($lastPurchaseDate);
-                $days = (int) now()->startOfDay()->diffInDays($d->startOfDay());
-                $lifecycleLastPurchaseLabel = $days.' days ago';
+            if ($lastPurchaseAt) {
+                $lifecycleLastPurchaseLabel = $this->formatDaysAgoLabel($lastPurchaseAt);
             }
         } catch (\Throwable $e) {
             $lifecycleLastPurchaseLabel = '—';
@@ -238,6 +237,7 @@ class ItemProfileController extends Controller
         $avgSellingPrice = null;
         $lastOrderDate = null;
         $lifecycleLastOrderLabel = '—';
+        $lastOrderRaw = null;
         try {
             $soBase = DB::table('tabSales Order Item as soi')
                 ->join('tabSales Order as so', 'so.name', '=', 'soi.parent')
@@ -253,61 +253,13 @@ class ItemProfileController extends Controller
             if ($lastOrderRaw) {
                 $lastOrderCarbon = \Carbon\Carbon::parse($lastOrderRaw)->startOfDay();
                 $lastOrderDate = $lastOrderCarbon->format('M j, Y');
-                $days = (int) abs(now()->startOfDay()->diffInDays($lastOrderCarbon));
-                $lifecycleLastOrderLabel = $days.' days ago';
+                $lifecycleLastOrderLabel = $this->formatDaysAgoLabel($lastOrderRaw);
             }
         } catch (\Throwable $e) {
             $avgSellingPrice = null;
             $lastOrderDate = null;
             $lifecycleLastOrderLabel = '—';
         }
-
-        // #region agent log
-        try {
-            $soProbe = ['tableExists' => Schema::hasTable('tabSales Order Item'), 'avgRate' => null, 'lastOrderDate' => null, 'soCount' => 0, 'error' => null];
-            if ($soProbe['tableExists']) {
-                $soBaseLog = DB::table('tabSales Order Item as soi')
-                    ->join('tabSales Order as so', 'so.name', '=', 'soi.parent')
-                    ->where('soi.item_code', $itemCode)
-                    ->where('so.docstatus', 1);
-                $soProbe['soCount'] = (clone $soBaseLog)->count();
-                $soProbe['avgRate'] = (clone $soBaseLog)->avg('soi.rate');
-                $soProbe['lastOrderDate'] = (clone $soBaseLog)->max('so.transaction_date');
-                $soProbe['orphanSoiCount'] = DB::table('tabSales Order Item')->where('item_code', $itemCode)->count();
-            }
-            $payload = [
-                'sessionId' => '1cf719',
-                'runId' => 'post-fix',
-                'hypothesisId' => 'A',
-                'location' => 'ItemProfileController.php:getItemDetails',
-                'message' => 'Item profile price/date payload after ASP/LastOrder wiring',
-                'data' => [
-                    'itemCode' => $itemCode,
-                    'priceDataKeys' => array_keys($priceData),
-                    'avgSellingPrice' => $avgSellingPrice,
-                    'lastOrderDate' => $lastOrderDate,
-                    'lifecycleLastOrderLabel' => $lifecycleLastOrderLabel,
-                    'defaultPrice' => $defaultPrice,
-                    'avgPurchaseRate' => $avgPurchaseRate,
-                    'lastPurchaseDate' => $lastPurchaseDate,
-                    'lifecycleLastMovementLabel' => $lifecycleLastMovementLabel,
-                    'lifecycleLastPurchaseLabel' => $lifecycleLastPurchaseLabel,
-                    'salesOrderProbe' => $soProbe,
-                ],
-                'timestamp' => (int) (microtime(true) * 1000),
-            ];
-            file_put_contents(base_path('debug-1cf719.log'), json_encode($payload)."\n", FILE_APPEND);
-        } catch (\Throwable $e) {
-            file_put_contents(base_path('debug-1cf719.log'), json_encode([
-                'sessionId' => '1cf719',
-                'hypothesisId' => 'A',
-                'location' => 'ItemProfileController.php:getItemDetails',
-                'message' => 'debug log failed',
-                'data' => ['error' => $e->getMessage()],
-                'timestamp' => (int) (microtime(true) * 1000),
-            ])."\n", FILE_APPEND);
-        }
-        // #endregion
 
         // images are eager-loaded on the main item query above.
         $itemImagesRaw = $itemDetails->images?->pluck('image_path') ?? collect();
@@ -612,6 +564,7 @@ class ItemProfileController extends Controller
             'variantsMinPriceArr',
             'actualVariantStocks',
             'itemStockAvailable',
+            'itemStockOnHand',
             'manualRate',
             'manualPriceInput',
             'consignmentBranches',
@@ -815,6 +768,22 @@ class ItemProfileController extends Controller
      * Item profile image rule: show .webp if it exists, otherwise no-img.png.
      * Used for main item images and item alternatives. Does not fall back to jpeg/png.
      */
+    private function formatDaysAgoLabel(mixed $date): string
+    {
+        $target = \Carbon\Carbon::parse($date)->startOfDay();
+        $days = (int) round(abs(now()->startOfDay()->diffInDays($target)));
+
+        if ($days === 0) {
+            return 'Today';
+        }
+
+        if ($days === 1) {
+            return '1 day ago';
+        }
+
+        return $days.' days ago';
+    }
+
     private function itemImageUrlWebpOrNoImg(?string $imagePath): string
     {
         $noImgUrl = Storage::disk('upcloud')->url('icon/no-img.png');
@@ -1005,6 +974,7 @@ class ItemProfileController extends Controller
 
         if ($request->ajax()) {
             $itemDetails = $itemDetails ?? Item::query()->where('name', $itemCode)->first();
+            $siteWarehouses = $this->sellableSiteWarehouses($siteWarehouses)->values()->all();
 
             return view('item_stock_level', compact('consignmentWarehouses', 'siteWarehouses', 'itemDetails'));
         }
@@ -1171,30 +1141,24 @@ class ItemProfileController extends Controller
 
             $actualQty = $value->actual_qty;
             $availableQty = ($actualQty > $issuedReservedQty) ? $actualQty - $issuedReservedQty : 0;
-            if ($value->parent_warehouse == 'P2 Consignment Warehouse - FI' && ! $isPromodiser) {
-                $consignmentWarehouses[] = [
-                    'warehouse' => $value->warehouse,
-                    'location' => $value->location,
-                    'reserved_qty' => $reservedQty,
-                    'actual_qty' => $value->actual_qty,
-                    'issued_qty' => $issuedQty,
-                    'available_qty' => $availableQty,
-                    'stock_uom' => $value->stock_uom,
-                ];
+            $row = [
+                'warehouse' => $value->warehouse,
+                'location' => $value->location,
+                'reserved_qty' => $reservedQty,
+                'actual_qty' => $value->actual_qty,
+                'issued_qty' => $issuedQty,
+                'available_qty' => $availableQty,
+                'stock_uom' => $value->stock_uom,
+                'parent_warehouse' => $value->parent_warehouse,
+            ];
+            if ($value->parent_warehouse == WarehouseConstants::P2_CONSIGNMENT_PARENT && ! $isPromodiser) {
+                $consignmentWarehouses[] = $row;
             } else {
-                if (Auth::user()->user_group == 'Promodiser' && $value->parent_warehouse == 'P2 Consignment Warehouse - FI') {
-                    $availableQty = $value->consigned_qty > 0 ? $value->consigned_qty : 0;
+                if (Auth::user()->user_group == 'Promodiser' && $value->parent_warehouse == WarehouseConstants::P2_CONSIGNMENT_PARENT) {
+                    $row['available_qty'] = $value->consigned_qty > 0 ? $value->consigned_qty : 0;
                 }
 
-                $siteWarehouses[] = [
-                    'warehouse' => $value->warehouse,
-                    'location' => $value->location,
-                    'reserved_qty' => $reservedQty,
-                    'actual_qty' => $value->actual_qty,
-                    'issued_qty' => $issuedQty,
-                    'available_qty' => $availableQty,
-                    'stock_uom' => $value->stock_uom,
-                ];
+                $siteWarehouses[] = $row;
             }
         }
 
@@ -1202,6 +1166,23 @@ class ItemProfileController extends Controller
             'consignment_warehouses' => $consignmentWarehouses,
             'site_warehouses' => $siteWarehouses,
         ];
+    }
+
+    /**
+     * Site bins that count toward Item Profile Available / On Hand widgets
+     * and the Stock Information table. Available = sum of Available column;
+     * On Hand = sum of Actual column.
+     *
+     * @param  array<int, array<string, mixed>>  $siteWarehouses
+     */
+    private function sellableSiteWarehouses(array $siteWarehouses): Collection
+    {
+        return collect($siteWarehouses)->reject(
+            fn (array $row) => WarehouseConstants::isExcludedFromItemProfileStockSummary(
+                $row['parent_warehouse'] ?? null,
+                $row['warehouse'] ?? null
+            )
+        );
     }
 
     public function getBundledItemStockLevels(Request $request, $itemCode)

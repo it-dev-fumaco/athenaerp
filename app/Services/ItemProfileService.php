@@ -46,6 +46,7 @@ class ItemProfileService
                 'lastPurchaseRate' => $lastPurchaseRate,
                 'manualRate' => $manualRate,
                 'lastPurchaseDate' => $lastPurchaseDate,
+                'lastPurchaseAt' => null,
                 'websitePrice' => $websitePrice,
                 'avgPurchaseRate' => $avgPurchaseRate,
                 'isTaxIncludedInRate' => 0,
@@ -59,8 +60,11 @@ class ItemProfileService
         $lastPurchaseOrder = PurchaseOrder::query()->from('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
             ->where('po.docstatus', 1)->where('poi.item_code', $itemCode)->select('poi.base_rate', 'po.supplier_group', 'po.creation')->orderBy('po.creation', 'desc')->first();
 
+        $lastPurchaseAt = null;
         if ($lastPurchaseOrder) {
-            $lastPurchaseDate = Carbon::parse($lastPurchaseOrder->creation)->format('M. d, Y h:i:A');
+            $lastPurchaseAt = $lastPurchaseOrder->creation;
+            // Use "h:i A" (space before AM/PM). "h:i:A" renders "03:30:AM" which Carbon cannot re-parse.
+            $lastPurchaseDate = Carbon::parse($lastPurchaseOrder->creation)->format('M. d, Y h:i A');
             if ($lastPurchaseOrder->supplier_group == 'Imported') {
                 $lastLandedCostVoucher = LandedCostVoucher::query()->from('tabLanded Cost Voucher as a')
                     ->join('tabLanded Cost Item as b', 'a.name', 'b.parent')
@@ -116,6 +120,7 @@ class ItemProfileService
             'lastPurchaseRate' => $lastPurchaseRate,
             'manualRate' => $manualRate,
             'lastPurchaseDate' => $lastPurchaseDate,
+            'lastPurchaseAt' => $lastPurchaseAt,
             'websitePrice' => $websitePrice,
             'avgPurchaseRate' => $avgPurchaseRate,
             'isTaxIncludedInRate' => $isTaxIncludedInRate,
