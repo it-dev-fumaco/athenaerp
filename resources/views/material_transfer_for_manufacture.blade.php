@@ -164,11 +164,11 @@
 														</tr>
 														<tr>
 															<td class="p-1"><b>Qty:</b></td>
-															<td class="p-1">@{{ x.qty | number:2 }}</td>
+															<td class="p-1">@{{ x.qty | qtyFormat }}</td>
 														</tr>
 														<tr>
 															<td class="p-1"><b>Available Stock:</b></td>
-															<td class="p-1"><span class="badge badge-@{{ x.balance > 0 ? 'success' : 'danger' }}">@{{ x.balance | number:2 }}</span></td>
+															<td class="p-1"><span class="badge badge-@{{ x.balance > 0 ? 'success' : 'danger' }}">@{{ x.balance | qtyFormat }}</span></td>
 														</tr>
 														<tr>
 															<td class="p-1"><b>Delivery Date:</b></td>
@@ -191,9 +191,9 @@
 												</div>
 											</td>
 											<td class="text-center d-none d-lg-table-cell">
-												<span class="d-block" style="font-size: 14pt;">@{{ x.qty | number:2 }}</span>
+												<span class="d-block" style="font-size: 14pt;">@{{ x.qty | qtyFormat }}</span>
 												<span class="d-block mt-3" style="font-size: 10pt;">Available Stock:</span>
-												<span class="badge badge-@{{ x.balance > 0 ? 'success' : 'danger' }}">@{{ x.balance | number:2 }}</span>
+												<span class="badge badge-@{{ x.balance > 0 ? 'success' : 'danger' }}">@{{ x.balance | qtyFormat }}</span>
 											</td>
 											<td class="text-center d-none d-lg-table-cell">
 												<span class="badge badge-danger" ng-if="x.delivery_status == 'late'" style="font-size: 10pt;">@{{ x.delivery_date }}</span>
@@ -389,6 +389,16 @@
 	});
 	
 	var app = angular.module('myApp', []);
+	// Show up to 4 decimals and trim trailing zeros so small qtys (e.g. 0.002) are not shown as 0.00
+	app.filter('qtyFormat', function () {
+		return function (input) {
+			var n = Number(input);
+			if (!isFinite(n)) {
+				return input;
+			}
+			return parseFloat(n.toFixed(4));
+		};
+	});
 	app.controller('stockCtrl', function($scope, $http, $interval, $window, $location, $sce) {
 		$scope.trustAsHtml = function(html) { return html ? $sce.trustAsHtml(html) : ''; };
 		$http.get("/get_parent_warehouses").then(function (response) {

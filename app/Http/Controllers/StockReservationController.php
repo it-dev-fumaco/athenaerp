@@ -149,7 +149,7 @@ class StockReservationController extends Controller
         if ($itemCode !== null && $itemCode !== '') {
             $stockEntryIssued = DB::table('tabStock Entry Detail as sted')
                 ->join('tabStock Entry as ste', 'ste.name', 'sted.parent')
-                ->where('sted.docstatus', 0)
+                ->where('ste.docstatus', 0)
                 ->where('sted.status', 'Issued')
                 ->where('sted.item_code', $itemCode)
                 ->whereNotIn('ste.purpose', ['Manufacture', 'Material Receipt'])

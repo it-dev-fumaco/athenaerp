@@ -123,8 +123,6 @@ class TransactionController extends Controller
                 'date_modified' => now()->toDateTimeString(),
             ];
 
-            $submitResult = $this->submitStockEntry($steDetails->parent_se, $values, 1);
-
             $this->insertTransactionLog('Stock Entry', $request->child_tbl_id);
 
             $stockReservationDetails = [];

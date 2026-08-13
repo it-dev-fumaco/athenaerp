@@ -20,10 +20,16 @@
     }
 
     $stockUom = $itemDetails->stock_uom ?? '';
-    $stockAvailable = $itemStockAvailable ?? collect($siteWarehouses ?? [])->sum('available_qty');
-    $stockReserved = collect($siteWarehouses ?? [])->sum('reserved_qty');
-    $stockOnHand = collect($siteWarehouses ?? [])->sum('actual_qty');
-    $warehouseCount = count($siteWarehouses ?? []);
+    $sellableSiteWarehouses = collect($siteWarehouses ?? [])->reject(function ($row) {
+        return \App\Constants\WarehouseConstants::isExcludedFromItemProfileStockSummary(
+            $row['parent_warehouse'] ?? null,
+            $row['warehouse'] ?? null
+        );
+    })->values();
+    $stockAvailable = $sellableSiteWarehouses->sum('available_qty');
+    $stockReserved = $sellableSiteWarehouses->sum('reserved_qty');
+    $stockOnHand = $sellableSiteWarehouses->sum('actual_qty');
+    $warehouseCount = $sellableSiteWarehouses->count();
 
     $lifecycleStatus = $lifecycleCurrentStatus ?? \App\Models\Item::LIFECYCLE_STATUS_ACTIVE;
     if ($lifecycleStatus === \App\Models\Item::LIFECYCLE_STATUS_ACTIVE) {
@@ -219,29 +225,6 @@
                                             <span class="ip-price-value">{{ '₱ ' . number_format($minimumSellingPrice, 2, '.', ',') }}</span>
                                         </div>
                                     @endif
-                                    {{-- #region agent log --}}
-                                    @php
-                                        try {
-                                            file_put_contents(base_path('debug-1cf719.log'), json_encode([
-                                                'sessionId' => '1cf719',
-                                                'runId' => 'post-fix',
-                                                'hypothesisId' => 'B',
-                                                'location' => 'item_profile_item_info.blade.php:pricing',
-                                                'message' => 'Pricing/Key Dates card render after ASP/LastOrder wiring',
-                                                'data' => [
-                                                    'issetAvgSellingPrice' => isset($avgSellingPrice),
-                                                    'avgSellingPrice' => $avgSellingPrice ?? null,
-                                                    'issetLastOrderDate' => isset($lastOrderDate),
-                                                    'lastOrderDate' => $lastOrderDate ?? null,
-                                                    'lifecycleLastOrderLabel' => $lifecycleLastOrderLabel ?? null,
-                                                    'willRenderAvgSellingRow' => isset($avgSellingPrice),
-                                                    'willRenderLastOrderRow' => true,
-                                                ],
-                                                'timestamp' => (int) (microtime(true) * 1000),
-                                            ])."\n", FILE_APPEND);
-                                        } catch (\Throwable $e) {}
-                                    @endphp
-                                    {{-- #endregion --}}
                                     @if (! empty($avgSellingPrice) && $avgSellingPrice > 0)
                                         <div class="ip-price-row">
                                             <span class="ip-price-label">Average Selling Price (Sales Orders)</span>
@@ -359,7 +342,7 @@
                     <div class="row mb-3">
                         <div class="col-6 col-md-3 mb-2">
                             <div class="ip-stock-widget ip-stock-available">
-                                <div class="ip-stock-widget-label"><i class="fas fa-check-circle mr-1"></i> Available</div>
+                                <div class="ip-stock-widget-label"><i class="fas fa-check-circle mr-1"></i> Available Qty</div>
                                 <div class="ip-stock-widget-value">{{ number_format((float) $stockAvailable, 2, '.', ',') }}</div>
                                 <div class="ip-stock-widget-uom">{{ $stockUom }}</div>
                             </div>
@@ -373,7 +356,7 @@
                         </div>
                         <div class="col-6 col-md-3 mb-2">
                             <div class="ip-stock-widget ip-stock-onhand">
-                                <div class="ip-stock-widget-label"><i class="fas fa-cubes mr-1"></i> On Hand</div>
+                                <div class="ip-stock-widget-label"><i class="fas fa-cubes mr-1"></i> Actual On Hand Qty</div>
                                 <div class="ip-stock-widget-value">{{ number_format((float) $stockOnHand, 2, '.', ',') }}</div>
                                 <div class="ip-stock-widget-uom">{{ $stockUom }}</div>
                             </div>
@@ -391,7 +374,7 @@
                     @if ($bundled)
                         @include('item_stock_level_bundled', ['stocks' => $bundledStocks])
                     @else
-                        @include('item_stock_level', compact('consignmentWarehouses', 'siteWarehouses', 'itemDetails'))
+                        @include('item_stock_level', ['consignmentWarehouses' => $consignmentWarehouses, 'siteWarehouses' => $sellableSiteWarehouses, 'itemDetails' => $itemDetails])
                     @endif
                 </div>
             </div>
@@ -433,7 +416,7 @@
                                             <td class="text-center align-middle">{{ data_get($itemAttributes, $attributeName) }}</td>
                                         @endforeach
                                         <td class="text-center align-middle text-nowrap variants-table">
-                                            <span class="badge badge-{{ ($itemStockAvailable > 0) ? 'success' : 'secondary' }} font-responsive">{{ ($itemStockAvailable > 0) ? 'In Stock' : 'Unavailable' }}</span>
+                                            <span class="badge badge-{{ ($stockAvailable > 0) ? 'success' : 'secondary' }} font-responsive">{{ ($stockAvailable > 0) ? 'In Stock' : 'Unavailable' }}</span>
                                         </td>
                                         @if ($showDeptPricing)
                                             <td class="text-center align-middle text-nowrap">
@@ -608,7 +591,7 @@
                         data-item-code="{{ $itemDetails->name }}"
                         data-item-name="{{ $itemDetails->item_name ?? $itemDetails->name }}"
                         data-item-tag="{{ $itemDetails->name }}"
-                        data-current-stock="{{ (float) ($itemStockAvailable ?? 0) }}"
+                        data-current-stock="{{ (float) $stockAvailable }}"
                         data-last-movement="{{ $lifecycleLastMovementLabel ?? '—' }}"
                         data-last-purchase="{{ $lifecycleLastPurchaseLabel ?? '—' }}"
                         data-current-status="{{ $lifecycleCurrentStatus ?? \App\Models\Item::LIFECYCLE_STATUS_ACTIVE }}"
