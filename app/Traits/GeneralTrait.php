@@ -190,13 +190,14 @@ trait GeneralTrait
             $reservedMap[$key] = (float) $row->reserve_qty - (float) $row->consumed_qty;
         }
 
-        $steIssuedResults = DB::table('tabStock Entry Detail')
-            ->where('docstatus', 0)
-            ->where('status', 'Issued')
-            ->whereIn('item_code', $itemCodes)
-            ->whereIn('s_warehouse', $warehouses)
-            ->selectRaw('item_code, s_warehouse as warehouse, SUM(qty) as qty')
-            ->groupBy('item_code', 's_warehouse')
+        $steIssuedResults = DB::table('tabStock Entry Detail as sted')
+            ->join('tabStock Entry as ste', 'ste.name', 'sted.parent')
+            ->where('ste.docstatus', 0)
+            ->where('sted.status', 'Issued')
+            ->whereIn('sted.item_code', $itemCodes)
+            ->whereIn('sted.s_warehouse', $warehouses)
+            ->selectRaw('sted.item_code, sted.s_warehouse as warehouse, SUM(sted.qty) as qty')
+            ->groupBy('sted.item_code', 'sted.s_warehouse')
             ->get();
 
         $athenaIssuedResults = DB::table('tabAthena Transactions as at')
@@ -480,8 +481,13 @@ trait GeneralTrait
 
     public function getIssuedQty($itemCode, $warehouse)
     {
-        $totalIssued = DB::table('tabStock Entry Detail')->where('docstatus', 0)->where('status', 'Issued')
-            ->where('item_code', $itemCode)->where('s_warehouse', $warehouse)->sum('qty');
+        $totalIssued = DB::table('tabStock Entry Detail as sted')
+            ->join('tabStock Entry as ste', 'ste.name', 'sted.parent')
+            ->where('ste.docstatus', 0)
+            ->where('sted.status', 'Issued')
+            ->where('sted.item_code', $itemCode)
+            ->where('sted.s_warehouse', $warehouse)
+            ->sum('sted.qty');
 
         $totalIssued += DB::table('tabAthena Transactions as at')
             ->join('tabPacking Slip as ps', 'ps.name', 'at.reference_parent')
