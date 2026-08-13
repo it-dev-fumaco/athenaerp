@@ -342,7 +342,7 @@
                     <div class="row mb-3">
                         <div class="col-6 col-md-3 mb-2">
                             <div class="ip-stock-widget ip-stock-available">
-                                <div class="ip-stock-widget-label"><i class="fas fa-check-circle mr-1"></i> Available</div>
+                                <div class="ip-stock-widget-label"><i class="fas fa-check-circle mr-1"></i> Available Qty</div>
                                 <div class="ip-stock-widget-value">{{ number_format((float) $stockAvailable, 2, '.', ',') }}</div>
                                 <div class="ip-stock-widget-uom">{{ $stockUom }}</div>
                             </div>
@@ -356,7 +356,7 @@
                         </div>
                         <div class="col-6 col-md-3 mb-2">
                             <div class="ip-stock-widget ip-stock-onhand">
-                                <div class="ip-stock-widget-label"><i class="fas fa-cubes mr-1"></i> On Hand</div>
+                                <div class="ip-stock-widget-label"><i class="fas fa-cubes mr-1"></i> Actual On Hand Qty</div>
                                 <div class="ip-stock-widget-value">{{ number_format((float) $stockOnHand, 2, '.', ',') }}</div>
                                 <div class="ip-stock-widget-uom">{{ $stockUom }}</div>
                             </div>
