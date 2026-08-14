@@ -305,6 +305,12 @@
                         </li>
                         @endif
                         <li class="nav-item">
+                            <a class="nav-link" id="get-order-history" data-toggle="tab" href="#order-history">
+                                <span class="d-none d-lg-block">Order History</span>
+                                <i class="fas fa-file-invoice d-block d-lg-none"></i>
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" id="getProductFiles" data-toggle="tab" href="#tabProductFiles">
                                 <span class="d-none d-lg-block">Product Files</span>
                                 <i class="fas fa-folder-open d-block d-lg-none"></i>
@@ -480,6 +486,9 @@
                         <div id="item-profile-purchase-history" class="p-3 col-12" data-item-code="{{ $itemDetails->name }}"></div>
                     </div>
                     @endif
+                    <div id="order-history" class="container-fluid tab-pane bg-white overflow-auto">
+                        <div id="item-profile-order-history" data-item-code="{{ $itemDetails->name }}"></div>
+                    </div>
                     <div class="container-fluid tab-pane bg-white" id="tab_4">
                         <div class="row">
                             <div class="col-md-12">
@@ -1101,6 +1110,10 @@
                 document.dispatchEvent(new CustomEvent('item-profile-purchase-history-refresh'));
             })
         @endif
+
+        $(document).on('click', '#get-order-history', function () {
+            document.dispatchEvent(new CustomEvent('item-profile-order-history-refresh'));
+        });
 
         $("#ath_dates").daterangepicker({
             autoUpdateInput: false,

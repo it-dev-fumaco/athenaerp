@@ -23,6 +23,7 @@ use App\Models\StockEntryDetail;
 use App\Models\StockReservation;
 use App\Models\UOM;
 use App\Models\WarehouseAccess;
+use App\Services\ItemOrderHistoryService;
 use App\Services\ItemProfileService;
 use App\Traits\GeneralTrait;
 use Buglinjo\LaravelWebp\Facades\Webp;
@@ -46,7 +47,8 @@ class ItemProfileController extends Controller
     use GeneralTrait;
 
     public function __construct(
-        protected ItemProfileService $itemProfileService
+        protected ItemProfileService $itemProfileService,
+        protected ItemOrderHistoryService $itemOrderHistoryService
     ) {}
 
     public function formWarehouseLocation($itemCode)
@@ -1273,5 +1275,58 @@ class ItemProfileController extends Controller
         }
 
         return $stocks;
+    }
+
+    public function getOrderHistory(Request $request, string $item_code)
+    {
+        $filters = $this->orderHistoryFilters($request);
+        $item = Item::query()->where('name', $item_code)->first();
+        $paginator = $this->itemOrderHistoryService->paginate($item_code, $filters);
+        $summary = $this->itemOrderHistoryService->summarize($item_code, $filters);
+        $customers = $this->itemOrderHistoryService->customerOptions($item_code, $filters);
+
+        $rows = collect($paginator->items())->map(function ($row) {
+            return [
+                'customer' => $row->customer,
+                'customer_name' => $row->customer_name ?: $row->customer,
+                'total_sales' => (float) $row->total_sales,
+                'total_qty' => (float) $row->total_qty,
+                'avg_selling_price' => (float) $row->avg_selling_price,
+                'last_order_date' => $row->last_order_date,
+                'last_order_no' => $row->last_order_no ?? null,
+                'number_of_orders' => (int) $row->number_of_orders,
+            ];
+        })->values();
+
+        return response()->json([
+            'summary' => $summary,
+            'rows' => $rows,
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'from' => $paginator->firstItem(),
+                'to' => $paginator->lastItem(),
+            ],
+            'customers' => $customers,
+            'stock_uom' => optional($item)->stock_uom ?? '',
+            'erp_web_base_url' => rtrim((string) config('erp.web_base_url'), '/'),
+        ]);
+    }
+
+    /**
+     * @return array{date_from: string|null, date_to: string|null, customer: string|null, sort: string, direction: string, per_page: int}
+     */
+    private function orderHistoryFilters(Request $request): array
+    {
+        return [
+            'date_from' => $request->input('date_from'),
+            'date_to' => $request->input('date_to'),
+            'customer' => $request->input('customer'),
+            'sort' => $request->input('sort', 'total_sales'),
+            'direction' => $request->input('direction', 'desc'),
+            'per_page' => (int) $request->input('per_page', 10),
+        ];
     }
 }

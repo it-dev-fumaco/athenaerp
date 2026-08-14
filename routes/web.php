@@ -168,6 +168,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
         Route::get('/get_dr_return_details/{id}', [DeliveryController::class, 'getDrReturnDetails']);
 
         Route::get('/get_item_details/{item_code}', [ItemProfileController::class, 'getItemDetails']);
+        Route::get('/item_order_history/{item_code}', [ItemProfileController::class, 'getOrderHistory']);
         Route::get('/get_athena_transactions/{item_code}', [MainController::class, 'getAthenaTransactions']);
         Route::get('/get_stock_ledger/{item_code}', [MainController::class, 'getStockLedger']);
         Route::get('/form_warehouse_location/{item_code}', [ItemProfileController::class, 'formWarehouseLocation']);
