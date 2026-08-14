@@ -239,6 +239,14 @@
 	min-height: 0;
 }
 
+/* Login activity filter buttons: keep content-sized */
+#login-activity-app .login-activity-filters__btn {
+	flex: 0 0 auto !important;
+	width: auto !important;
+	min-width: 0 !important;
+	max-width: none !important;
+}
+
 /* Desktop: host wraps the sticky sidebar column */
 .inventory-shell__sidebar-host {
 	flex-shrink: 0;
