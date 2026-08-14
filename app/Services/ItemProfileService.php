@@ -47,6 +47,7 @@ class ItemProfileService
                 'manualRate' => $manualRate,
                 'lastPurchaseDate' => $lastPurchaseDate,
                 'lastPurchaseAt' => null,
+                'lastPurchaseSupplier' => null,
                 'websitePrice' => $websitePrice,
                 'avgPurchaseRate' => $avgPurchaseRate,
                 'isTaxIncludedInRate' => 0,
@@ -58,11 +59,13 @@ class ItemProfileService
         $avgPurchaseRate = $this->avgPurchaseRate($itemCode);
 
         $lastPurchaseOrder = PurchaseOrder::query()->from('tabPurchase Order as po')->join('tabPurchase Order Item as poi', 'po.name', 'poi.parent')
-            ->where('po.docstatus', 1)->where('poi.item_code', $itemCode)->select('poi.base_rate', 'po.supplier_group', 'po.creation')->orderBy('po.creation', 'desc')->first();
+            ->where('po.docstatus', 1)->where('poi.item_code', $itemCode)->select('poi.base_rate', 'po.supplier_group', 'po.creation', 'po.supplier_name', 'po.supplier')->orderBy('po.creation', 'desc')->first();
 
         $lastPurchaseAt = null;
+        $lastPurchaseSupplier = null;
         if ($lastPurchaseOrder) {
             $lastPurchaseAt = $lastPurchaseOrder->creation;
+            $lastPurchaseSupplier = $lastPurchaseOrder->supplier_name ?: $lastPurchaseOrder->supplier;
             // Use "h:i A" (space before AM/PM). "h:i:A" renders "03:30:AM" which Carbon cannot re-parse.
             $lastPurchaseDate = Carbon::parse($lastPurchaseOrder->creation)->format('M. d, Y h:i A');
             if ($lastPurchaseOrder->supplier_group == 'Imported') {
@@ -121,6 +124,7 @@ class ItemProfileService
             'manualRate' => $manualRate,
             'lastPurchaseDate' => $lastPurchaseDate,
             'lastPurchaseAt' => $lastPurchaseAt,
+            'lastPurchaseSupplier' => $lastPurchaseSupplier,
             'websitePrice' => $websitePrice,
             'avgPurchaseRate' => $avgPurchaseRate,
             'isTaxIncludedInRate' => $isTaxIncludedInRate,
