@@ -123,6 +123,33 @@
             border-bottom: 0;
         }
 
+        .ip-price-section {
+            padding-bottom: 0.35rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid #eef2f7;
+        }
+
+        .ip-price-section:last-child,
+        .ip-price-section-last {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: 0;
+        }
+
+        .ip-price-section .ip-price-row {
+            border-bottom: 0;
+        }
+
+        .ip-price-group-label {
+            font-size: 9pt;
+            font-weight: 600;
+            color: #4b5563;
+        }
+
+        .ip-price-row.ip-price-nested {
+            padding-left: 1rem;
+        }
+
         .ip-price-label {
             font-size: 9pt;
             color: #4b5563;
@@ -149,6 +176,21 @@
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+        }
+
+        .ip-sold-chart {
+            padding-top: 0.15rem;
+        }
+
+        .ip-sold-chart-header {
+            border-bottom: 0;
+            padding-bottom: 0.2rem;
+        }
+
+        .ip-sold-chart-wrap {
+            position: relative;
+            height: 150px;
+            margin-top: 0.25rem;
         }
 
         .ip-stock-widget {
@@ -789,6 +831,73 @@
                 window.requestIdleCallback(startDataFetch, { timeout: 1000 });
             } else {
                 setTimeout(startDataFetch, 0);
+            }
+
+            var soldChartEl = document.getElementById('ip-avg-sold-chart');
+            var soldChartData = @json($soldPerMonthChart ?? ['labels' => [], 'values' => []]);
+            if (soldChartEl && typeof Chart !== 'undefined' && soldChartData.labels && soldChartData.labels.length) {
+                var formatSoldQty = function (value) {
+                    var n = Number(value);
+                    if (!isFinite(n)) {
+                        return '0';
+                    }
+                    return Math.round(n * 100) / 100 === Math.round(n) ? String(Math.round(n)) : n.toFixed(2);
+                };
+                new Chart(soldChartEl.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: soldChartData.labels,
+                        datasets: [{
+                            data: soldChartData.values,
+                            backgroundColor: '#3b82f6',
+                            hoverBackgroundColor: '#2563eb',
+                            barPercentage: 0.65,
+                            categoryPercentage: 0.8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        legend: { display: false },
+                        tooltips: {
+                            callbacks: {
+                                label: function (tooltipItem) {
+                                    return formatSoldQty(tooltipItem.yLabel);
+                                }
+                            }
+                        },
+                        layout: { padding: { top: 18 } },
+                        scales: {
+                            xAxes: [{
+                                gridLines: { display: false },
+                                ticks: { fontSize: 10, fontColor: '#6b7280', maxRotation: 0, minRotation: 0 }
+                            }],
+                            yAxes: [{
+                                display: false,
+                                ticks: { beginAtZero: true }
+                            }]
+                        }
+                    },
+                    plugins: [{
+                        afterDatasetsDraw: function (chart) {
+                            var ctx = chart.ctx;
+                            chart.data.datasets.forEach(function (dataset, i) {
+                                var meta = chart.getDatasetMeta(i);
+                                if (meta.hidden) {
+                                    return;
+                                }
+                                meta.data.forEach(function (bar, index) {
+                                    var value = dataset.data[index];
+                                    ctx.fillStyle = '#374151';
+                                    ctx.font = '600 10px sans-serif';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'bottom';
+                                    ctx.fillText(formatSoldQty(value), bar._model.x, bar._model.y - 4);
+                                });
+                            });
+                        }
+                    }]
+                });
             }
         });
         $(document).on('submit', '#edit-warehouse-location-form', function (e) {

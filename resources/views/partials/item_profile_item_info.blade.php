@@ -200,57 +200,86 @@
                             </div>
                             <div class="ip-card-body">
                                 @if ($showDeptPricing && $defaultPrice > 0)
-                                    <div class="ip-price-row">
-                                        <span class="ip-price-label">Standard Selling Price</span>
-                                        <span class="ip-price-value">{{ '₱ ' . number_format($defaultPrice, 2, '.', ',') }}</span>
+                                    <div class="ip-price-section">
+                                        <div class="ip-price-row">
+                                            <span class="ip-price-label">Standard Selling Price ({{ $isTaxIncludedInRate ? 'Vat Inclusive' : 'Vat Exclusive' }})</span>
+                                            <span class="ip-price-value">{{ '₱ ' . number_format($defaultPrice, 2, '.', ',') }}</span>
+                                        </div>
                                     </div>
-                                    @if ($isTaxIncludedInRate)
-                                        <small class="text-muted font-italic d-block mb-2" style="font-size: 7.5pt;">* VAT inclusive</small>
-                                    @endif
                                 @endif
 
                                 @if ($showManagerPricing)
-                                    @if ($defaultPrice > 0)
-                                        <div class="ip-price-row">
-                                            <span class="ip-price-label">Standard Selling Price</span>
-                                            <span class="ip-price-value">{{ '₱ ' . number_format($defaultPrice, 2, '.', ',') }}</span>
-                                        </div>
-                                        @if ($isTaxIncludedInRate)
-                                            <small class="text-muted font-italic d-block mb-2" style="font-size: 7.5pt;">* VAT inclusive</small>
+                                    <div class="ip-price-section">
+                                        @if ($defaultPrice > 0)
+                                            <div class="ip-price-row">
+                                                <span class="ip-price-label">Standard Selling Price (Vat Inclusive)</span>
+                                                <span class="ip-price-value">{{ '₱ ' . number_format($defaultPrice, 2, '.', ',') }}</span>
+                                            </div>
                                         @endif
-                                    @endif
-                                    @if ($minimumSellingPrice > 0)
+                                        @if ($minimumSellingPrice > 0)
+                                            <div class="ip-price-row">
+                                                <span class="ip-price-label">Minimum Selling Price (Vat Inclusive)</span>
+                                                <span class="ip-price-value">{{ '₱ ' . number_format($minimumSellingPrice, 2, '.', ',') }}</span>
+                                            </div>
+                                        @endif
                                         <div class="ip-price-row">
-                                            <span class="ip-price-label">Minimum Selling Price</span>
-                                            <span class="ip-price-value">{{ '₱ ' . number_format($minimumSellingPrice, 2, '.', ',') }}</span>
+                                            <span class="ip-price-group-label">Average Selling Price (Vat Exclusive)</span>
                                         </div>
-                                    @endif
-                                    @if (! empty($avgSellingPrice) && $avgSellingPrice > 0)
-                                        <div class="ip-price-row">
-                                            <span class="ip-price-label">Average Selling Price (Sales Orders)</span>
-                                            <span class="ip-price-value">{{ '₱ ' . number_format($avgSellingPrice, 2, '.', ',') }}</span>
-                                        </div>
-                                    @else
-                                        <div class="ip-price-row">
-                                            <span class="ip-price-label">Average Selling Price (Sales Orders)</span>
-                                            <span class="ip-price-value">—</span>
-                                        </div>
-                                    @endif
-                                    @if ($lastPurchaseRate > 0)
-                                        <div class="ip-price-row">
-                                            <span class="ip-price-label">Last Purchase Rate</span>
+                                        <div class="ip-price-row ip-price-nested">
+                                            <span class="ip-price-label">Last 6 Months</span>
                                             <span class="ip-price-value">
-                                                {{ '₱ ' . number_format($lastPurchaseRate, 2, '.', ',') }}
-                                                <small class="text-muted font-italic d-block">{{ $lastPurchaseDate }}</small>
+                                                @if (! empty($avgSellingPrice6m) && $avgSellingPrice6m > 0)
+                                                    {{ '₱ ' . number_format($avgSellingPrice6m, 2, '.', ',') }}
+                                                @else
+                                                    —
+                                                @endif
                                             </span>
                                         </div>
-                                    @endif
-                                    @if ($avgPurchaseRate > 0)
-                                        <div class="ip-price-row avg-purchase-rate-div">
-                                            <span class="ip-price-label">Average Purchase Rate</span>
-                                            <span class="ip-price-value">{{ $avgPurchaseRate }}</span>
+                                        <div class="ip-price-row ip-price-nested">
+                                            <span class="ip-price-label">Year to Date (YTD)</span>
+                                            <span class="ip-price-value">
+                                                @if (! empty($avgSellingPriceYtd) && $avgSellingPriceYtd > 0)
+                                                    {{ '₱ ' . number_format($avgSellingPriceYtd, 2, '.', ',') }}
+                                                @else
+                                                    —
+                                                @endif
+                                            </span>
                                         </div>
-                                    @endif
+                                    </div>
+                                @endif
+
+                                <div class="ip-price-section ip-sold-chart">
+                                    <div class="ip-price-row ip-sold-chart-header">
+                                        <span class="ip-price-label">Average Sold Per Month (Last 6 Months)</span>
+                                        <span class="ip-price-value">
+                                            @if (! empty($itemDetails->stock_uom))
+                                                <small class="text-muted">{{ $itemDetails->stock_uom }}</small>
+                                            @endif
+                                        </span>
+                                    </div>
+                                    <div class="ip-sold-chart-wrap">
+                                        <canvas id="ip-avg-sold-chart" height="140"></canvas>
+                                    </div>
+                                </div>
+
+                                @if ($showManagerPricing)
+                                    <div class="ip-price-section ip-price-section-last">
+                                        @if ($lastPurchaseRate > 0)
+                                            <div class="ip-price-row">
+                                                <span class="ip-price-label">Last Purchase Rate</span>
+                                                <span class="ip-price-value">
+                                                    {{ '₱ ' . number_format($lastPurchaseRate, 2, '.', ',') }}
+                                                    <small class="text-muted font-italic d-block">{{ $lastPurchaseDate }}</small>
+                                                </span>
+                                            </div>
+                                        @endif
+                                        @if ($avgPurchaseRate > 0)
+                                            <div class="ip-price-row avg-purchase-rate-div">
+                                                <span class="ip-price-label">Average Purchase Rate (Vat Exclusive)</span>
+                                                <span class="ip-price-value">{{ $avgPurchaseRate }}</span>
+                                            </div>
+                                        @endif
+                                    </div>
                                 @endif
                             </div>
                         </div>
@@ -279,6 +308,9 @@
                                             @if (! empty($lastOrderDate))
                                                 <small class="text-muted d-block">{{ $lastOrderDate }}</small>
                                             @endif
+                                            @if (! empty($lastOrderCustomer))
+                                                <small class="text-muted d-block">from {{ $lastOrderCustomer }}</small>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -286,7 +318,12 @@
                                     <span class="ip-date-icon"><i class="fas fa-warehouse"></i></span>
                                     <div>
                                         <div class="ip-meta-label">Last Purchase</div>
-                                        <div class="ip-meta-value">{{ $lifecycleLastPurchaseLabel ?? '—' }}</div>
+                                        <div class="ip-meta-value">
+                                            {{ $lifecycleLastPurchaseLabel ?? '—' }}
+                                            @if (! empty($lastPurchaseSupplier))
+                                                <small class="text-muted d-block">from {{ $lastPurchaseSupplier }}</small>
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -165,6 +165,7 @@ class ItemProfileController extends Controller
         $manualRate = $priceData['manualRate'];
         $lastPurchaseDate = $priceData['lastPurchaseDate'];
         $lastPurchaseAt = $priceData['lastPurchaseAt'] ?? null;
+        $lastPurchaseSupplier = $priceData['lastPurchaseSupplier'] ?? null;
         $websitePrice = $priceData['websitePrice'];
         $avgPurchaseRate = $priceData['avgPurchaseRate'];
         $isTaxIncludedInRate = $priceData['isTaxIncludedInRate'];
@@ -233,9 +234,13 @@ class ItemProfileController extends Controller
             $lifecycleLastUpdatedDetail = '—';
         }
 
-        // Average Selling Price + Last Order Date from submitted Sales Orders.
-        $avgSellingPrice = null;
+        // Average Selling Price (6m / YTD) + Last Order Date from submitted Sales Orders.
+        $avgSellingPrice6m = null;
+        $avgSellingPriceYtd = null;
+        $avgSoldPerMonth = null;
+        $soldPerMonthChart = ['labels' => [], 'values' => []];
         $lastOrderDate = null;
+        $lastOrderCustomer = null;
         $lifecycleLastOrderLabel = '—';
         $lastOrderRaw = null;
         try {
@@ -244,20 +249,56 @@ class ItemProfileController extends Controller
                 ->where('soi.item_code', $itemCode)
                 ->where('so.docstatus', 1);
 
-            $avgRate = (clone $soBase)->avg('soi.rate');
-            if ($avgRate !== null && (float) $avgRate > 0) {
-                $avgSellingPrice = (float) $avgRate;
-            }
+            $rateColumn = Schema::hasColumn('tabSales Order Item', 'net_rate')
+                ? 'soi.net_rate'
+                : 'soi.rate';
+            $from6m = now()->startOfMonth()->subMonths(5)->toDateString();
+            $fromYtd = now()->startOfYear()->toDateString();
 
-            $lastOrderRaw = (clone $soBase)->max('so.transaction_date');
-            if ($lastOrderRaw) {
+            $avg6m = (clone $soBase)->where('so.transaction_date', '>=', $from6m)->avg($rateColumn);
+            $avgYtd = (clone $soBase)->where('so.transaction_date', '>=', $fromYtd)->avg($rateColumn);
+            $avgSellingPrice6m = ($avg6m !== null && (float) $avg6m > 0) ? (float) $avg6m : null;
+            $avgSellingPriceYtd = ($avgYtd !== null && (float) $avgYtd > 0) ? (float) $avgYtd : null;
+
+            $lastOrder = (clone $soBase)
+                ->orderByDesc('so.transaction_date')
+                ->orderByDesc('so.modified')
+                ->select('so.transaction_date', 'so.customer_name', 'so.customer')
+                ->first();
+            if ($lastOrder?->transaction_date) {
+                $lastOrderRaw = $lastOrder->transaction_date;
                 $lastOrderCarbon = \Carbon\Carbon::parse($lastOrderRaw)->startOfDay();
                 $lastOrderDate = $lastOrderCarbon->format('M j, Y');
                 $lifecycleLastOrderLabel = $this->formatDaysAgoLabel($lastOrderRaw);
+                $lastOrderCustomer = $lastOrder->customer_name ?: $lastOrder->customer;
+            }
+
+            $qtyColumn = Schema::hasColumn('tabSales Order Item', 'stock_qty')
+                ? 'soi.stock_qty'
+                : 'soi.qty';
+            $totalSold = (clone $soBase)->where('so.transaction_date', '>=', $from6m)->sum($qtyColumn);
+            $avgSoldPerMonth = round(((float) $totalSold) / 6, 2);
+
+            $monthlySold = (clone $soBase)
+                ->where('so.transaction_date', '>=', $from6m)
+                ->selectRaw('DATE_FORMAT(so.transaction_date, "%Y-%m") as ym, SUM('.$qtyColumn.') as qty')
+                ->groupBy(DB::raw('DATE_FORMAT(so.transaction_date, "%Y-%m")'))
+                ->pluck('qty', 'ym');
+
+            $soldPerMonthChart = ['labels' => [], 'values' => []];
+            for ($i = 5; $i >= 0; $i--) {
+                $month = now()->startOfMonth()->subMonths($i);
+                $ym = $month->format('Y-m');
+                $soldPerMonthChart['labels'][] = $month->format('M')." '".$month->format('y');
+                $soldPerMonthChart['values'][] = round((float) ($monthlySold[$ym] ?? 0), 2);
             }
         } catch (\Throwable $e) {
-            $avgSellingPrice = null;
+            $avgSellingPrice6m = null;
+            $avgSellingPriceYtd = null;
+            $avgSoldPerMonth = null;
+            $soldPerMonthChart = ['labels' => [], 'values' => []];
             $lastOrderDate = null;
+            $lastOrderCustomer = null;
             $lifecycleLastOrderLabel = '—';
         }
 
@@ -580,8 +621,13 @@ class ItemProfileController extends Controller
             'lifecycleLastMovementLabel',
             'lifecycleLastPurchaseLabel',
             'lifecycleLastOrderLabel',
-            'avgSellingPrice',
+            'avgSellingPrice6m',
+            'avgSellingPriceYtd',
+            'avgSoldPerMonth',
+            'soldPerMonthChart',
             'lastOrderDate',
+            'lastOrderCustomer',
+            'lastPurchaseSupplier',
             'lifecycleLastUpdatedLabel',
             'lifecycleLastUpdatedDetail'
         ));
