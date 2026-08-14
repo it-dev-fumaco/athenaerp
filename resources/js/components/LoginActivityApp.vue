@@ -7,71 +7,75 @@
       </p>
     </div>
 
-    <div class="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:flex-wrap lg:items-end">
-      <div class="min-w-0 flex-1">
-        <label class="block text-xs font-medium text-slate-500" for="laf-user">User / email / id</label>
-        <input
-          id="laf-user"
-          v-model="filters.user"
-          type="search"
-          class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
-          placeholder="Partial match on username or user id"
-          autocomplete="off"
-          @keyup.enter="applyFilters"
-        >
+    <form class="login-activity-filters" @submit.prevent="applyFilters">
+      <div class="login-activity-filters__row">
+        <div class="login-activity-filters__user-col">
+          <div class="login-activity-filters__field login-activity-filters__field--user">
+            <label class="login-activity-filters__label" for="laf-user">User / email / id</label>
+            <input
+              id="laf-user"
+              v-model="filters.user"
+              type="search"
+              class="login-activity-filters__control"
+              placeholder="Partial match on user"
+              autocomplete="off"
+              @keydown.enter.prevent="applyFilters"
+            >
+          </div>
+          <div class="login-activity-filters__actions">
+            <button
+              type="button"
+              class="login-activity-filters__btn login-activity-filters__btn--reset"
+              @click="resetFilters"
+            >
+              Reset
+            </button>
+            <button
+              type="button"
+              class="login-activity-filters__btn login-activity-filters__btn--apply"
+              @click="applyFilters"
+            >
+              Apply filters
+            </button>
+          </div>
+        </div>
+        <div class="login-activity-filters__field login-activity-filters__field--status">
+          <label class="login-activity-filters__label" for="laf-status">Status</label>
+          <select
+            id="laf-status"
+            v-model="filters.status"
+            class="login-activity-filters__control"
+          >
+            <option value="">All</option>
+            <option value="success">Success</option>
+            <option value="failed">Failed</option>
+          </select>
+        </div>
+        <div class="login-activity-filters__field login-activity-filters__field--date">
+          <label class="login-activity-filters__label" for="laf-from">From</label>
+          <input
+            id="laf-from"
+            v-model="filters.date_from"
+            type="date"
+            class="login-activity-filters__control"
+          >
+        </div>
+        <div class="login-activity-filters__field login-activity-filters__field--date">
+          <label class="login-activity-filters__label" for="laf-to">To</label>
+          <input
+            id="laf-to"
+            v-model="filters.date_to"
+            type="date"
+            class="login-activity-filters__control"
+          >
+        </div>
       </div>
-      <div>
-        <label class="block text-xs font-medium text-slate-500" for="laf-status">Status</label>
-        <select
-          id="laf-status"
-          v-model="filters.status"
-          class="mt-1 w-full min-w-[10rem] rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 lg:w-40"
-        >
-          <option value="">All</option>
-          <option value="success">Success</option>
-          <option value="failed">Failed</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs font-medium text-slate-500" for="laf-from">From</label>
-        <input
-          id="laf-from"
-          v-model="filters.date_from"
-          type="date"
-          class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 lg:w-44"
-        >
-      </div>
-      <div>
-        <label class="block text-xs font-medium text-slate-500" for="laf-to">To</label>
-        <input
-          id="laf-to"
-          v-model="filters.date_to"
-          type="date"
-          class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 lg:w-44"
-        >
-      </div>
-      <div class="flex gap-2">
-        <button
-          type="button"
-          class="rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2"
-          @click="applyFilters"
-        >
-          Apply
-        </button>
-        <button
-          type="button"
-          class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
-          @click="resetFilters"
-        >
-          Reset
-        </button>
-      </div>
-    </div>
+    </form>
 
     <div v-if="loading" class="flex justify-center py-10">
       <div class="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700" aria-hidden="true" />
     </div>
-    <div v-else-if="error" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+    <div v-else-if="error" class="pt-2 text-sm font-medium text-red-700">
       {{ error }}
     </div>
     <div v-else class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -265,3 +269,177 @@ onMounted(() => {
   loadPage(1);
 });
 </script>
+
+<style scoped>
+.login-activity-filters {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.login-activity-filters__row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+}
+
+.login-activity-filters__user-col {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 280px;
+  width: 280px;
+  max-width: 280px;
+  gap: 8px;
+}
+
+.login-activity-filters__field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.login-activity-filters__field--user {
+  width: 100%;
+  max-width: none;
+}
+
+.login-activity-filters__field--status {
+  flex: 0 0 140px;
+  width: 140px;
+}
+
+.login-activity-filters__field--date {
+  flex: 0 0 150px;
+  width: 150px;
+}
+
+.login-activity-filters__label {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: #334155;
+}
+
+.login-activity-filters__control {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 40px;
+  margin: 0;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 24px;
+  color: #0f172a;
+  box-shadow: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+select.login-activity-filters__control {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2364748b' d='M1.4.6 6 5.2 10.6.6 12 2 6 8 0 2z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 10px 7px;
+  padding-right: 32px;
+}
+
+.login-activity-filters__control::placeholder {
+  color: #9ca3af;
+}
+
+.login-activity-filters__control:focus {
+  outline: none;
+  border-color: #0f172a;
+  box-shadow: 0 0 0 1px #0f172a;
+}
+
+.login-activity-filters__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.login-activity-filters__btn {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: auto !important;
+  min-width: 0;
+  max-width: none;
+  height: 40px;
+  margin: 0;
+  border-radius: 6px;
+  padding: 0 16px;
+  font-size: 14px;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.login-activity-filters__btn:focus {
+  outline: none;
+}
+
+.login-activity-filters__btn:focus-visible {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #94a3b8;
+}
+
+.login-activity-filters__btn--reset {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #0f172a;
+  font-weight: 500;
+}
+
+.login-activity-filters__btn--reset:hover {
+  background: #f8fafc;
+}
+
+.login-activity-filters__btn--apply {
+  flex: 0 0 auto;
+  width: auto !important;
+  border: 1px solid #0f172a;
+  background: #0f172a;
+  color: #fff;
+  font-weight: 600;
+}
+
+.login-activity-filters__btn--apply:hover {
+  background: #020617;
+}
+
+@media (max-width: 900px) {
+  .login-activity-filters__row {
+    flex-wrap: wrap;
+  }
+
+  .login-activity-filters__user-col,
+  .login-activity-filters__field--status,
+  .login-activity-filters__field--date {
+    flex: 1 1 calc(50% - 12px);
+    max-width: none;
+    width: auto;
+  }
+}
+</style>
+
+

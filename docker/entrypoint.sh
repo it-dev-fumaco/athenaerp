@@ -30,24 +30,16 @@ if [ -f "artisan" ] && [ ! -f ".env" ]; then
     fi
 fi
 
-# Generate app key if missing (e.g. first run without APP_KEY in .env)
-if [ -f "artisan" ] && [ -f ".env" ] && ! grep -q "APP_KEY=base64:" .env 2>/dev/null; then
-    php artisan key:generate --no-interaction 2>/dev/null || true
-fi
+# Skip key:generate here — artisan can hang on OpenTelemetry shutdown and block PHP-FPM.
 
 # Use built Vite assets in container (no dev server). Remove hot so @vite() uses manifest.
 if [ -f "public/hot" ]; then
     rm -f public/hot
 fi
 
-# Production: clear view cache first so compiled Blade uses current Vite manifest (avoids 404 for assets after deploy).
-# Then cache config, routes, views for faster response (no business logic change).
-# Use --force so Laravel does not prompt for confirmation in non-interactive mode.
-if [ "${APP_ENV:-local}" = "production" ] && [ -f "artisan" ]; then
-    php artisan view:clear --no-interaction 2>/dev/null || true
-    php artisan config:cache --no-interaction --force 2>/dev/null || true
-    php artisan route:cache --no-interaction --force 2>/dev/null || true
-    php artisan view:cache --no-interaction --force 2>/dev/null || true
-fi
+# Do not run artisan cache here. Those commands can hang on shutdown
+# (OpenTelemetry export to :4318) and nginx then returns 502 until FPM starts.
+# Warm caches after the container is up, e.g.:
+#   docker exec athenaerp-app php artisan config:cache --no-interaction
 
 exec "$@"
