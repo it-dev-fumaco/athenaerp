@@ -3015,7 +3015,7 @@ class MainController extends Controller
     public function uploadFiles(Request $request)
     {
         $now = now();
-        $maxFileSizeBytes = 10 * 1024 * 1024; // 10 MB
+        $maxFileSizeBytes = 100 * 1024 * 1024; // 100 MB
         $allowedExtensions = SafePath::allowedDocumentExtensions();
 
         if ($request->hasFile('itemFile')) {
@@ -3034,10 +3034,14 @@ class MainController extends Controller
             $itemFiles = [];
             foreach ($files as $i => $file) {
                 if (! $file->isValid()) {
-                    continue;
+                    if (in_array($file->getError(), [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
+                        return response()->json(['status' => false, 'message' => 'File too large. Maximum size is 100 MB.'], 422);
+                    }
+
+                    return response()->json(['status' => false, 'message' => 'File upload failed.'], 422);
                 }
                 if ($file->getSize() > $maxFileSizeBytes) {
-                    return response()->json(['status' => false, 'message' => 'File too large. Maximum size is 10 MB.'], 422);
+                    return response()->json(['status' => false, 'message' => 'File too large. Maximum size is 100 MB.'], 422);
                 }
                 $originalExtension = strtolower($file->getClientOriginalExtension());
                 if (! in_array($originalExtension, $allowedExtensions, true)) {
