@@ -21,6 +21,7 @@ import ItemProfileStockReservation from './components/ItemProfileStockReservatio
 import ItemProfileAthenaTransactions from './components/ItemProfileAthenaTransactions.vue';
 import ItemProfileStockLedger from './components/ItemProfileStockLedger.vue';
 import ItemProfilePurchaseHistory from './components/ItemProfilePurchaseHistory.vue';
+import ItemProfileOrderHistory from './components/ItemProfileOrderHistory.vue';
 import ItemProfileConsignmentStockMovement from './components/ItemProfileConsignmentStockMovement.vue';
 import SearchResultsList from './components/SearchResultsList.vue';
 import SearchResultsApp from './components/SearchResultsApp.vue';
@@ -132,6 +133,13 @@ if (itemProfilePurchaseHistoryEl) {
     createApp(ItemProfilePurchaseHistory, {
         itemCode: itemProfilePurchaseHistoryEl.dataset.itemCode || '',
     }).mount('#item-profile-purchase-history');
+}
+
+const itemProfileOrderHistoryEl = document.getElementById('item-profile-order-history');
+if (itemProfileOrderHistoryEl) {
+    createApp(ItemProfileOrderHistory, {
+        itemCode: itemProfileOrderHistoryEl.dataset.itemCode || '',
+    }).mount('#item-profile-order-history');
 }
 
 const itemProfileConsignmentStockMovementEl = document.getElementById('item-profile-consignment-stock-movement');
