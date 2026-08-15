@@ -176,6 +176,28 @@
 			border-radius: 2px;
 			text-align: center;
 		}
+		.pip {
+			position: relative;
+		}
+		.pip .ip-img-default-badge {
+			position: absolute;
+			bottom: 10px;
+			left: 18px;
+			background: #2563eb;
+			color: #fff;
+			font-size: 0.7rem;
+			font-weight: 600;
+			padding: 0.15rem 0.5rem;
+			border-radius: 999px;
+		}
+		.pip .set-default-item-image {
+			position: absolute;
+			bottom: 8px;
+			left: 18px;
+			z-index: 2;
+			font-size: 0.75rem;
+			padding: 0.15rem 0.45rem;
+		}
 		.col-md-13 {
 			width: 19%;
 			margin: 0.5%;
@@ -1916,16 +1938,73 @@
 					url: '/get_item_images/' + item_code,
 					success: function(response){
 						$('#image-previews').empty();
-						$.each(response, function(i, image_src){
-							$("<div class=\"col-md-4 pip img_upload\">" +
-							"<input type=\"hidden\" name=\"existing_images[]\" value=\"" + i + "\">" +
-							"<img src=\"" + image_src + "\" class=\"img-thumbnail\">" +
-							"<span class=\"add-fav remove\">&times;</span>" +
-							"</div>").insertAfter("#image-previews");
+						$('.img_upload').remove();
+						$.each(response, function(_, image){
+							var name = image && image.name ? image.name : '';
+							var url = image && image.url ? image.url : '';
+							var $pip = $('<div class="col-md-4 pip img_upload"></div>');
+							$pip.append($('<input type="hidden" name="existing_images[]">').val(name));
+							$pip.append($('<img class="img-thumbnail">').attr('src', url));
+							if (image && image.is_default) {
+								$pip.append('<span class="ip-img-default-badge">Default</span>');
+							} else if (name) {
+								var $btn = $('<button type="button" class="btn btn-sm btn-primary set-default-item-image"><i class="fas fa-star"></i> Set as default</button>');
+								$btn.attr('data-item-code', item_code).attr('data-image-name', name);
+								$pip.append($btn);
+							}
+							$pip.append('<span class="add-fav remove">&times;</span>');
+							$pip.insertAfter("#image-previews");
 						});
 					}
 				});
 			}
+
+			function refreshAfterDefaultImageChange(item_code) {
+				if (window.location.pathname.indexOf('/get_item_details/') === 0) {
+					window.location.reload();
+					return;
+				}
+				if (typeof view_item_details === 'function') {
+					view_item_details(item_code);
+				}
+			}
+
+			$(document).on('click', '.set-default-item-image', function(e){
+				e.preventDefault();
+				e.stopPropagation();
+				var $btn = $(this);
+				var item_code = $btn.attr('data-item-code');
+				var image_name = $btn.attr('data-image-name');
+				if (!item_code || !image_name) {
+					return;
+				}
+				$btn.prop('disabled', true);
+				$.ajax({
+					type: 'POST',
+					url: '/set_default_item_image',
+					data: {
+						item_code: item_code,
+						image_name: image_name
+					},
+					success: function(response){
+						showNotification("success", (response && response.message) ? response.message : 'Default image updated.', "fa fa-check");
+						if ($('#upload-image-modal').hasClass('show')) {
+							get_item_images(item_code).always(function(){
+								refreshAfterDefaultImageChange(item_code);
+							});
+							return;
+						}
+						refreshAfterDefaultImageChange(item_code);
+					},
+					error: function(jqXHR){
+						$btn.prop('disabled', false);
+						var msg = jqXHR && jqXHR.responseJSON && jqXHR.responseJSON.message
+							? jqXHR.responseJSON.message
+							: 'Failed to set default image.';
+						showNotification("danger", msg, "fa fa-info");
+					}
+				});
+			});
 
 			$(document).on('click', '.remove', function(){
 				var $pip = $(this).closest(".pip");

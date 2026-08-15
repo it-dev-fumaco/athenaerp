@@ -99,7 +99,9 @@ class Item extends Model
 
     public function defaultImage()
     {
-        return $this->hasOne(ItemImages::class, 'parent', 'name')->select('image_path', 'parent');
+        return $this->hasOne(ItemImages::class, 'parent', 'name')
+            ->orderBy('idx', 'asc')
+            ->select('image_path', 'parent', 'idx');
     }
 
     public function itemDefault()

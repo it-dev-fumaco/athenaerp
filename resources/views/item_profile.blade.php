@@ -28,6 +28,44 @@
             object-fit: cover;
         }
 
+        .ip-image-cell {
+            position: relative;
+        }
+
+        .ip-default-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            z-index: 2;
+            background: #2563eb;
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            pointer-events: none;
+        }
+
+        .ip-set-default-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            z-index: 2;
+            border: 0;
+            background: rgba(17, 24, 39, 0.75);
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.2rem 0.45rem;
+            border-radius: 4px;
+            line-height: 1.2;
+        }
+
+        .ip-set-default-btn:hover {
+            background: #2563eb;
+            color: #fff;
+        }
+
         /* Simple blur-up effect for main image */
         .blur-up {
             filter: blur(12px);
