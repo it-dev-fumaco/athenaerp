@@ -91,7 +91,7 @@
                                         $full = data_get($imageData, 'full');
                                         $alt = Illuminate\Support\Str::slug($itemBrochureDescription, '-');
                                     @endphp
-                                    <div class="{{ $i == 0 ? 'col-12' : 'col-4 mt-2 p-2 border' }} {{ $i == 0 ? 'ip-main-image-wrapper' : null }}">
+                                    <div class="{{ $i == 0 ? 'col-12' : 'col-4 mt-2 p-2 border' }} {{ $i == 0 ? 'ip-main-image-wrapper' : null }} ip-image-cell">
                                         <a href="{{ $full }}" class="view-images" data-item-code="{{ $itemDetails->name }}" data-idx="{{ $i }}">
                                             <picture>
                                                 @if ($i === 0)
@@ -125,6 +125,20 @@
                                                 </div>
                                             @endif
                                         </a>
+                                        @if ($i === 0)
+                                            <span class="ip-default-badge">Default</span>
+                                        @elseif (! empty($imageData['name']))
+                                            <button
+                                                type="button"
+                                                class="ip-set-default-btn set-default-item-image"
+                                                data-item-code="{{ $itemDetails->name }}"
+                                                data-image-name="{{ $imageData['name'] }}"
+                                                title="Set as default"
+                                            >
+                                                <i class="fas fa-star"></i>
+                                                <span class="sr-only">Set as default</span>
+                                            </button>
+                                        @endif
                                     </div>
                                 @endisset
                             @endfor

@@ -126,7 +126,7 @@ class ItemProfileController extends Controller
             ->select($selectCols)
             ->with([
                 'images' => fn ($q) => $q
-                    ->select('parent', 'image_path', 'idx')
+                    ->select('name', 'parent', 'image_path', 'idx')
                     ->orderBy('idx', 'asc'),
             ])
             ->first();
@@ -303,11 +303,9 @@ class ItemProfileController extends Controller
         }
 
         // images are eager-loaded on the main item query above.
-        $itemImagesRaw = $itemDetails->images?->pluck('image_path') ?? collect();
-
         $disk = Storage::disk('upcloud');
-        $itemImages = collect($itemImagesRaw)->map(function ($imagePath) use ($disk) {
-            $path = $imagePath ? trim((string) $imagePath) : null;
+        $itemImages = collect($itemDetails->images)->values()->map(function ($image, $index) use ($disk) {
+            $path = $image->image_path ? trim((string) $image->image_path) : null;
             $url = $this->itemImageUrlFast($path);
 
             $thumbUrl = $url;
@@ -320,8 +318,10 @@ class ItemProfileController extends Controller
             }
 
             return [
+                'name' => $image->name,
                 'full' => $url,
                 'thumb' => $thumbUrl,
+                'is_default' => $index === 0,
             ];
         });
 
@@ -723,6 +723,7 @@ class ItemProfileController extends Controller
 
             $files = $request->file('item_image');
             $itemImagesArr = [];
+            $nextIdx = (int) ItemImages::query()->where('parent', $request->item_code)->max('idx');
 
             foreach ($files as $i => $file) {
 
@@ -795,7 +796,7 @@ class ItemProfileController extends Controller
                     'modified' => $now,
                     'modified_by' => Auth::user()->wh_user,
                     'owner' => Auth::user()->wh_user,
-                    'idx' => $i + 1,
+                    'idx' => $nextIdx + $i + 1,
                     'parent' => $request->item_code,
                     'parentfield' => 'item_images',
                     'parenttype' => 'Item',
@@ -812,6 +813,61 @@ class ItemProfileController extends Controller
 
         return response()->json([
             'message' => 'Item image for '.$request->item_code.' has been updated.',
+        ]);
+    }
+
+    public function setDefaultItemImage(Request $request)
+    {
+        $request->validate([
+            'item_code' => 'required|string',
+            'image_name' => 'required|string',
+        ]);
+
+        $itemCode = $request->input('item_code');
+        $imageName = $request->input('image_name');
+
+        $chosen = ItemImages::query()
+            ->where('parent', $itemCode)
+            ->where('name', $imageName)
+            ->first();
+
+        if (! $chosen) {
+            return response()->json([
+                'message' => 'Image not found for this item.',
+            ], 422);
+        }
+
+        $images = ItemImages::query()
+            ->where('parent', $itemCode)
+            ->orderBy('idx', 'asc')
+            ->orderBy('name', 'asc')
+            ->get(['name', 'idx']);
+
+        $updates = [];
+        $next = 2;
+        foreach ($images as $image) {
+            if ($image->name === $imageName) {
+                $updates[$image->name] = 1;
+                continue;
+            }
+            $updates[$image->name] = $next;
+            $next++;
+        }
+
+        if ($updates !== []) {
+            $conn = ItemImages::query()->getConnection();
+            $case = collect($updates)
+                ->map(fn ($idx, $name) => 'WHEN '.$conn->getPdo()->quote($name).' THEN '.(int) $idx)
+                ->implode(' ');
+            ItemImages::query()
+                ->where('parent', $itemCode)
+                ->whereIn('name', array_keys($updates))
+                ->update(['idx' => DB::raw("CASE name {$case} END")]);
+        }
+
+        return response()->json([
+            'message' => 'Default image updated.',
+            'default_image_name' => $imageName,
         ]);
     }
 
@@ -933,47 +989,56 @@ class ItemProfileController extends Controller
 
     public function getItemImages($itemCode)
     {
-        $images = ItemImages::query()->where('parent', $itemCode)->orderBy('idx', 'asc')->pluck('image_path', 'name');
+        $rows = ItemImages::query()
+            ->where('parent', $itemCode)
+            ->orderBy('idx', 'asc')
+            ->get(['name', 'image_path', 'idx']);
 
-        return collect($images)->map(function ($image) {
-            $imagePath = $image ? trim((string) $image) : null;
-
-            if (! $imagePath) {
-                return Storage::disk('upcloud')->url('icon/no-img.png');
-            }
-
-            // If a full URL is already stored, just use it.
-            if (Str::startsWith($imagePath, ['http://', 'https://'])) {
-                return $imagePath;
-            }
-
-            $disk = Storage::disk('upcloud');
-
-            // If the path already includes a directory, treat it as the object key.
-            if (str_contains($imagePath, '/')) {
-                $storageKey = ltrim($imagePath, '/');
-                $url = $this->preferWebpUrlOrOriginal($disk, $storageKey);
-
-                return $url ?? $disk->url($storageKey);
-            }
-
-            // Filename-only rows: try img/ first, then legacy items/ and item-images/.
-            $candidates = [
-                "img/{$imagePath}",
-                "items/{$imagePath}",
-                "item-images/{$imagePath}",
+        return $rows->values()->map(function ($row, $index) {
+            return [
+                'name' => $row->name,
+                'url' => $this->resolveItemImagePublicUrl($row->image_path),
+                'is_default' => $index === 0,
             ];
-
-            foreach ($candidates as $candidate) {
-                if ($disk->exists($candidate)) {
-                    $url = $this->preferWebpUrlOrOriginal($disk, $candidate);
-
-                    return $url ?? $disk->url($candidate);
-                }
-            }
-
-            return $disk->url('icon/no-img.png');
         });
+    }
+
+    private function resolveItemImagePublicUrl(?string $image): string
+    {
+        $imagePath = $image ? trim((string) $image) : null;
+
+        if (! $imagePath) {
+            return Storage::disk('upcloud')->url('icon/no-img.png');
+        }
+
+        if (Str::startsWith($imagePath, ['http://', 'https://'])) {
+            return $imagePath;
+        }
+
+        $disk = Storage::disk('upcloud');
+
+        if (str_contains($imagePath, '/')) {
+            $storageKey = ltrim($imagePath, '/');
+            $url = $this->preferWebpUrlOrOriginal($disk, $storageKey);
+
+            return $url ?? $disk->url($storageKey);
+        }
+
+        $candidates = [
+            "img/{$imagePath}",
+            "items/{$imagePath}",
+            "item-images/{$imagePath}",
+        ];
+
+        foreach ($candidates as $candidate) {
+            if ($disk->exists($candidate)) {
+                $url = $this->preferWebpUrlOrOriginal($disk, $candidate);
+
+                return $url ?? $disk->url($candidate);
+            }
+        }
+
+        return $disk->url('icon/no-img.png');
     }
 
     /**

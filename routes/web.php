@@ -185,6 +185,7 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
         Route::get('/submit_stock_entry/{id}', [MainController::class, 'submitStockEntry']);
 
         Route::post('/upload_item_image', [ItemProfileController::class, 'uploadItemImage']);
+        Route::post('/set_default_item_image', [ItemProfileController::class, 'setDefaultItemImage']);
         Route::post('/uploadFiles', [MainController::class, 'uploadFiles']);
         Route::get('/load_item_images/{item_code}', [ItemProfileController::class, 'loadItemImages']);
 
