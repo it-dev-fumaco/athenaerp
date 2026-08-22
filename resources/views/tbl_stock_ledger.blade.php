@@ -17,7 +17,13 @@
     @forelse ($list as $row)
     <tr>
         <td class="text-center font-responsive">
-          <span class="d-block">{{ $row['voucher_no'] }}</span>
+          <span class="d-block">
+            @if (! empty($row['voucher_url']))
+              <a href="{{ $row['voucher_url'] }}" target="_blank" rel="noopener">{{ $row['voucher_no'] }}</a>
+            @else
+              {{ $row['voucher_no'] }}
+            @endif
+          </span>
           <span class="badge badge-info">{{ $row['status'] }}</span>
         </td>
         <td class="d-md-none font-responsive" style="width: 70%">
@@ -25,7 +31,13 @@
           <span><b>Transaction:</b> {{ $row['transaction'] }}</span><br>
           <span><b>Qty:</b> {{ $row['actual_qty'] }}</span><br>
           <span><b>Balance Qty:</b> {{ $row['qty_after_transaction'] }}</span><br>
-          <span><b>Ref. No.:</b> {{ $row['ref_no'] }}</span><br>
+          <span><b>Ref. No.:</b>
+            @if (! empty($row['ref_url']))
+              <a href="{{ $row['ref_url'] }}" target="_blank" rel="noopener">{{ $row['ref_no'] }}</a>
+            @else
+              {{ $row['ref_no'] }}
+            @endif
+          </span><br>
           <span><b>Date:</b> {{ $row['date_modified'] }}</span><br>
           <span><b>Transact by:</b> {{ $row['session_user'] }}</span>
         </td>
@@ -33,7 +45,13 @@
         <td class="text-center font-responsive d-none d-sm-table-cell">{{ $row['transaction'] }}</td>
         <td class="text-center font-responsive d-none d-sm-table-cell">{{ $row['actual_qty'] }}</td>
         <td class="text-center font-responsive d-none d-sm-table-cell">{{ $row['qty_after_transaction'] }}</td>
-        <td class="text-center font-responsive d-none d-sm-table-cell">{{ $row['ref_no'] }}</td>
+        <td class="text-center font-responsive d-none d-sm-table-cell">
+          @if (! empty($row['ref_url']))
+            <a href="{{ $row['ref_url'] }}" target="_blank" rel="noopener">{{ $row['ref_no'] }}</a>
+          @else
+            {{ $row['ref_no'] }}
+          @endif
+        </td>
         <td class="text-center font-responsive d-none d-sm-table-cell">{{ $row['date_modified'] }}</td>
         <td class="text-center font-responsive d-none d-sm-table-cell">{{ $row['session_user'] }}</td>
       </tr>

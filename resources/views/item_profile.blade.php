@@ -146,6 +146,22 @@
             color: #111827;
         }
 
+        #item-summary-card .ip-meta-value {
+            font-weight: 400;
+        }
+
+        #item-summary-card .responsive-description,
+        #item-summary-card .responsive-description b,
+        #item-summary-card .responsive-description strong,
+        #item-summary-card .responsive-description * {
+            font-weight: 400 !important;
+        }
+
+        #item-summary-card #item-information-container b,
+        #item-summary-card #item-information-container strong {
+            font-weight: 400;
+        }
+
         .ip-price-row,
         .ip-date-row {
             display: flex;
