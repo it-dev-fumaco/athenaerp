@@ -1266,13 +1266,25 @@ class MainController extends Controller
                 $dateModified = Carbon::parse($dateModified);
             }
 
+            $voucherUrl = $row->voucher_type === 'Stock Entry'
+                ? $this->erpWebDocumentUrl('stock-entry', $voucherNo)
+                : null;
+            $refUrl = null;
+            if (Str::startsWith((string) $refNo, 'SO-')) {
+                $refUrl = $this->erpWebDocumentUrl('sales-order', $refNo);
+            } elseif (Str::startsWith((string) $refNo, 'DR-')) {
+                $refUrl = $this->erpWebDocumentUrl('delivery-note', $refNo);
+            }
+
             $list[] = [
                 'voucher_no' => $voucherNo,
+                'voucher_url' => $voucherUrl,
                 'warehouse' => $row->warehouse,
                 'transaction' => $transaction,
                 'actual_qty' => $row->actual_qty * 1,
                 'qty_after_transaction' => $row->qty_after_transaction * 1,
                 'ref_no' => $refNo,
+                'ref_url' => $refUrl,
                 'date_modified' => $dateModified,
                 'session_user' => $sessionUser,
                 'posting_date' => $row->posting_date,
@@ -3002,6 +3014,17 @@ class MainController extends Controller
         });
 
         return view('user_manual', compact('consignmentPromodiserManuals', 'consignmentSupervisorManuals', 'genericManuals'));
+    }
+
+    private function erpWebDocumentUrl(?string $doctypeSlug, mixed $name): ?string
+    {
+        $base = rtrim((string) config('erp.web_base_url'), '/');
+        $name = trim((string) $name);
+        if ($base === '' || $doctypeSlug === null || $doctypeSlug === '' || $name === '') {
+            return null;
+        }
+
+        return $base.'/app/'.$doctypeSlug.'/'.rawurlencode($name);
     }
 
     private function humanFileSize($bytes, $decimals = 2)
