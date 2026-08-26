@@ -1435,12 +1435,14 @@ class MainController extends Controller
 
         $itemWarehousePairs = $query->map(fn ($a) => [$a->item_code, $a->warehouse])->unique()->values()->toArray();
         $actualQtyMap = $this->getActualQtyBulk($itemWarehousePairs);
+        $onHandByItem = $this->getSellableOnHandQtyByItem(
+            collect($query)->pluck('item_code')->unique()->filter()->values()->all()
+        );
 
         $lowStockPairs = [];
         foreach ($query as $a) {
-            $key = "{$a->item_code}-{$a->warehouse}";
-            $actualQty = $actualQtyMap[$key] ?? 0;
-            if ($actualQty <= $a->warehouse_reorder_level) {
+            $onHandQty = (float) ($onHandByItem[$a->item_code] ?? 0);
+            if ($onHandQty <= (float) $a->warehouse_reorder_level) {
                 $lowStockPairs[] = ['item_code' => $a->item_code, 'warehouse' => $a->warehouse];
             }
         }
@@ -1477,8 +1479,9 @@ class MainController extends Controller
         foreach ($query as $a) {
             $key = "{$a->item_code}-{$a->warehouse}";
             $actualQty = $actualQtyMap[$key] ?? 0;
+            $onHandQty = (float) ($onHandByItem[$a->item_code] ?? 0);
 
-            if ($actualQty <= $a->warehouse_reorder_level) {
+            if ($onHandQty <= (float) $a->warehouse_reorder_level) {
                 $existingMr = $existingMrMap[$key] ?? null;
 
                 $itemImage = Arr::get($itemImages, $a->item_code) ? '/img/'.$itemImages[$a->item_code] : '/icon/no-img.png';
@@ -1494,6 +1497,7 @@ class MainController extends Controller
                     'warehouse_reorder_level' => $a->warehouse_reorder_level,
                     'warehouse_reorder_qty' => $a->warehouse_reorder_qty,
                     'actual_qty' => $actualQty,
+                    'on_hand_qty' => $onHandQty,
                     'image' => $itemImage,
                     'existing_mr' => $existingMr,
                 ];
@@ -3014,6 +3018,43 @@ class MainController extends Controller
         });
 
         return view('user_manual', compact('consignmentPromodiserManuals', 'consignmentSupervisorManuals', 'genericManuals'));
+    }
+
+    /**
+     * Item Profile Actual On Hand: sum of sellable site-warehouse bin qty
+     * (stock warehouses only; excludes consignment, assembly, reject).
+     *
+     * @param  array<int, string>  $itemCodes
+     * @return array<string, float>
+     */
+    private function getSellableOnHandQtyByItem(array $itemCodes): array
+    {
+        if ($itemCodes === []) {
+            return [];
+        }
+
+        $rows = DB::table('tabBin as b')
+            ->join('tabWarehouse as w', 'w.name', '=', 'b.warehouse')
+            ->whereIn('b.item_code', $itemCodes)
+            ->where('w.stock_warehouse', 1)
+            ->where('w.disabled', 0)
+            ->where('w.is_group', 0)
+            ->select('b.item_code', 'b.warehouse', 'b.actual_qty', 'w.parent_warehouse')
+            ->get();
+
+        $map = [];
+        foreach ($rows as $row) {
+            if ($row->parent_warehouse == WarehouseConstants::P2_CONSIGNMENT_PARENT) {
+                continue;
+            }
+            if (WarehouseConstants::isExcludedFromItemProfileStockSummary($row->parent_warehouse, $row->warehouse)) {
+                continue;
+            }
+            $itemCode = $row->item_code;
+            $map[$itemCode] = ($map[$itemCode] ?? 0) + (float) $row->actual_qty;
+        }
+
+        return $map;
     }
 
     private function erpWebDocumentUrl(?string $doctypeSlug, mixed $name): ?string

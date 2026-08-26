@@ -57,7 +57,7 @@
                                 <strong>{{ number_format($row['warehouse_reorder_level'] * 1) }}</strong> {{ $row['stock_uom'] }}
                             </td>
                             <td class="p-1">
-                                <span class="badge badge-{{ ($row['actual_qty'] > $row['warehouse_reorder_level']) ? 'success' : 'danger' }} low-lvl-stock-badge">{{ number_format($row['actual_qty'] * 1) }} {{ $row['stock_uom'] }}</span>
+                                <span class="badge badge-{{ (($row['on_hand_qty'] ?? $row['actual_qty']) > $row['warehouse_reorder_level']) ? 'success' : 'danger' }} low-lvl-stock-badge">{{ number_format(($row['on_hand_qty'] ?? $row['actual_qty']) * 1) }} {{ $row['stock_uom'] }}</span>
                             </td>
                         </tr>
                     </table>
@@ -70,7 +70,7 @@
             <td class="text-center p-1 align-middle d-none d-lg-table-cell reorder-qty" style="font-size:12px">{{ number_format($row['warehouse_reorder_qty'] * 1) }} <small>{{ $row['stock_uom'] }}</small></td>
             <td class="text-center p-1 align-middle d-none d-lg-table-cell"><strong>{{ number_format($row['warehouse_reorder_level'] * 1) }} <small>{{ $row['stock_uom'] }}</small></strong></td>
             <td class="text-center p-1 align-middle d-none d-lg-table-cell">
-                <span class="badge badge-{{ ($row['actual_qty'] > $row['warehouse_reorder_level']) ? 'success' : 'danger' }}" style="font-size: 11pt;">{{ number_format($row['actual_qty'] * 1) }} <small>{{ $row['stock_uom'] }}</small></span>
+                <span class="badge badge-{{ (($row['on_hand_qty'] ?? $row['actual_qty']) > $row['warehouse_reorder_level']) ? 'success' : 'danger' }}" style="font-size: 11pt;">{{ number_format(($row['on_hand_qty'] ?? $row['actual_qty']) * 1) }} <small>{{ $row['stock_uom'] }}</small></span>
             </td>
             <td class="text-center p-1 align-middle d-none d-lg-table-cell">
                 @if(!$row['existing_mr'])
