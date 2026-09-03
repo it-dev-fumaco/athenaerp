@@ -1,21 +1,10 @@
 # LMS kiosk PHP-FPM runs from LMSForProduction compose (container_name `lms-kiosk`) — not started here (name conflict).
-# Build (order matters): docker compose -f docker-compose.prod.yml build lms-kiosk-image nginx
+# Cost Engine PHP-FPM runs from cost_engine compose (container_name `cost-engine-app`) — not started here.
+# Build: docker compose -f docker-compose.prod.yml build nginx
 # Then: cd ../LMSForProduction && docker compose up -d
+# Then: cd ../cost_engine && docker compose -f docker-compose.prod.yml up -d
 
 services:
-  lms-kiosk-image:
-    image: ${LMS_KIOSK_APP_IMAGE:-lms-kiosk-app-fpm:latest}
-    build:
-      context: ${LMS_KIOSK_PATH:-../LMSForProduction}
-      dockerfile: Dockerfile.fpm
-      args:
-        COMPOSER_INSTALL_FLAGS: "--no-dev"
-        XDEBUG_ENABLED: "0"
-        OPCACHE_REVALIDATE_FREQ: "0"
-        OPCACHE_VALIDATE_TIMESTAMPS: "0"
-    entrypoint: ["/bin/true"]
-    restart: "no"
-
   app:
     image: ${ATHENAERP_APP_IMAGE:-athenaerp-app-fpm:latest}
     build:
@@ -67,7 +56,8 @@ services:
         APP_IMAGE: ${ATHENAERP_APP_IMAGE:-athenaerp-app-fpm:latest}
         ESSEX_APP_IMAGE: ${ESSEX_APP_IMAGE:-devfumaco/essex-app:v4}
         LMS_APP_IMAGE: ${LMS_APP_IMAGE:-devfumaco/lms-app:staging}
-        LMS_KIOSK_APP_IMAGE: ${LMS_KIOSK_APP_IMAGE:-lms-kiosk-app-fpm:latest}
+        LMS_KIOSK_APP_IMAGE: ${LMS_KIOSK_APP_IMAGE:-devfumaco/lms-kiosk:staging}
+        COST_ENGINE_APP_IMAGE: ${COST_ENGINE_APP_IMAGE:-cost-engine-app-fpm:latest}
     container_name: athenaerp-nginx
     restart: unless-stopped
     ports:
@@ -75,6 +65,7 @@ services:
       - "8081:80"
       - "${FORWARD_LMS_HTTP_PORT:-8082}:8082"
       - "${FORWARD_LMS_KIOSK_HTTP_PORT:-8083}:8083"
+      - "${FORWARD_COST_ENGINE_HTTP_PORT:-8084}:8084"
     volumes:
       - lms_storage_public:/var/www/lms/public/storage:ro
       - lms_kiosk_storage_public:/var/www/lms-kiosk/public/storage:ro
