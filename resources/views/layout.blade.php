@@ -2031,6 +2031,23 @@
 
 				$("#browse-file").on("change", function (e) {
 					var files = e.target.files;
+					var allowed = String($(this).data('allowed-extensions') || '').split(',').map(function (ext) {
+						return $.trim(String(ext)).toLowerCase();
+					}).filter(Boolean);
+					var invalidNames = [];
+					for (var n = 0; n < files.length; n++) {
+						var fileName = files[n].name || '';
+						var ext = fileName.indexOf('.') === -1 ? '' : fileName.split('.').pop().toLowerCase();
+						if (allowed.length && allowed.indexOf(ext) === -1) {
+							invalidNames.push(fileName);
+						}
+					}
+					if (invalidNames.length) {
+						var allowedLabel = allowed.map(function (ext) { return ext.toUpperCase(); }).join(', ');
+						showNotification("danger", "Invalid file format. Allowed types: " + allowedLabel + ".", "fa fa-info");
+						e.target.value = '';
+						return;
+					}
 
 					for (var i = 0; i < files.length; i++) {
 						let f = files[i];

@@ -26,6 +26,18 @@ trait GeneralTrait
         return Auth::user()->allowedWarehouseIds();
     }
 
+    /**
+     * Whether the current user may operate on the given warehouse.
+     */
+    protected function canAccessWarehouse(?string $warehouse): bool
+    {
+        if ($warehouse === null || trim($warehouse) === '') {
+            return false;
+        }
+
+        return $this->getAllowedWarehouseIds()->contains($warehouse);
+    }
+
     public function getStockReservation($itemCode, $warehouse, $salesPerson, $project, $consignmentWarehouse, $orderType = null, $poNo = null)
     {
         $query = null;
