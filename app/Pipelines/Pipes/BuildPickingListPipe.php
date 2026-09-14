@@ -67,6 +67,7 @@ class BuildPickingListPipe implements Pipe
                 $query->whereNull('so.name')
                     ->orWhereNotIn('so.status', self::EXCLUDED_SALES_ORDER_STATUSES);
             })
+            ->whereIn('dri.warehouse', $warehouseIds)
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('psi.item_code', 'like', "%{$search}%")

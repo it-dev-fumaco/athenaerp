@@ -1039,6 +1039,28 @@
              $(document).on('submit', '#fileListModal form', function(e){
             e.preventDefault();
 
+            var $fileInput = $('#browse-file');
+            var files = $fileInput[0] && $fileInput[0].files;
+            var allowed = String($fileInput.data('allowed-extensions') || '').split(',').map(function (ext) {
+                return $.trim(String(ext)).toLowerCase();
+            }).filter(Boolean);
+            var hasInvalid = false;
+            if (files) {
+                for (var i = 0; i < files.length; i++) {
+                    var fileName = files[i].name || '';
+                    var ext = fileName.indexOf('.') === -1 ? '' : fileName.split('.').pop().toLowerCase();
+                    if (allowed.length && allowed.indexOf(ext) === -1) {
+                        hasInvalid = true;
+                        break;
+                    }
+                }
+            }
+            if (hasInvalid) {
+                var allowedLabel = allowed.map(function (ext) { return ext.toUpperCase(); }).join(', ');
+                showNotification("danger", "Invalid file format. Allowed types: " + allowedLabel + ".", "fa fa-info");
+                return;
+            }
+
             $.ajax({
                 type: 'POST',
                 url: $(this).attr('action'),
@@ -1054,6 +1076,12 @@
                     } else {
                         showNotification("danger", response.message, "fa fa-info");
                     }
+                },
+                error: function(jqXHR){
+                    var msg = jqXHR && jqXHR.responseJSON && jqXHR.responseJSON.message
+                        ? jqXHR.responseJSON.message
+                        : 'File upload failed.';
+                    showNotification("danger", msg, "fa fa-info");
                 }
             });
         });

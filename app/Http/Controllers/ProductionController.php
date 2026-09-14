@@ -18,19 +18,24 @@ class ProductionController extends Controller
 {
     use GeneralTrait;
 
+    private const TO_RECEIVE_EXCLUDED_STATUSES = ['Cancelled', 'Stopped', 'Closed'];
+
+    private function productionToReceiveQuery()
+    {
+        $allowedWarehouses = $this->getAllowedWarehouseIds();
+
+        return MESProductionOrder::query()
+            ->whereNotIn('status', self::TO_RECEIVE_EXCLUDED_STATUSES)
+            ->whereIn('fg_warehouse', $allowedWarehouses)
+            ->where('fg_warehouse', 'P2 - Housing Temporary - FI')
+            ->where('produced_qty', '>', 0)
+            ->whereRaw('produced_qty > feedback_qty');
+    }
+
     public function countProductionToReceive()
     {
         try {
-            $allowedWarehouses = $this->getAllowedWarehouseIds();
-
-            return DB::connection('mysql_mes')
-                ->table('production_order AS po')
-                ->whereNotIn('po.status', ['Cancelled', 'Stopped'])
-                ->whereIn('po.fg_warehouse', $allowedWarehouses)
-                ->where('po.fg_warehouse', 'P2 - Housing Temporary - FI')
-                ->where('po.produced_qty', '>', 0)
-                ->whereRaw('po.produced_qty > feedback_qty')
-                ->count();
+            return $this->productionToReceiveQuery()->count();
         } catch (QueryException $e) {
             return 0;
         }
@@ -45,13 +50,7 @@ class ProductionController extends Controller
         $list = [];
 
         try {
-            $allowedWarehouses = $this->getAllowedWarehouseIds();
-
-            $q = MESProductionOrder::whereNotIn('status', ['Cancelled'])
-                ->whereIn('fg_warehouse', $allowedWarehouses)
-                ->where('fg_warehouse', 'P2 - Housing Temporary - FI')
-                ->where('produced_qty', '>', 0)
-                ->whereRaw('produced_qty > feedback_qty')
+            $q = $this->productionToReceiveQuery()
                 ->orderByDesc('created_at')
                 ->get();
 

@@ -5,6 +5,7 @@
 #
 # Laravel LMS (lms.local): same pattern as Essex — Nginx mounts LMS repo; PHP runs in `lms-app` from laravel-lms/docker-compose.yml on network `athenaerp`.
 # LMS kiosk (port 8083): Nginx mounts LMSForProduction repo; PHP runs in `lms-kiosk` from LMSForProduction/docker-compose.yml.
+# Cost Engine (port 8084): Nginx mounts cost_engine repo; PHP runs in `cost-engine-app` from cost_engine/docker-compose.yml.
 
 services:
   app:
@@ -72,6 +73,7 @@ services:
       - "${FORWARD_HTTP_PORT:-80}:80"
       - "${FORWARD_LMS_HTTP_PORT:-8082}:8082"
       - "${FORWARD_LMS_KIOSK_HTTP_PORT:-8083}:8083"
+      - "${FORWARD_COST_ENGINE_HTTP_PORT:-8084}:8084"
     volumes:
       - .:/var/www/html:ro,delegated
       # Essex (essex.local): nginx serves public/ from host; PHP runs in essex-app container.
@@ -81,6 +83,8 @@ services:
       - ${LMS_PATH:-../laravel-lms}:/var/www/lms:ro
       # LMS kiosk (port 8083): static from host; PHP in lms-kiosk (start from LMSForProduction repo).
       - ${LMS_KIOSK_PATH:-../LMSForProduction}:/var/www/lms-kiosk:ro
+      # Cost Engine (port 8084): static from host; PHP in cost-engine-app (start from cost_engine repo).
+      - ${COST_ENGINE_PATH:-../cost_engine}:/var/www/cost-engine:ro
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - app

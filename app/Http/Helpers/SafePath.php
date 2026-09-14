@@ -76,7 +76,7 @@ class SafePath
     /** @return array<string> */
     public static function allowedDocumentExtensions(): array
     {
-        return ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'csv', 'zip'];
+        return ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'csv', 'zip', 'ies'];
     }
 
     /** @return array<string> */

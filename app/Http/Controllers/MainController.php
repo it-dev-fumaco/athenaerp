@@ -61,7 +61,6 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Response;
@@ -512,6 +511,16 @@ class MainController extends Controller
         if (! $q) {
             Log::warning('getPsDetails: item not found', ['id' => $id, 'type' => $request->type]);
             return ApiResponse::modal(false, 'Not Found', 'Item not found. Please reload the page.', 422);
+        }
+
+        $warehouse = trim((string) ($q->warehouse ?? ''));
+        if (! $this->canAccessWarehouse($warehouse)) {
+            return ApiResponse::modal(
+                false,
+                'Access Denied',
+                'You do not have access to warehouse <b>'.e($warehouse !== '' ? $warehouse : '(none)').'</b>.',
+                403
+            );
         }
 
         $itemDetails = Item::query()->where('name', $q->item_code)->first();
@@ -3109,16 +3118,17 @@ class MainController extends Controller
                 }
                 $originalExtension = strtolower($file->getClientOriginalExtension());
                 if (! in_array($originalExtension, $allowedExtensions, true)) {
-                    return response()->json(['status' => false, 'message' => 'File type not allowed.'], 422);
+                    $allowedLabel = strtoupper(implode(', ', $allowedExtensions));
+
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Invalid file format. Allowed types: '.$allowedLabel.'.',
+                    ], 422);
                 }
 
                 $safeName = Str::random(40).'-'.$itemCode;
                 $storedFilename = $safeName.'.'.$originalExtension;
                 Storage::putFileAs('itemFiles/', $file, $storedFilename);
-
-                if (! File::exists(public_path('temp'))) {
-                    File::makeDirectory(public_path('temp'), 0755, true);
-                }
 
                 $itemFiles[] = [
                     'name' => uniqid('', true),

@@ -17,7 +17,9 @@
 
                             <div class="fileUpload btn btn-primary upload-btn mb-3">
                                 <span><i class="fas fa-folder-open"></i> Browse File(s)</span>
-                                <input type="file" name="itemFile[]" class="upload" id="browse-file" multiple />
+                                <input type="file" name="itemFile[]" class="upload" id="browse-file" multiple
+                                    accept=".{{ implode(',.', \App\Http\Helpers\SafePath::allowedDocumentExtensions()) }}"
+                                    data-allowed-extensions="{{ implode(',', \App\Http\Helpers\SafePath::allowedDocumentExtensions()) }}" />
                             </div>
                             <div class="row">
                                 <div class="col-md-12" id="file-previews"></div>

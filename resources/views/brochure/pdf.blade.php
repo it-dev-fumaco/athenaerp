@@ -149,7 +149,13 @@
     </footer>
 
     @foreach ($content as $r => $row)
-    @if (!collect($row['attrib'])->filter()->values()->all())
+    @php
+        $hasAttrib = (bool) collect($row['attrib'] ?? [])->filter()->values()->all();
+        $hasImages = collect($row['image_data_uris'] ?? [])->filter()->isNotEmpty();
+        $hasName = trim((string) ($row['item_name'] ?? '')) !== '';
+        $skipMain = ! $hasAttrib && ! $hasImages && ! $hasName;
+    @endphp
+    @if ($skipMain)
         @continue
     @endif
     <main>

@@ -238,6 +238,11 @@ class TransactionController extends Controller
                 return ApiResponse::failure('Record not found.');
             }
 
+            $sourceWarehouse = $this->resolvePickingSlipWarehouse($packingSlip, $childId, $request->warehouse);
+            if (! $this->canAccessWarehouse($sourceWarehouse)) {
+                return ApiResponse::failure('You do not have access to warehouse <b>'.e($sourceWarehouse ?: '(none)').'</b>.');
+            }
+
             $packingSlipItem = collect($packingSlip->items)->where('name', $childId);
             $index = collect($packingSlipItem)->search(function ($item) use ($childId) {
                 return $item['name'] === $childId;
@@ -410,6 +415,10 @@ class TransactionController extends Controller
     {
         DB::connection('mysql')->beginTransaction();
         try {
+            if (! $packingSlip) {
+                return ApiResponse::failure('Record not found.');
+            }
+
             $now = now();
 
             $packedItems = collect($packingSlip->items)->filter(function ($item) use ($request) {
@@ -418,6 +427,18 @@ class TransactionController extends Controller
 
             if ($packedItems->isEmpty()) {
                 throw new Exception('Item(s) not found');
+            }
+
+            foreach ($packedItems as $packedItem) {
+                $packedWarehouse = $packedItem->packed->warehouse ?? null;
+                if (! $this->canAccessWarehouse($packedWarehouse)) {
+                    return ApiResponse::failure('You do not have access to warehouse <b>'.e($packedWarehouse ?: '(none)').'</b>.');
+                }
+            }
+
+            $sourceWarehouse = $this->resolvePickingSlipWarehouse($packingSlip, $childId, $request->warehouse);
+            if (! $this->canAccessWarehouse($sourceWarehouse)) {
+                return ApiResponse::failure('You do not have access to warehouse <b>'.e($sourceWarehouse ?: '(none)').'</b>.');
             }
 
             $packedItemNames = collect($packedItems)->pluck('name');
@@ -503,5 +524,42 @@ class TransactionController extends Controller
 
             return ApiResponse::modal(false, 'Error', $th->getMessage(), 422);
         }
+    }
+
+    /**
+     * Resolve the source warehouse for a packing slip item from Delivery Note / Packed Item.
+     * Prefer ERP data over the request so checkout cannot spoof an allowed warehouse.
+     */
+    private function resolvePickingSlipWarehouse($packingSlip, string $childId, ?string $requestWarehouse = null): ?string
+    {
+        if (! $packingSlip) {
+            return null;
+        }
+
+        $fromDeliveryNote = DB::table('tabPacking Slip as ps')
+            ->join('tabPacking Slip Item as psi', 'ps.name', '=', 'psi.parent')
+            ->join('tabDelivery Note Item as dri', function ($join) {
+                $join->on('dri.parent', '=', 'ps.delivery_note')
+                    ->on('dri.item_code', '=', 'psi.item_code');
+            })
+            ->where('psi.name', $childId)
+            ->value('dri.warehouse');
+
+        if ($fromDeliveryNote) {
+            return $fromDeliveryNote;
+        }
+
+        $fromPackedItem = DB::table('tabPacking Slip Item as psi')
+            ->join('tabPacked Item as pi', 'pi.name', '=', 'psi.pi_detail')
+            ->where('psi.name', $childId)
+            ->value('pi.warehouse');
+
+        if ($fromPackedItem) {
+            return $fromPackedItem;
+        }
+
+        $requestWarehouse = is_string($requestWarehouse) ? trim($requestWarehouse) : '';
+
+        return $requestWarehouse !== '' ? $requestWarehouse : null;
     }
 }
