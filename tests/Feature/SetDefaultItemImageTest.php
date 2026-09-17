@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class SetDefaultItemImageTest extends TestCase
@@ -18,6 +19,7 @@ class SetDefaultItemImageTest extends TestCase
         $this->useMysqlAsSqlite();
         $this->createSchema();
         $this->seedImages();
+        Storage::fake('upcloud');
     }
 
     private function useMysqlAsSqlite(): void
@@ -48,40 +50,64 @@ class SetDefaultItemImageTest extends TestCase
             )'
         );
         $conn->getPdo()->exec(
+            'CREATE TABLE IF NOT EXISTS "tabItem" (
+                name TEXT PRIMARY KEY,
+                image TEXT,
+                modified TEXT,
+                modified_by TEXT
+            )'
+        );
+        $conn->getPdo()->exec(
             'CREATE TABLE IF NOT EXISTS "tabItem Images" (
                 name TEXT PRIMARY KEY,
                 parent TEXT,
                 image_path TEXT,
-                idx INTEGER
+                public_url TEXT,
+                idx INTEGER,
+                modified TEXT,
+                modified_by TEXT
             )'
         );
     }
 
     private function seedImages(): void
     {
+        DB::connection('mysql')->table('tabItem')->insert([
+            [
+                'name' => self::ITEM_CODE,
+                'image' => '/files/old-erpnext-image.png',
+                'modified' => now()->toDateTimeString(),
+                'modified_by' => 'Administrator',
+            ],
+        ]);
+
         DB::connection('mysql')->table('tabItem Images')->insert([
             [
                 'name' => 'img-1',
                 'parent' => self::ITEM_CODE,
                 'image_path' => 'img/one.webp',
+                'public_url' => null,
                 'idx' => 1,
             ],
             [
                 'name' => 'img-2',
                 'parent' => self::ITEM_CODE,
                 'image_path' => 'img/two.webp',
+                'public_url' => null,
                 'idx' => 2,
             ],
             [
                 'name' => 'img-3',
                 'parent' => self::ITEM_CODE,
                 'image_path' => 'img/three.webp',
+                'public_url' => null,
                 'idx' => 3,
             ],
             [
                 'name' => 'img-other',
                 'parent' => 'ITEM-OTHER',
                 'image_path' => 'img/other.webp',
+                'public_url' => null,
                 'idx' => 1,
             ],
         ]);
@@ -113,6 +139,10 @@ class SetDefaultItemImageTest extends TestCase
 
     public function test_promotes_chosen_image_to_idx_one_and_keeps_relative_order(): void
     {
+        Storage::disk('upcloud')->put('img/one.webp', 'one', 'private');
+        Storage::disk('upcloud')->put('img/two.webp', 'two', 'private');
+        Storage::disk('upcloud')->put('img/three.webp', 'three', 'private');
+
         $user = $this->createUser();
 
         $response = $this->actingAs($user)->postJson('/set_default_item_image', [
@@ -132,6 +162,25 @@ class SetDefaultItemImageTest extends TestCase
         $this->assertSame(2, (int) $indexes['img-1']);
         $this->assertSame(3, (int) $indexes['img-2']);
         $this->assertSame(1, (int) DB::connection('mysql')->table('tabItem Images')->where('name', 'img-other')->value('idx'));
+
+        $this->assertSame('public', Storage::disk('upcloud')->getVisibility('img/three.webp'));
+
+        $expectedUrl = Storage::disk('upcloud')->url('img/three.webp');
+        $this->assertNotEmpty($expectedUrl);
+        $this->assertStringNotContainsString('X-Amz-', $expectedUrl);
+        $this->assertStringNotContainsString('Expires=', $expectedUrl);
+
+        $this->assertSame(
+            $expectedUrl,
+            DB::connection('mysql')->table('tabItem Images')->where('name', 'img-3')->value('public_url')
+        );
+        $this->assertSame(
+            $expectedUrl,
+            DB::connection('mysql')->table('tabItem')->where('name', self::ITEM_CODE)->value('image')
+        );
+        $this->assertNull(
+            DB::connection('mysql')->table('tabItem Images')->where('name', 'img-1')->value('public_url')
+        );
     }
 
     public function test_returns_422_when_image_does_not_belong_to_item(): void

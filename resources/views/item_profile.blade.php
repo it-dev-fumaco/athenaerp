@@ -1384,4 +1384,3 @@
         });
     </script>
 @endsection
-@endsection
