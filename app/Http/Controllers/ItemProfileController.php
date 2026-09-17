@@ -691,7 +691,7 @@ class ItemProfileController extends Controller
             }
 
             try {
-                $success = $disk->put($storageKey, $stream);
+                $success = $disk->put($storageKey, $stream, ['visibility' => 'public']);
                 if (! $success) {
                     throw new \RuntimeException('Failed to write file to storage: '.$storageKey);
                 }
@@ -803,11 +803,16 @@ class ItemProfileController extends Controller
                     'parentfield' => 'item_images',
                     'parenttype' => 'Item',
                     'image_path' => $storageKey, // store only object key
+                    'public_url' => $this->itemImagePermanentPublicUrl($storageKey),
                 ];
             }
 
             ItemImages::insert($itemImagesArr);
+        }
 
+        $this->syncItemDefaultImageForErp($request->item_code);
+
+        if ($request->hasFile('item_image')) {
             return response()->json([
                 'message' => 'Item image for '.$request->item_code.' has been uploaded.',
             ]);
@@ -866,6 +871,28 @@ class ItemProfileController extends Controller
                 ->whereIn('name', array_keys($updates))
                 ->update(['idx' => DB::raw("CASE name {$case} END")]);
         }
+
+        $now = now()->toDateTimeString();
+        $modifiedBy = Auth::user()->wh_user ?? null;
+        $this->makeItemImagePublicOnUpcloud($chosen->image_path);
+        $publicUrl = $this->itemImagePermanentPublicUrl($chosen->image_path);
+
+        ItemImages::query()
+            ->where('parent', $itemCode)
+            ->where('name', $imageName)
+            ->update([
+                'public_url' => $publicUrl,
+                'modified' => $now,
+                'modified_by' => $modifiedBy,
+            ]);
+
+        Item::query()
+            ->where('name', $itemCode)
+            ->update([
+                'image' => $publicUrl,
+                'modified' => $now,
+                'modified_by' => $modifiedBy,
+            ]);
 
         return response()->json([
             'message' => 'Default image updated.',
@@ -1003,6 +1030,129 @@ class ItemProfileController extends Controller
                 'is_default' => $index === 0,
             ];
         });
+    }
+
+    /**
+     * Set Upcloud object ACL to public-read so ERPNext can load the permanent URL.
+     * If the bucket disables object ACLs, log and continue (bucket policy may already allow reads).
+     */
+    private function makeItemImagePublicOnUpcloud(?string $imagePath): void
+    {
+        $imagePath = $imagePath ? trim((string) $imagePath) : null;
+        if (! $imagePath || Str::startsWith($imagePath, ['http://', 'https://'])) {
+            return;
+        }
+
+        $key = $this->resolveItemImageStorageKey($imagePath) ?? ltrim($imagePath, '/');
+
+        try {
+            Storage::disk('upcloud')->setVisibility($key, 'public');
+        } catch (\Throwable $e) {
+            Log::warning('Failed to set Upcloud object visibility to public', [
+                'key' => $key,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Permanent (non-signed) Upcloud object URL for ERPNext.
+     * Does not probe storage or fall back to no-img.png.
+     */
+    private function itemImagePermanentPublicUrl(?string $imagePath): ?string
+    {
+        $imagePath = $imagePath ? trim((string) $imagePath) : null;
+        if (! $imagePath) {
+            return null;
+        }
+
+        if (Str::startsWith($imagePath, ['http://', 'https://'])) {
+            return $imagePath;
+        }
+
+        $key = $this->resolveItemImageStorageKey($imagePath) ?? ltrim($imagePath, '/');
+
+        return Storage::disk('upcloud')->url($key);
+    }
+
+    /**
+     * Map a tabItem Images.image_path value to the real Upcloud object key.
+     * Older rows store a filename only; objects live under img/.
+     */
+    private function resolveItemImageStorageKey(?string $imagePath): ?string
+    {
+        $imagePath = $imagePath ? trim((string) $imagePath) : null;
+        if (! $imagePath) {
+            return null;
+        }
+
+        if (Str::startsWith($imagePath, ['http://', 'https://'])) {
+            return $imagePath;
+        }
+
+        $key = ltrim($imagePath, '/');
+        $disk = Storage::disk('upcloud');
+        $base = basename($key);
+        $candidates = array_values(array_unique([
+            $key,
+            'img/'.$base,
+            'items/'.$base,
+            'item-images/'.$base,
+        ]));
+
+        foreach ($candidates as $candidate) {
+            try {
+                if ($disk->exists($candidate)) {
+                    return $candidate;
+                }
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        if (! str_contains($key, '/')) {
+            return 'img/'.$key;
+        }
+
+        return $key;
+    }
+
+    /**
+     * Keep tabItem.image aligned with the current default (lowest idx) image.
+     */
+    private function syncItemDefaultImageForErp(string $itemCode): void
+    {
+        $default = ItemImages::query()
+            ->where('parent', $itemCode)
+            ->orderBy('idx', 'asc')
+            ->orderBy('name', 'asc')
+            ->first();
+
+        $publicUrl = $default
+            ? ($default->public_url ?: $this->itemImagePermanentPublicUrl($default->image_path))
+            : null;
+
+        $now = now()->toDateTimeString();
+        $modifiedBy = Auth::user()->wh_user ?? null;
+
+        if ($default && $publicUrl && $default->public_url !== $publicUrl) {
+            ItemImages::query()
+                ->where('parent', $itemCode)
+                ->where('name', $default->name)
+                ->update([
+                    'public_url' => $publicUrl,
+                    'modified' => $now,
+                    'modified_by' => $modifiedBy,
+                ]);
+        }
+
+        Item::query()
+            ->where('name', $itemCode)
+            ->update([
+                'image' => $publicUrl,
+                'modified' => $now,
+                'modified_by' => $modifiedBy,
+            ]);
     }
 
     private function resolveItemImagePublicUrl(?string $image): string
