@@ -9,6 +9,11 @@ class ItemPrice extends Model
 {
     use HasFactory;
 
+    /**
+     * ERPNext selling price list for the director-edited Fix Standard Selling Price.
+     */
+    public const ATHENA_DISPLAY_PRICE_LIST = 'Standard Price List - Athena Display';
+
     protected $connection = 'mysql';
 
     protected $primaryKey = 'name';

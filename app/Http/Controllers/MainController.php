@@ -2713,16 +2713,29 @@ class MainController extends Controller
             ];
         }
 
-        return view('view_item_variants', compact('attributes', 'attributeNames', 'itemCodes', 'variantOf', 'prices'));
+        $fixedStandardPrices = $this->fixedStandardSellingPrices($itemCodes);
+        $canEditFixedPrice = Auth::user()->user_group === 'Director';
+
+        return view('view_item_variants', compact('attributes', 'attributeNames', 'itemCodes', 'variantOf', 'prices', 'fixedStandardPrices', 'canEditFixedPrice'));
     }
 
     public function updateRate(Request $request)
     {
         DB::beginTransaction();
         try {
-            foreach ($request->price as $itemCode => $value) {
-                if ($value && $value > 0) {
-                    Item::query()->where('name', $itemCode)->update(['custom_item_cost' => $value]);
+            $submittedCosts = $request->input('price', []);
+            if (is_array($submittedCosts)) {
+                foreach ($submittedCosts as $itemCode => $value) {
+                    if ($value && $value > 0) {
+                        Item::query()->where('name', $itemCode)->update(['custom_item_cost' => $value]);
+                    }
+                }
+            }
+
+            if (Auth::user()->user_group === 'Director') {
+                $submittedFixedPrices = $request->input('fixed_price', []);
+                if (is_array($submittedFixedPrices)) {
+                    $this->syncFixedStandardSellingPrices($submittedFixedPrices);
                 }
             }
 
@@ -2737,6 +2750,99 @@ class MainController extends Controller
             DB::rollback();
 
             return redirect()->back()->with('error', 'There was a problem updating prices. Please try again.');
+        }
+    }
+
+    /**
+     * Latest selling rate on the Athena display price list, keyed by item code.
+     *
+     * @param  array<int, string>  $itemCodes
+     * @return array<string, mixed>
+     */
+    private function fixedStandardSellingPrices(array $itemCodes): array
+    {
+        if ($itemCodes === []) {
+            return [];
+        }
+
+        return ItemPrice::query()
+            ->where('price_list', ItemPrice::ATHENA_DISPLAY_PRICE_LIST)
+            ->where('selling', 1)
+            ->whereIn('item_code', $itemCodes)
+            ->orderBy('modified', 'desc')
+            ->get(['item_code', 'price_list_rate'])
+            ->unique('item_code')
+            ->pluck('price_list_rate', 'item_code')
+            ->all();
+    }
+
+    /**
+     * Create or update Item Price rows for Fix Standard Selling Price.
+     * Blank and zero values are ignored. Unchanged rates are left as they are.
+     *
+     * @param  array<string, mixed>  $submittedPrices
+     */
+    private function syncFixedStandardSellingPrices(array $submittedPrices): void
+    {
+        $rates = [];
+        foreach ($submittedPrices as $itemCode => $value) {
+            $itemCode = (string) $itemCode;
+            if ($itemCode === '' || $value === null || $value === '' || ! is_numeric($value) || (float) $value <= 0) {
+                continue;
+            }
+            $rates[$itemCode] = (float) $value;
+        }
+
+        if ($rates === []) {
+            return;
+        }
+
+        $itemCodes = array_keys($rates);
+        $existing = ItemPrice::query()
+            ->where('price_list', ItemPrice::ATHENA_DISPLAY_PRICE_LIST)
+            ->where('selling', 1)
+            ->whereIn('item_code', $itemCodes)
+            ->orderBy('modified', 'desc')
+            ->get(['name', 'item_code', 'price_list_rate'])
+            ->unique('item_code')
+            ->keyBy('item_code');
+
+        $stockUoms = Item::query()->whereIn('name', $itemCodes)->pluck('stock_uom', 'name');
+
+        foreach ($rates as $itemCode => $rate) {
+            $current = $existing->get($itemCode);
+            if ($current && abs((float) $current->price_list_rate - $rate) < 0.00001) {
+                continue;
+            }
+
+            if ($current) {
+                $response = $this->erpPut('Item Price', $current->name, [
+                    'price_list_rate' => $rate,
+                ], true);
+            } else {
+                if (! $stockUoms->has($itemCode)) {
+                    continue;
+                }
+
+                $payload = [
+                    'item_code' => $itemCode,
+                    'uom' => $stockUoms->get($itemCode),
+                    'price_list' => ItemPrice::ATHENA_DISPLAY_PRICE_LIST,
+                    'price_list_rate' => $rate,
+                    'selling' => 1,
+                ];
+
+                $response = $this->erpPost('Item Price', $payload, true);
+            }
+
+            if (! empty($response['error']) || Arr::has($response, 'exception') || Arr::has($response, 'exc') || Arr::has($response, 'exc_type')) {
+                $message = $response['message'] ?? 'Unable to save Fix Standard Selling Price.';
+                if (! is_string($message) || $message === '') {
+                    $message = 'Unable to save Fix Standard Selling Price.';
+                }
+
+                throw new Exception($message);
+            }
         }
     }
 
