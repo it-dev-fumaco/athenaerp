@@ -24,9 +24,11 @@
             data-sidebar-toggle
             class="inventory-sidebar__collapse-btn"
             title="Collapse sidebar"
+            aria-label="Collapse sidebar"
             aria-expanded="true"
         >
-            <i class="fas fa-angles-left inventory-shell-collapse-icon" aria-hidden="true"></i>
+            <i class="fas fa-angle-double-left inventory-shell-collapse-icon" aria-hidden="true"></i>
+            <span class="inventory-sidebar-label" data-sidebar-toggle-label>Collapse</span>
         </button>
     </div>
 
@@ -107,7 +109,13 @@
                 aside.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
             }
             if (btn) {
-                btn.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+                var toggleLabel = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+                btn.setAttribute('title', toggleLabel);
+                btn.setAttribute('aria-label', toggleLabel);
+                var toggleText = btn.querySelector('[data-sidebar-toggle-label]');
+                if (toggleText) {
+                    toggleText.textContent = collapsed ? 'Expand' : 'Collapse';
+                }
             }
             try {
                 localStorage.setItem(KEY, collapsed ? '1' : '0');
