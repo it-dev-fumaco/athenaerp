@@ -481,7 +481,7 @@ class ItemProfileController extends Controller
             $coVariants = new LengthAwarePaginator($coVariantsSlice, $coVariantsTotal, $coVariantsPerPage, $coVariantsPage, ['path' => LengthAwarePaginator::resolveCurrentPath(), 'query' => request()->query()]);
             $variantItemCodes = $coVariantsSlice->pluck('name')->toArray();
 
-            if (in_array($userDepartment, $allowedDepartment) || ItemProfileService::seesFullPricing(Auth::user()->user_group, $userDepartment)) {
+            if (in_array($userDepartment, $allowedDepartment) || in_array(Auth::user()->user_group, ['Manager', 'Director'])) {
                 $itemCustomCost = [];
                 foreach ($coVariants->items() as $row) {
                     $itemCustomCost[$row->name] = $row->custom_item_cost;

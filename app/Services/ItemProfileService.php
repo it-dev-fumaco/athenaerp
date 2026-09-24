@@ -16,14 +16,6 @@ use Illuminate\Support\Facades\DB;
 
 class ItemProfileService
 {
-    public const FULL_PRICING_DEPARTMENTS = ['Sales', 'Customer Service', 'IT-Department'];
-
-    public static function seesFullPricing(?string $userGroup, ?string $userDepartment): bool
-    {
-        return in_array($userGroup, ['Manager', 'Director'], true)
-            || in_array($userDepartment, self::FULL_PRICING_DEPARTMENTS, true);
-    }
-
     /**
      * Get price-related data for an item (last purchase, landed cost, website price, etc.).
      *
@@ -46,7 +38,7 @@ class ItemProfileService
         $websitePrice = [];
         $avgPurchaseRate = '₱ 0.00';
 
-        if (! in_array($userDepartment, $allowedDepartment) && ! self::seesFullPricing($userGroup, $userDepartment)) {
+        if (! in_array($userDepartment, $allowedDepartment) && ! in_array($userGroup, ['Manager', 'Director'])) {
             return [
                 'itemRate' => $itemRate,
                 'minimumSellingPrice' => $minimumSellingPrice,
@@ -123,17 +115,6 @@ class ItemProfileService
             ->select('price_list_rate', 'price_list')->first();
 
         $defaultPrice = ($websitePrice) ? $websitePrice->price_list_rate : $defaultPrice;
-
-        $athenaDisplayPrice = ItemPrice::query()
-            ->where('price_list', ItemPrice::ATHENA_DISPLAY_PRICE_LIST)
-            ->where('selling', 1)
-            ->where('item_code', $itemCode)
-            ->orderBy('modified', 'desc')
-            ->value('price_list_rate');
-
-        if ($athenaDisplayPrice !== null && (float) $athenaDisplayPrice > 0) {
-            $defaultPrice = $athenaDisplayPrice;
-        }
 
         return [
             'itemRate' => $itemRate,
