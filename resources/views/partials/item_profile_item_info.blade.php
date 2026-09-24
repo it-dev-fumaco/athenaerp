@@ -41,8 +41,8 @@
     }
 
     $stockTitle = $bundled ? 'Bundled Items' : 'Stock Information';
-    $showDeptPricing = in_array($userDepartment, $allowedDepartment) && !in_array($userGroup, ['Manager', 'Director']);
-    $showManagerPricing = in_array($userGroup, ['Manager', 'Director']);
+    $showManagerPricing = \App\Services\ItemProfileService::seesFullPricing($userGroup, $userDepartment);
+    $showDeptPricing = in_array($userDepartment, $allowedDepartment) && ! $showManagerPricing;
 @endphp
 <div class="row">
     <div class="col-12 col-lg-10">
