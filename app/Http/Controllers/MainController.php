@@ -3278,7 +3278,7 @@ class MainController extends Controller
     }
 
     /**
-     * Secure file download: path must be under storage/app/public (no path traversal).
+     * Serve an item file from the default disk, or from local public storage.
      */
     public function downloadFile(string $path)
     {
@@ -3286,14 +3286,23 @@ class MainController extends Controller
             abort(404);
         }
 
-        $root = storage_path('app/public');
-        $absolutePath = SafePath::resolveUnderRoot($root, $path);
+        $inline = request()->boolean('inline');
+        $downloadName = SafePath::sanitizeSegment(basename($path)) ?: 'file';
+        $diskName = config('filesystems.default');
+
+        if (SafePath::pathUnderPrefix($path, 'itemFiles') && Storage::disk($diskName)->exists($path)) {
+            return Storage::disk($diskName)->response($path, $downloadName, [], $inline ? 'inline' : 'attachment');
+        }
+
+        $absolutePath = SafePath::resolveUnderRoot(storage_path('app/public'), $path);
 
         if ($absolutePath === null || ! is_file($absolutePath)) {
             abort(404);
         }
 
-        return response()->download($absolutePath);
+        return $inline
+            ? response()->file($absolutePath)
+            : response()->download($absolutePath);
     }
 
     public function deleteItemFile(Request $request)
@@ -3305,8 +3314,10 @@ class MainController extends Controller
             if (SafePath::pathContainsTraversal($file->file_path) || ! SafePath::pathUnderPrefix($file->file_path, 'itemFiles')) {
                 return response()->json(['status' => false, 'message' => 'Invalid file.'], 422);
             }
-            if (Storage::disk('public')->exists($file->file_path)) {
-                Storage::disk('public')->delete($file->file_path);
+            foreach (array_unique([config('filesystems.default'), 'public']) as $diskName) {
+                if (Storage::disk($diskName)->exists($file->file_path)) {
+                    Storage::disk($diskName)->delete($file->file_path);
+                }
             }
         }
 

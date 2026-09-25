@@ -4,7 +4,7 @@
         <tr>
             <td class="h4 align-middle"><i class="fas fa-file"></i></td>
             <td>
-                <a href="{{ asset('storage/'.$file->file_path) }}" target="_blank" class="text-xs">{{ $file->file_name }}</a>
+                <a href="/download/{{ $file->file_path }}?inline=1" target="_blank" class="text-xs">{{ $file->file_name }}</a>
                 <span class="d-block font-italic text-muted" style="font-size: 10px;">By: {{ ucwords(str_replace('.', ' ', explode('@', $file->owner)[0])) }} - {{ \Carbon\Carbon::parse($file->creation)->format('M d, Y h:i A') }}
 </span>
             </td>
