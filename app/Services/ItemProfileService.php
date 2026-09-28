@@ -116,6 +116,17 @@ class ItemProfileService
 
         $defaultPrice = ($websitePrice) ? $websitePrice->price_list_rate : $defaultPrice;
 
+        $athenaDisplayPrice = ItemPrice::query()
+            ->where('price_list', ItemPrice::ATHENA_DISPLAY_PRICE_LIST)
+            ->where('selling', 1)
+            ->where('item_code', $itemCode)
+            ->orderBy('modified', 'desc')
+            ->value('price_list_rate');
+
+        if ($athenaDisplayPrice !== null && (float) $athenaDisplayPrice > 0) {
+            $defaultPrice = $athenaDisplayPrice;
+        }
+
         return [
             'itemRate' => $itemRate,
             'minimumSellingPrice' => $minimumSellingPrice,
