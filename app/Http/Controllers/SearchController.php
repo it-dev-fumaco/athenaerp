@@ -207,6 +207,7 @@ class SearchController extends Controller
         $lastLandedCostVoucher = [];
         $priceSettings = [];
         $websitePrices = [];
+        $athenaDisplayPrices = [];
         if (in_array($userDepartment, $allowedDepartment) || in_array(Auth::user()->user_group, ['Manager', 'Director'])) {
             $lastPurchaseOrder = PurchaseOrder::query()
                 ->from('tabPurchase Order as po')
@@ -235,6 +236,16 @@ class SearchController extends Controller
                 ->orderBy('modified', 'desc')
                 ->pluck('price_list_rate', 'item_code')
                 ->toArray();
+
+            $athenaDisplayPrices = ItemPrice::query()
+                ->where('price_list', ItemPrice::ATHENA_DISPLAY_PRICE_LIST)
+                ->where('selling', 1)
+                ->whereIn('item_code', $itemCodes)
+                ->orderBy('modified', 'desc')
+                ->get(['item_code', 'price_list_rate'])
+                ->unique('item_code')
+                ->pluck('price_list_rate', 'item_code')
+                ->all();
 
             $priceSettings = Singles::where('doctype', 'Price Settings')
                 ->whereIn('field', ['minimum_price_computation', 'standard_price_computation', 'is_tax_included_in_rate'])
@@ -342,6 +353,11 @@ class SearchController extends Controller
             $websitePrice = Arr::get($websitePrices, $itemCode, 0);
 
             $defaultPrice = ($websitePrice > 0) ? $websitePrice : $defaultPrice;
+
+            $athenaDisplayPrice = Arr::get($athenaDisplayPrices, $itemCode, 0);
+            if ($athenaDisplayPrice > 0) {
+                $defaultPrice = $athenaDisplayPrice;
+            }
 
             $packageDimension = null;
             if (
