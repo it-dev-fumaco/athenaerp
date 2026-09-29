@@ -183,6 +183,50 @@ class SetDefaultItemImageTest extends TestCase
         );
     }
 
+    public function test_erpnext_url_prefers_jpeg_when_jpeg_and_webp_exist(): void
+    {
+        Storage::disk('upcloud')->put('img/three.jpg', 'jpeg-bytes', 'private');
+        Storage::disk('upcloud')->put('img/three.webp', 'webp-bytes', 'private');
+
+        $user = $this->createUser();
+
+        $this->actingAs($user)->postJson('/set_default_item_image', [
+            'item_code' => self::ITEM_CODE,
+            'image_name' => 'img-3',
+        ])->assertOk();
+
+        $expectedUrl = Storage::disk('upcloud')->url('img/three.jpg');
+        $this->assertStringEndsWith('.jpg', parse_url($expectedUrl, PHP_URL_PATH) ?? $expectedUrl);
+        $this->assertSame(
+            $expectedUrl,
+            DB::connection('mysql')->table('tabItem')->where('name', self::ITEM_CODE)->value('image')
+        );
+        $this->assertSame(
+            $expectedUrl,
+            DB::connection('mysql')->table('tabItem Images')->where('name', 'img-3')->value('public_url')
+        );
+        $this->assertSame('public', Storage::disk('upcloud')->getVisibility('img/three.jpg'));
+    }
+
+    public function test_erpnext_url_falls_back_to_webp_when_jpeg_is_missing(): void
+    {
+        Storage::disk('upcloud')->put('img/three.webp', 'webp-bytes', 'private');
+
+        $user = $this->createUser();
+
+        $this->actingAs($user)->postJson('/set_default_item_image', [
+            'item_code' => self::ITEM_CODE,
+            'image_name' => 'img-3',
+        ])->assertOk();
+
+        $expectedUrl = Storage::disk('upcloud')->url('img/three.webp');
+        $this->assertStringEndsWith('.webp', parse_url($expectedUrl, PHP_URL_PATH) ?? $expectedUrl);
+        $this->assertSame(
+            $expectedUrl,
+            DB::connection('mysql')->table('tabItem')->where('name', self::ITEM_CODE)->value('image')
+        );
+    }
+
     public function test_returns_422_when_image_does_not_belong_to_item(): void
     {
         $user = $this->createUser();
