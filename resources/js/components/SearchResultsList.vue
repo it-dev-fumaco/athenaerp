@@ -13,7 +13,7 @@
                 <div class="col-12 col-sm-4 col-md-3 col-lg-2 p-1 text-center text-md-left">
                   <div class="search-result-thumb-wrap position-relative mx-auto mx-md-0" style="max-width: 140px">
                     <a :href="row.image" :data-item-code="row.name" class="view-images d-block">
-                      <img :src="row.image" class="img w-100" alt="">
+                      <img :src="row.image" class="img w-100" alt="" @error="onSearchImageError">
                     </a>
                   </div>
                   <div class="text-center mt-2 mb-1 d-flex flex-row justify-content-center flex-wrap gap-1">
@@ -164,6 +164,25 @@ function invBadgeClass(inv) {
   if (inv.available_qty === 0) return 'badge-secondary';
   if (inv.available_qty <= inv.warehouse_reorder_level) return 'badge-warning';
   return 'badge-success';
+}
+
+function noImgUrl() {
+  return apiData.value?.meta?.no_img
+    || document.getElementById('search-results-app')?.dataset?.noImgUrl
+    || '';
+}
+
+function onSearchImageError(event) {
+  const img = event.target;
+  if (!(img instanceof HTMLImageElement) || img.dataset.fallbackApplied) {
+    return;
+  }
+  const fallback = noImgUrl();
+  if (!fallback || img.src === fallback) {
+    return;
+  }
+  img.dataset.fallbackApplied = '1';
+  img.src = fallback;
 }
 
 /**
