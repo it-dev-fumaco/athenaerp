@@ -183,6 +183,47 @@ class SetDefaultItemImageTest extends TestCase
         );
     }
 
+    public function test_converts_webp_default_to_jpeg_for_erpnext(): void
+    {
+        if (! function_exists('imagejpeg') || ! function_exists('imagecreatetruecolor') || ! function_exists('imagewebp')) {
+            $this->markTestSkipped('GD WebP/JPEG is required.');
+        }
+
+        $gd = imagecreatetruecolor(4, 4);
+        $tmp = sys_get_temp_dir().DIRECTORY_SEPARATOR.'athena-webp-'.uniqid('', true).'.webp';
+        $ok = @imagewebp($gd, $tmp, 80);
+        imagedestroy($gd);
+        if (! $ok || ! is_file($tmp)) {
+            $this->markTestSkipped('Could not encode a WebP test image.');
+        }
+
+        Storage::disk('upcloud')->put('img/three.webp', (string) file_get_contents($tmp), 'private');
+        @unlink($tmp);
+
+        $decoded = @imagecreatefromstring((string) Storage::disk('upcloud')->get('img/three.webp'));
+        if ($decoded === false) {
+            $this->markTestSkipped('GD cannot decode WebP.');
+        }
+        imagedestroy($decoded);
+
+        $user = $this->createUser();
+        $this->actingAs($user)->postJson('/set_default_item_image', [
+            'item_code' => self::ITEM_CODE,
+            'image_name' => 'img-3',
+        ])->assertOk();
+
+        $this->assertTrue(Storage::disk('upcloud')->exists('img/three.jpg'));
+        $expectedUrl = Storage::disk('upcloud')->url('img/three.jpg');
+        $this->assertSame(
+            $expectedUrl,
+            DB::connection('mysql')->table('tabItem')->where('name', self::ITEM_CODE)->value('image')
+        );
+        $this->assertSame(
+            $expectedUrl,
+            DB::connection('mysql')->table('tabItem Images')->where('name', 'img-3')->value('public_url')
+        );
+    }
+
     public function test_returns_422_when_image_does_not_belong_to_item(): void
     {
         $user = $this->createUser();

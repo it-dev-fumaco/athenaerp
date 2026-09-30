@@ -874,6 +874,7 @@ class ItemProfileController extends Controller
 
         $now = now()->toDateTimeString();
         $modifiedBy = Auth::user()->wh_user ?? null;
+        $this->ensureItemImageJpegForErp($chosen->image_path);
         $this->makeItemImagePublicOnUpcloud($chosen->image_path);
         $publicUrl = $this->itemImagePermanentPublicUrl($chosen->image_path);
 
@@ -1093,11 +1094,19 @@ class ItemProfileController extends Controller
         $key = ltrim($imagePath, '/');
         $disk = Storage::disk('upcloud');
         $base = basename($key);
+        $stem = pathinfo($base, PATHINFO_FILENAME);
         $candidates = array_values(array_unique([
+            'img/'.$stem.'.jpg',
+            'img/'.$stem.'.jpeg',
+            'items/'.$stem.'.jpg',
+            'items/'.$stem.'.jpeg',
+            'item-images/'.$stem.'.jpg',
+            'item-images/'.$stem.'.jpeg',
             $key,
             'img/'.$base,
             'items/'.$base,
             'item-images/'.$base,
+            'img/'.$stem.'.webp',
         ]));
 
         foreach ($candidates as $candidate) {
@@ -1115,6 +1124,85 @@ class ItemProfileController extends Controller
         }
 
         return $key;
+    }
+
+    /**
+     * If the default image is WebP-only, convert it to JPEG on Upcloud for ERPNext.
+     */
+    private function ensureItemImageJpegForErp(?string $imagePath): void
+    {
+        $imagePath = $imagePath ? trim((string) $imagePath) : null;
+        if (! $imagePath || Str::startsWith($imagePath, ['http://', 'https://'])) {
+            return;
+        }
+
+        $disk = Storage::disk('upcloud');
+        $sourceKey = $this->resolveItemImageStorageKey($imagePath) ?? ltrim($imagePath, '/');
+        $stem = pathinfo($sourceKey, PATHINFO_FILENAME);
+        $dir = dirname($sourceKey);
+        $dir = ($dir === '.' ? 'img' : $dir);
+        $jpegKey = $dir.'/'.$stem.'.jpg';
+
+        try {
+            if ($disk->exists($jpegKey)) {
+                return;
+            }
+        } catch (\Throwable) {
+            // Continue and try to convert.
+        }
+
+        if (! str_ends_with(strtolower($sourceKey), '.webp')) {
+            return;
+        }
+
+        if (! function_exists('imagejpeg')) {
+            Log::warning('Cannot convert WebP default image to JPEG: GD imagejpeg is unavailable.', [
+                'key' => $sourceKey,
+            ]);
+
+            return;
+        }
+
+        try {
+            $bytes = $disk->get($sourceKey);
+            $gd = @imagecreatefromstring($bytes);
+            if ($gd === false) {
+                throw new \RuntimeException('Unable to decode WebP for JPEG conversion.');
+            }
+
+            if (function_exists('imagepalettetotruecolor') && ! imageistruecolor($gd)) {
+                imagepalettetotruecolor($gd);
+            }
+
+            $tempPath = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'athena-erp-'.uniqid('', true).'.jpg';
+            try {
+                if (! imagejpeg($gd, $tempPath, 85)) {
+                    throw new \RuntimeException('Failed to encode JPEG.');
+                }
+                $stream = fopen($tempPath, 'rb');
+                if ($stream === false) {
+                    throw new \RuntimeException('Failed to read converted JPEG.');
+                }
+                try {
+                    $disk->put($jpegKey, $stream, ['visibility' => 'public']);
+                } finally {
+                    if (is_resource($stream)) {
+                        fclose($stream);
+                    }
+                }
+            } finally {
+                imagedestroy($gd);
+                if (is_file($tempPath)) {
+                    @unlink($tempPath);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Failed to convert WebP default image to JPEG', [
+                'source' => $sourceKey,
+                'jpeg' => $jpegKey,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
