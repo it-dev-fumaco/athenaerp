@@ -161,6 +161,89 @@ class ItemImageErpSyncService
     }
 
     /**
+     * If the default image is WebP-only, convert it to JPEG on Upcloud for ERPNext.
+     */
+    public function ensureJpegForErp(?string $imagePath): void
+    {
+        $imagePath = $imagePath ? trim((string) $imagePath) : null;
+        if (! $imagePath || Str::startsWith($imagePath, ['http://', 'https://'])) {
+            return;
+        }
+
+        $disk = Storage::disk('upcloud');
+        $sourceKey = $this->resolveStorageKey($imagePath) ?? ltrim($imagePath, '/');
+        if (Str::startsWith($sourceKey, ['http://', 'https://'])) {
+            return;
+        }
+
+        $stem = pathinfo($sourceKey, PATHINFO_FILENAME);
+        $dir = dirname($sourceKey);
+        $dir = ($dir === '.' ? 'img' : $dir);
+        $jpegKey = $dir.'/'.$stem.'.jpg';
+
+        try {
+            if ($disk->exists($jpegKey)) {
+                return;
+            }
+        } catch (\Throwable) {
+            // Continue and try to convert.
+        }
+
+        if (! str_ends_with(strtolower($sourceKey), '.webp')) {
+            return;
+        }
+
+        if (! function_exists('imagejpeg') || ! function_exists('imagecreatefromstring')) {
+            Log::warning('Cannot convert WebP default image to JPEG: GD imagejpeg is unavailable.', [
+                'key' => $sourceKey,
+            ]);
+
+            return;
+        }
+
+        try {
+            $bytes = $disk->get($sourceKey);
+            $gd = @imagecreatefromstring($bytes);
+            if ($gd === false) {
+                throw new \RuntimeException('Unable to decode WebP for JPEG conversion.');
+            }
+
+            if (function_exists('imagepalettetotruecolor') && ! imageistruecolor($gd)) {
+                imagepalettetotruecolor($gd);
+            }
+
+            $tempPath = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'athena-erp-'.uniqid('', true).'.jpg';
+            try {
+                if (! imagejpeg($gd, $tempPath, 85)) {
+                    throw new \RuntimeException('Failed to encode JPEG.');
+                }
+                $stream = fopen($tempPath, 'rb');
+                if ($stream === false) {
+                    throw new \RuntimeException('Failed to read converted JPEG.');
+                }
+                try {
+                    $disk->put($jpegKey, $stream, ['visibility' => 'public']);
+                } finally {
+                    if (is_resource($stream)) {
+                        fclose($stream);
+                    }
+                }
+            } finally {
+                imagedestroy($gd);
+                if (is_file($tempPath)) {
+                    @unlink($tempPath);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Failed to convert WebP default image to JPEG', [
+                'source' => $sourceKey,
+                'jpeg' => $jpegKey,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
      * Keep tabItem.image aligned with the current default (lowest idx) image.
      */
     public function syncDefaultImage(string $itemCode, ?string $modifiedBy = null): ?string
@@ -168,6 +251,7 @@ class ItemImageErpSyncService
         $default = $this->defaultImage($itemCode);
 
         if ($default?->image_path) {
+            $this->ensureJpegForErp($default->image_path);
             $this->makePublic($default->image_path);
         }
 
