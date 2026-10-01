@@ -442,6 +442,7 @@ class SearchController extends Controller
                     'last_page' => $items->lastPage(),
                     'total' => $items->total(),
                     'path' => $items->path(),
+                    'no_img' => $noImgPlaceholder,
                 ],
                 'bundled_items' => $bundledItems,
                 'show_price' => $showPrice,

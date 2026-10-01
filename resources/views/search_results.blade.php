@@ -285,7 +285,7 @@
 											</div>
 										</div> --}}
 										<div class="col-12 col-xl-{{ $itemGroups ? '10' : '12' }} order-2">
-										<div id="search-results-app">
+										<div id="search-results-app" data-no-img-url="{{ $noImgPlaceholder }}">
 										<div id="search-results-list">
 										<div class="col-12">
 											<div class="container-fluid m-0">
@@ -304,7 +304,7 @@
 															<div class="col-12 col-sm-4 col-md-3 col-lg-2 p-1 text-center text-md-left">
 																<div class="search-result-thumb-wrap position-relative mx-auto mx-md-0" style="max-width: 140px">
 																	<a href="{{ $row['image'] }}" data-item-code="{{ $row['name'] }}" class="view-images d-block">
-																		<img src="{{ $row['image'] }}" class="img w-100">
+																		<img src="{{ $row['image'] }}" class="img w-100" alt="" onerror="if(this.dataset.fallbackApplied){return;} this.dataset.fallbackApplied='1'; this.src='{{ $noImgPlaceholder }}';">
 																	</a>
 																</div>
 					
@@ -485,7 +485,7 @@
 															<div class="col-3 col-lg-2 col-xl-3 p-1">
 																<div class="search-result-thumb-wrap position-relative">
 																	<a href="{{ $row['image'] }}" data-item-code="{{ $row['name'] }}" class="view-images d-block">
-																		<img src="{{ $row['image'] }}" class="img w-100">
+																		<img src="{{ $row['image'] }}" class="img w-100" alt="" onerror="if(this.dataset.fallbackApplied){return;} this.dataset.fallbackApplied='1'; this.src='{{ $noImgPlaceholder }}';">
 																	</a>
 																</div>
 

@@ -5,7 +5,7 @@
     @endphp
     <div class="search-row row w-100 p-2" style="border-bottom: 1px solid #ccc;">
       <div class="text-center p-2 col-2">
-        <img src="{{ $img }}" class="img w-100">
+        <img src="{{ $img }}" class="img w-100" alt="" onerror="if(this.dataset.fallbackApplied){return;} this.dataset.fallbackApplied='1'; this.src='{{ $noImg }}';">
       </div>
       <div class="col-8 col-md-9 text-truncate">
         <span style="font-size: 10pt;"><b>{{ $item->name }}</b></span>

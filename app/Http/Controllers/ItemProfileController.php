@@ -25,6 +25,7 @@ use App\Models\UOM;
 use App\Models\WarehouseAccess;
 use App\Services\ItemOrderHistoryService;
 use App\Services\ItemProfileService;
+use App\Services\ItemImageErpSyncService;
 use App\Traits\GeneralTrait;
 use Buglinjo\LaravelWebp\Facades\Webp;
 use ErrorException;
@@ -48,7 +49,8 @@ class ItemProfileController extends Controller
 
     public function __construct(
         protected ItemProfileService $itemProfileService,
-        protected ItemOrderHistoryService $itemOrderHistoryService
+        protected ItemOrderHistoryService $itemOrderHistoryService,
+        protected ItemImageErpSyncService $itemImageErpSyncService
     ) {}
 
     public function formWarehouseLocation($itemCode)
@@ -711,9 +713,9 @@ class ItemProfileController extends Controller
 
         $removedImages = $query->pluck('image_path')->toArray();
 
-        // Delete from cloud
+        // Delete from cloud (webp + jpeg sidecar + thumbs)
         if (! empty($removedImages)) {
-            $disk->delete($removedImages);
+            $disk->delete($this->itemImageObjectKeysForDelete($removedImages));
         }
 
         // Delete DB records
@@ -738,6 +740,7 @@ class ItemProfileController extends Controller
                 $thumbTempPath = null;
 
                 // Prefer WebP when supported; otherwise fall back to original file bytes.
+                // Also store a JPEG sidecar (same stem) so ERPNext can use JPEG.
                 try {
                     if (function_exists('imagewebp')) {
                         $filename = $randomBase.'.webp';
@@ -747,6 +750,15 @@ class ItemProfileController extends Controller
                         $tempPath = rtrim($tempDir, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'athena-item-'.$filename;
                         $webp->save($tempPath);
                         $putToUpcloud($storageKey, $tempPath);
+
+                        try {
+                            $this->putUploadedItemImageAsJpeg($putToUpcloud, $file, $randomBase, $tempDir);
+                        } catch (\Throwable $jpegError) {
+                            Log::warning('Failed to store JPEG sidecar for item image', [
+                                'item_code' => $request->item_code,
+                                'error' => $jpegError->getMessage(),
+                            ]);
+                        }
 
                         // Generate a smaller thumbnail (~600px wide) under img/thumbs/ for LCP.
                         $thumbFilename = $filename;
@@ -772,6 +784,9 @@ class ItemProfileController extends Controller
                             throw new \RuntimeException('Uploaded file real path not found.');
                         }
                         $putToUpcloud($storageKey, $realPath);
+                        if (! in_array($ext, ['jpg', 'jpeg'], true)) {
+                            $this->putUploadedItemImageAsJpeg($putToUpcloud, $file, $randomBase, $tempDir);
+                        }
                     }
                 } catch (\Throwable $e) {
                     // Last-resort fallback: store original bytes so upload never 500s.
@@ -783,6 +798,13 @@ class ItemProfileController extends Controller
                         throw $e;
                     }
                     $putToUpcloud($storageKey, $realPath);
+                    if (! in_array($ext, ['jpg', 'jpeg'], true)) {
+                        try {
+                            $this->putUploadedItemImageAsJpeg($putToUpcloud, $file, $randomBase, $tempDir);
+                        } catch (\Throwable) {
+                            // JPEG sidecar is best-effort when falling back.
+                        }
+                    }
                 } finally {
                     if ($tempPath && is_file($tempPath)) {
                         @unlink($tempPath);
@@ -803,14 +825,17 @@ class ItemProfileController extends Controller
                     'parentfield' => 'item_images',
                     'parenttype' => 'Item',
                     'image_path' => $storageKey, // store only object key
-                    'public_url' => $this->itemImagePermanentPublicUrl($storageKey),
+                    'public_url' => $this->itemImageErpSyncService->permanentUrl($storageKey),
                 ];
             }
 
             ItemImages::insert($itemImagesArr);
         }
 
-        $this->syncItemDefaultImageForErp($request->item_code);
+        $this->itemImageErpSyncService->syncDefaultImage(
+            $request->item_code,
+            Auth::user()->wh_user ?? null
+        );
 
         if ($request->hasFile('item_image')) {
             return response()->json([
@@ -872,28 +897,7 @@ class ItemProfileController extends Controller
                 ->update(['idx' => DB::raw("CASE name {$case} END")]);
         }
 
-        $now = now()->toDateTimeString();
-        $modifiedBy = Auth::user()->wh_user ?? null;
-        $this->ensureItemImageJpegForErp($chosen->image_path);
-        $this->makeItemImagePublicOnUpcloud($chosen->image_path);
-        $publicUrl = $this->itemImagePermanentPublicUrl($chosen->image_path);
-
-        ItemImages::query()
-            ->where('parent', $itemCode)
-            ->where('name', $imageName)
-            ->update([
-                'public_url' => $publicUrl,
-                'modified' => $now,
-                'modified_by' => $modifiedBy,
-            ]);
-
-        Item::query()
-            ->where('name', $itemCode)
-            ->update([
-                'image' => $publicUrl,
-                'modified' => $now,
-                'modified_by' => $modifiedBy,
-            ]);
+        $this->itemImageErpSyncService->syncDefaultImage($itemCode, Auth::user()->wh_user ?? null);
 
         return response()->json([
             'message' => 'Default image updated.',
@@ -1034,213 +1038,83 @@ class ItemProfileController extends Controller
     }
 
     /**
-     * Set Upcloud object ACL to public-read so ERPNext can load the permanent URL.
-     * If the bucket disables object ACLs, log and continue (bucket policy may already allow reads).
+     * Store img/{stem}.jpg next to the WebP object so ERPNext can prefer JPEG.
+     *
+     * @param  callable(string, string): void  $putToUpcloud
      */
-    private function makeItemImagePublicOnUpcloud(?string $imagePath): void
+    private function putUploadedItemImageAsJpeg(callable $putToUpcloud, \Illuminate\Http\UploadedFile $file, string $randomBase, string $tempDir): void
     {
-        $imagePath = $imagePath ? trim((string) $imagePath) : null;
-        if (! $imagePath || Str::startsWith($imagePath, ['http://', 'https://'])) {
+        $jpegKey = 'img/'.$randomBase.'.jpg';
+        $realPath = (string) $file->getRealPath();
+        if (! is_file($realPath)) {
+            throw new \RuntimeException('Uploaded file real path not found.');
+        }
+
+        $ext = strtolower((string) $file->getClientOriginalExtension());
+        if (in_array($ext, ['jpg', 'jpeg'], true)) {
+            $putToUpcloud($jpegKey, $realPath);
+
             return;
         }
 
-        $key = $this->resolveItemImageStorageKey($imagePath) ?? ltrim($imagePath, '/');
+        if (! function_exists('imagejpeg') || ! function_exists('imagecreatefromstring')) {
+            throw new \RuntimeException('GD JPEG support is not available.');
+        }
 
+        $bytes = file_get_contents($realPath);
+        if ($bytes === false) {
+            throw new \RuntimeException('Failed to read uploaded file.');
+        }
+
+        $gd = @imagecreatefromstring($bytes);
+        if ($gd === false) {
+            throw new \RuntimeException('Failed to decode uploaded image for JPEG.');
+        }
+
+        if (function_exists('imagepalettetotruecolor') && ! imageistruecolor($gd)) {
+            imagepalettetotruecolor($gd);
+        }
+
+        $jpegTempPath = rtrim($tempDir, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'athena-item-'.$randomBase.'.jpg';
         try {
-            Storage::disk('upcloud')->setVisibility($key, 'public');
-        } catch (\Throwable $e) {
-            Log::warning('Failed to set Upcloud object visibility to public', [
-                'key' => $key,
-                'error' => $e->getMessage(),
-            ]);
+            if (! imagejpeg($gd, $jpegTempPath, 85)) {
+                throw new \RuntimeException('Failed to encode JPEG.');
+            }
+            $putToUpcloud($jpegKey, $jpegTempPath);
+        } finally {
+            imagedestroy($gd);
+            if (is_file($jpegTempPath)) {
+                @unlink($jpegTempPath);
+            }
         }
     }
 
     /**
-     * Permanent (non-signed) Upcloud object URL for ERPNext.
-     * Does not probe storage or fall back to no-img.png.
+     * @param  array<int, mixed>  $imagePaths
+     * @return list<string>
      */
-    private function itemImagePermanentPublicUrl(?string $imagePath): ?string
+    private function itemImageObjectKeysForDelete(array $imagePaths): array
     {
-        $imagePath = $imagePath ? trim((string) $imagePath) : null;
-        if (! $imagePath) {
-            return null;
-        }
-
-        if (Str::startsWith($imagePath, ['http://', 'https://'])) {
-            return $imagePath;
-        }
-
-        $key = $this->resolveItemImageStorageKey($imagePath) ?? ltrim($imagePath, '/');
-
-        return Storage::disk('upcloud')->url($key);
-    }
-
-    /**
-     * Map a tabItem Images.image_path value to the real Upcloud object key.
-     * Older rows store a filename only; objects live under img/.
-     */
-    private function resolveItemImageStorageKey(?string $imagePath): ?string
-    {
-        $imagePath = $imagePath ? trim((string) $imagePath) : null;
-        if (! $imagePath) {
-            return null;
-        }
-
-        if (Str::startsWith($imagePath, ['http://', 'https://'])) {
-            return $imagePath;
-        }
-
-        $key = ltrim($imagePath, '/');
-        $disk = Storage::disk('upcloud');
-        $base = basename($key);
-        $stem = pathinfo($base, PATHINFO_FILENAME);
-        $candidates = array_values(array_unique([
-            'img/'.$stem.'.jpg',
-            'img/'.$stem.'.jpeg',
-            'items/'.$stem.'.jpg',
-            'items/'.$stem.'.jpeg',
-            'item-images/'.$stem.'.jpg',
-            'item-images/'.$stem.'.jpeg',
-            $key,
-            'img/'.$base,
-            'items/'.$base,
-            'item-images/'.$base,
-            'img/'.$stem.'.webp',
-        ]));
-
-        foreach ($candidates as $candidate) {
-            try {
-                if ($disk->exists($candidate)) {
-                    return $candidate;
-                }
-            } catch (\Throwable) {
+        $keys = [];
+        foreach ($imagePaths as $path) {
+            $path = ltrim(trim((string) $path), '/');
+            if ($path === '') {
                 continue;
             }
-        }
 
-        if (! str_contains($key, '/')) {
-            return 'img/'.$key;
-        }
-
-        return $key;
-    }
-
-    /**
-     * If the default image is WebP-only, convert it to JPEG on Upcloud for ERPNext.
-     */
-    private function ensureItemImageJpegForErp(?string $imagePath): void
-    {
-        $imagePath = $imagePath ? trim((string) $imagePath) : null;
-        if (! $imagePath || Str::startsWith($imagePath, ['http://', 'https://'])) {
-            return;
-        }
-
-        $disk = Storage::disk('upcloud');
-        $sourceKey = $this->resolveItemImageStorageKey($imagePath) ?? ltrim($imagePath, '/');
-        $stem = pathinfo($sourceKey, PATHINFO_FILENAME);
-        $dir = dirname($sourceKey);
-        $dir = ($dir === '.' ? 'img' : $dir);
-        $jpegKey = $dir.'/'.$stem.'.jpg';
-
-        try {
-            if ($disk->exists($jpegKey)) {
-                return;
-            }
-        } catch (\Throwable) {
-            // Continue and try to convert.
-        }
-
-        if (! str_ends_with(strtolower($sourceKey), '.webp')) {
-            return;
-        }
-
-        if (! function_exists('imagejpeg')) {
-            Log::warning('Cannot convert WebP default image to JPEG: GD imagejpeg is unavailable.', [
-                'key' => $sourceKey,
-            ]);
-
-            return;
-        }
-
-        try {
-            $bytes = $disk->get($sourceKey);
-            $gd = @imagecreatefromstring($bytes);
-            if ($gd === false) {
-                throw new \RuntimeException('Unable to decode WebP for JPEG conversion.');
-            }
-
-            if (function_exists('imagepalettetotruecolor') && ! imageistruecolor($gd)) {
-                imagepalettetotruecolor($gd);
-            }
-
-            $tempPath = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'athena-erp-'.uniqid('', true).'.jpg';
-            try {
-                if (! imagejpeg($gd, $tempPath, 85)) {
-                    throw new \RuntimeException('Failed to encode JPEG.');
-                }
-                $stream = fopen($tempPath, 'rb');
-                if ($stream === false) {
-                    throw new \RuntimeException('Failed to read converted JPEG.');
-                }
-                try {
-                    $disk->put($jpegKey, $stream, ['visibility' => 'public']);
-                } finally {
-                    if (is_resource($stream)) {
-                        fclose($stream);
-                    }
-                }
-            } finally {
-                imagedestroy($gd);
-                if (is_file($tempPath)) {
-                    @unlink($tempPath);
+            $keys[] = $path;
+            $stem = pathinfo($path, PATHINFO_FILENAME);
+            $dir = dirname($path);
+            $dir = ($dir === '.' ? 'img' : $dir);
+            foreach (['jpg', 'jpeg', 'webp', 'png'] as $ext) {
+                $keys[] = $dir.'/'.$stem.'.'.$ext;
+                if ($dir !== 'img/thumbs') {
+                    $keys[] = 'img/thumbs/'.$stem.'.'.$ext;
                 }
             }
-        } catch (\Throwable $e) {
-            Log::warning('Failed to convert WebP default image to JPEG', [
-                'source' => $sourceKey,
-                'jpeg' => $jpegKey,
-                'error' => $e->getMessage(),
-            ]);
-        }
-    }
-
-    /**
-     * Keep tabItem.image aligned with the current default (lowest idx) image.
-     */
-    private function syncItemDefaultImageForErp(string $itemCode): void
-    {
-        $default = ItemImages::query()
-            ->where('parent', $itemCode)
-            ->orderBy('idx', 'asc')
-            ->orderBy('name', 'asc')
-            ->first();
-
-        $publicUrl = $default
-            ? ($default->public_url ?: $this->itemImagePermanentPublicUrl($default->image_path))
-            : null;
-
-        $now = now()->toDateTimeString();
-        $modifiedBy = Auth::user()->wh_user ?? null;
-
-        if ($default && $publicUrl && $default->public_url !== $publicUrl) {
-            ItemImages::query()
-                ->where('parent', $itemCode)
-                ->where('name', $default->name)
-                ->update([
-                    'public_url' => $publicUrl,
-                    'modified' => $now,
-                    'modified_by' => $modifiedBy,
-                ]);
         }
 
-        Item::query()
-            ->where('name', $itemCode)
-            ->update([
-                'image' => $publicUrl,
-                'modified' => $now,
-                'modified_by' => $modifiedBy,
-            ]);
+        return array_values(array_unique($keys));
     }
 
     private function resolveItemImagePublicUrl(?string $image): string
