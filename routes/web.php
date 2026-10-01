@@ -152,6 +152,9 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
         Route::get('/load_suggestion_box', [SearchController::class, 'loadSuggestionBox']);
         Route::get('/sales_report', [ReportController::class, 'salesReport']);
         Route::get('/sales_summary_report/{year}', [ReportController::class, 'salesReportSummary']);
+        Route::middleware('informationTechnology')->group(function () {
+            Route::get('/pending_submit_report', [ReportController::class, 'pendingSubmitReport']);
+        });
 
         Route::get('/get_select_filters', [SelectFilterController::class, 'getSelectFilters']);
 

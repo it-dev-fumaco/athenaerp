@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'sanitation' => \App\Http\Middleware\SanitationMiddleware::class,
             'checkConnection' => \App\Http\Middleware\CheckConnectionMiddleware::class,
             'inventoryLifecycleSettings' => \App\Http\Middleware\EnsureInventoryLifecycleSettingsAccess::class,
+            'informationTechnology' => \App\Http\Middleware\EnsureInformationTechnologyAccess::class,
             'loginActivityLog' => \App\Http\Middleware\EnsureLoginActivityLogAccess::class,
         ]);
     })
