@@ -732,8 +732,9 @@ trait GeneralTrait
     }
 
     /**
-     * Submit STE to ERPNext so that docstatus = 1 and Stock Ledger Entry is created.
-     * Uses ERPNext as source of truth for child item status; syncs parent Item Status to ERPNext. Submission is allowed even when some items are not yet issued.
+     * Update the STE in ERPNext, then submit it once every child line is Issued or Returned.
+     * A REST update cannot submit a Frappe document: docstatus stays 0 and no Stock Ledger Entry is created
+     * unless frappe.client.submit runs after the lines are fully issued.
      *
      * @param  string  $id  Stock Entry name (e.g. STE-XXX)
      * @param  int  $systemGenerated  1 when called from backend (return array on error); 0 for user-facing (return JSON response)
@@ -807,21 +808,36 @@ trait GeneralTrait
                 })->toArray();
             }
 
-            $pendingForChecking = collect($items)->where('status', StockEntryConstants::STATUS_FOR_CHECKING)->count();
-            $docstatus = ($erpData['docstatus'] ?? 0) || $pendingForChecking <= 0 ? 1 : 0;
+            $notIssuedCount = collect($items)
+                ->whereNotIn('status', [StockEntryConstants::STATUS_ISSUED, StockEntryConstants::STATUS_RETURNED])
+                ->count();
+            $shouldSubmit = $items !== [] && $notIssuedCount === 0;
+            if (! $shouldSubmit) {
+                $parentItemStatus = StockEntryConstants::STATUS_FOR_CHECKING;
+            }
 
             $updateResponse = $this->erpPut('Stock Entry', $id, [
                 'item_status' => $parentItemStatus,
-                'docstatus' => $docstatus,
-                'items' => $items
+                'items' => $items,
             ], $useSystemCredentials);
 
-            if (Arr::has($updateResponse, 'exception') || Arr::has($updateResponse, 'exc')) {
+            if (Arr::has($updateResponse, 'exception') || Arr::has($updateResponse, 'exc') || ($updateResponse['error'] ?? 0)) {
+                $updateErr = $updateResponse['exception'] ?? $updateResponse['exc'] ?? ($updateResponse['message'] ?? 'Stock Entry update failed');
                 Log::warning('GeneralTrait submitStockEntry ERP item_status update failed', [
                     'ste_id' => $id,
                     'response' => $updateResponse,
                 ]);
+
+                return $this->stockEntryActionResult($updateErr, $systemGenerated);
             }
+
+            if ($shouldSubmit && (int) data_get($updateResponse, 'data.docstatus', 0) !== 1) {
+                $submitError = $this->submitIssuedStockEntry($id, $updateResponse, $useSystemCredentials);
+                if ($submitError !== null) {
+                    return $this->stockEntryActionResult($submitError, $systemGenerated);
+                }
+            }
+
             return ['error' => 0, 'modal_title' => 'Success', 'modal_message' => 'Stock Entry Submitted.'];
         } catch (Exception $e) {
             Log::error('GeneralTrait submitStockEntry failed', [
@@ -838,5 +854,68 @@ trait GeneralTrait
 
             return response()->json(['error' => 1, 'modal_title' => 'Warning', 'modal_message' => $message]);
         }
+    }
+
+    /**
+     * Submit a fully issued Stock Entry through frappe.client.submit.
+     *
+     * @return string|null Error message, or null when ERPNext accepted the submit
+     */
+    private function submitIssuedStockEntry(string $id, array $updateResponse, bool $useSystemCredentials): ?string
+    {
+        $updatedDoc = (isset($updateResponse['data']) && is_array($updateResponse['data']))
+            ? $updateResponse['data']
+            : null;
+
+        if (! is_array($updatedDoc)) {
+            $freshDoc = Arr::get($this->erpGet('Stock Entry', $id, [], $useSystemCredentials), 'data');
+            $updatedDoc = is_array($freshDoc) ? $freshDoc : null;
+        }
+
+        $submitResponse = $this->erpSubmitDocument('Stock Entry', $id, $useSystemCredentials, $updatedDoc);
+        if (($submitResponse['exc_type'] ?? null) === 'TimestampMismatchError') {
+            sleep(1);
+            $freshDoc = Arr::get($this->erpGet('Stock Entry', $id, [], $useSystemCredentials), 'data');
+            $submitResponse = $this->erpSubmitDocument(
+                'Stock Entry',
+                $id,
+                $useSystemCredentials,
+                is_array($freshDoc) ? $freshDoc : null
+            );
+        }
+
+        if (Arr::has($submitResponse, 'exception') || Arr::has($submitResponse, 'exc') || ($submitResponse['error'] ?? 0)) {
+            $submitErr = $submitResponse['exception'] ?? $submitResponse['exc'] ?? ($submitResponse['message'] ?? 'Submit failed');
+            Log::error('GeneralTrait STE submit to ERPNext failed after all items issued', [
+                'ste_id' => $id,
+                'exception' => $submitErr,
+                'response' => $submitResponse,
+            ]);
+
+            if ($this->isErpConnectionError((string) $submitErr)) {
+                return (string) $submitErr;
+            }
+
+            return 'Item checked out, but the Stock Entry could not be submitted to ERP. Stock Ledger Entry was not created. Please contact your system administrator or try submitting the STE manually in ERPNext.';
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array|\Illuminate\Http\JsonResponse
+     */
+    private function stockEntryActionResult(string $message, $systemGenerated)
+    {
+        if ($this->isErpConnectionError($message)) {
+            $message = ERPTrait::erpConnectionUnavailableMessage();
+        }
+
+        $payload = ['error' => 1, 'modal_title' => 'Warning', 'modal_message' => $message];
+        if ($systemGenerated) {
+            return $payload;
+        }
+
+        return response()->json($payload);
     }
 }
