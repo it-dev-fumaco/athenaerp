@@ -27,20 +27,24 @@
                 <a class="btn btn-success" href="{{ url('/pending_submit_report') }}?export=1&amp;document_type={{ urlencode($documentType) }}&amp;item_code={{ urlencode($itemCode) }}">
                     <i class="fas fa-file-excel"></i> Export to Excel
                 </a>
+                <span class="ml-3 font-weight-bold">Total records: {{ number_format($rows->total()) }}</span>
             </form>
 
             <div class="table-responsive">
-                <table class="table table-bordered table-sm mb-0">
+                <table class="table table-bordered table-sm mb-0 pending-submit-table">
                     <thead>
                         <tr>
                             <th rowspan="2" class="align-middle text-center">Item Code</th>
-                            <th colspan="6" class="text-center">Pending Transactions</th>
+                            <th colspan="9" class="text-center">Pending Transactions</th>
                             <th colspan="3" class="text-center">Current Available Stock Per Source</th>
                         </tr>
                         <tr>
                             <th class="text-center">No.</th>
+                            <th class="text-center">Date Created</th>
                             <th class="text-center">Transaction Type</th>
                             <th class="text-center">Item Status</th>
+                            <th class="text-center">Date Issued</th>
+                            <th class="text-center">Issued By</th>
                             <th class="text-center">Main Status</th>
                             <th class="text-center">Doc Status</th>
                             <th class="text-center">Qty</th>
@@ -56,8 +60,11 @@
                                     <td rowspan="{{ $row['item_rowspan'] }}" class="align-middle font-weight-bold">{{ $row['item_code'] }}</td>
                                 @endif
                                 <td>{{ $row['document_no'] }}</td>
+                                <td class="text-nowrap">{{ $row['date_created'] ?: '—' }}</td>
                                 <td>{{ $row['transaction_type'] }}</td>
                                 <td class="text-center">{{ $row['item_status'] }}</td>
+                                <td class="text-nowrap">{{ $row['date_issued'] ?: '—' }}</td>
+                                <td>{{ $row['issued_by'] ?: '—' }}</td>
                                 <td class="text-center">{{ $row['main_status'] ?: '—' }}</td>
                                 <td class="text-center">{{ $row['doc_status'] }}</td>
                                 <td class="text-right">{{ (float) $row['qty'] == (int) $row['qty'] ? number_format($row['qty']) : number_format($row['qty'], 2) }}</td>
@@ -69,16 +76,28 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="text-center text-muted">No issued items are waiting for a Stock Entry or Delivery to be submitted.</td>
+                                <td colspan="13" class="text-center text-muted">No issued items are waiting for a Stock Entry or Delivery to be submitted.</td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-            <div class="mt-3">
+            <div class="mt-3 pending-submit-pager">
                 {{ $rows->links() }}
             </div>
         </div>
     </div>
 </div>
+<style>
+    .pending-submit-table {
+        font-size: 12px;
+    }
+    .pending-submit-table th,
+    .pending-submit-table td {
+        padding: 0.3rem 0.4rem;
+    }
+    .pending-submit-pager {
+        font-size: 13px;
+    }
+</style>
 @endsection

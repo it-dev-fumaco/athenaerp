@@ -44,8 +44,11 @@ class ReportController extends Controller
                     ->whereIn('tabStock Entry Detail.s_warehouse', $warehouses)
                     ->select([
                         'ste.name as document_no',
+                        'ste.creation as date_created',
                         'ste.purpose as transaction_type',
                         'tabStock Entry Detail.status as item_status',
+                        'tabStock Entry Detail.date_modified as date_issued',
+                        'tabStock Entry Detail.session_user as issued_by',
                         'ste.item_status as main_status',
                         DB::raw("'Draft' as doc_status"),
                         'tabStock Entry Detail.qty as qty',
@@ -66,8 +69,11 @@ class ReportController extends Controller
                     ->groupBy('ps.name', 'ps.item_status', 'at.reference_type', 'at.item_code', 'at.source_warehouse')
                     ->select([
                         'ps.name as document_no',
+                        DB::raw('MIN(ps.creation) as date_created'),
                         'at.reference_type as transaction_type',
                         DB::raw("'Issued' as item_status"),
+                        DB::raw('MAX(at.transaction_date) as date_issued'),
+                        DB::raw("GROUP_CONCAT(DISTINCT at.warehouse_user SEPARATOR ', ') as issued_by"),
                         'ps.item_status as main_status',
                         DB::raw("'DR Draft' as doc_status"),
                         DB::raw('SUM(at.issued_qty) as qty'),
@@ -93,8 +99,11 @@ class ReportController extends Controller
                     ->groupBy('ps.name', 'ps.item_status', 'psi.item_code', 'dri.warehouse')
                     ->select([
                         'ps.name as document_no',
+                        DB::raw('MIN(ps.creation) as date_created'),
                         DB::raw("'Picking Slip' as transaction_type"),
                         DB::raw("'Issued' as item_status"),
+                        DB::raw('MAX(psi.date_modified) as date_issued'),
+                        DB::raw("GROUP_CONCAT(DISTINCT psi.session_user SEPARATOR ', ') as issued_by"),
                         'ps.item_status as main_status',
                         DB::raw("'DR Draft' as doc_status"),
                         DB::raw('SUM(psi.qty) as qty'),
@@ -175,8 +184,11 @@ class ReportController extends Controller
                         'item_rowspan' => $itemLines->count(),
                         'item_code' => $itemCode,
                         'document_no' => $line->document_no,
+                        'date_created' => $this->formatPendingSubmitDate($line->date_created ?? null),
                         'transaction_type' => $line->transaction_type,
                         'item_status' => $line->item_status,
+                        'date_issued' => $this->formatPendingSubmitDate($line->date_issued ?? null),
+                        'issued_by' => $line->issued_by ?: '',
                         'main_status' => $line->main_status,
                         'doc_status' => $line->doc_status,
                         'qty' => (float) $line->qty,
@@ -193,6 +205,19 @@ class ReportController extends Controller
         }
 
         return $rows;
+    }
+
+    private function formatPendingSubmitDate($value): string
+    {
+        if (! $value) {
+            return '';
+        }
+
+        try {
+            return Carbon::parse($value)->format('M d, Y h:i A');
+        } catch (\Throwable) {
+            return (string) $value;
+        }
     }
 
     /**
@@ -265,16 +290,16 @@ class ReportController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Pending DR and STE');
 
-        $sheet->mergeCells('A1:J1');
+        $sheet->mergeCells('A1:M1');
         $sheet->setCellValue('A1', 'Pending DR and STE that are still in Draft Status but items are already issued');
         $sheet->mergeCells('A2:A3');
         $sheet->setCellValue('A2', 'Item Code');
-        $sheet->mergeCells('B2:G2');
+        $sheet->mergeCells('B2:J2');
         $sheet->setCellValue('B2', 'Pending Transactions');
-        $sheet->mergeCells('H2:J2');
-        $sheet->setCellValue('H2', 'Current Available Stock Per Source');
+        $sheet->mergeCells('K2:M2');
+        $sheet->setCellValue('K2', 'Current Available Stock Per Source');
 
-        $subHeaders = ['No.', 'Transaction Type', 'Item Status', 'Main Status', 'Doc Status', 'Qty', 'Warehouse', 'Actual', 'Available'];
+        $subHeaders = ['No.', 'Date Created', 'Transaction Type', 'Item Status', 'Date Issued', 'Issued By', 'Main Status', 'Doc Status', 'Qty', 'Warehouse', 'Actual', 'Available'];
         $column = 'B';
         foreach ($subHeaders as $header) {
             $sheet->setCellValue($column.'3', $header);
@@ -291,21 +316,24 @@ class ReportController extends Controller
             }
 
             $sheet->setCellValue('B'.$excelRow, $row['document_no']);
-            $sheet->setCellValue('C'.$excelRow, $row['transaction_type']);
-            $sheet->setCellValue('D'.$excelRow, $row['item_status']);
-            $sheet->setCellValue('E'.$excelRow, $row['main_status'] ?: '');
-            $sheet->setCellValue('F'.$excelRow, $row['doc_status']);
-            $sheet->setCellValue('G'.$excelRow, $row['qty']);
+            $sheet->setCellValue('C'.$excelRow, $row['date_created']);
+            $sheet->setCellValue('D'.$excelRow, $row['transaction_type']);
+            $sheet->setCellValue('E'.$excelRow, $row['item_status']);
+            $sheet->setCellValue('F'.$excelRow, $row['date_issued']);
+            $sheet->setCellValue('G'.$excelRow, $row['issued_by']);
+            $sheet->setCellValue('H'.$excelRow, $row['main_status'] ?: '');
+            $sheet->setCellValue('I'.$excelRow, $row['doc_status']);
+            $sheet->setCellValue('J'.$excelRow, $row['qty']);
 
             if ($row['show_warehouse']) {
-                $sheet->setCellValue('H'.$excelRow, $row['warehouse']);
-                $sheet->setCellValue('I'.$excelRow, $row['actual']);
-                $sheet->setCellValue('J'.$excelRow, $row['available']);
+                $sheet->setCellValue('K'.$excelRow, $row['warehouse']);
+                $sheet->setCellValue('L'.$excelRow, $row['actual']);
+                $sheet->setCellValue('M'.$excelRow, $row['available']);
                 if ($row['warehouse_rowspan'] > 1) {
                     $end = $excelRow + $row['warehouse_rowspan'] - 1;
-                    $sheet->mergeCells('H'.$excelRow.':H'.$end);
-                    $sheet->mergeCells('I'.$excelRow.':I'.$end);
-                    $sheet->mergeCells('J'.$excelRow.':J'.$end);
+                    $sheet->mergeCells('K'.$excelRow.':K'.$end);
+                    $sheet->mergeCells('L'.$excelRow.':L'.$end);
+                    $sheet->mergeCells('M'.$excelRow.':M'.$end);
                 }
             }
 
@@ -313,7 +341,7 @@ class ReportController extends Controller
         }
 
         $lastRow = max(3, $excelRow - 1);
-        $sheet->getStyle('A1:J'.$lastRow)->applyFromArray([
+        $sheet->getStyle('A1:M'.$lastRow)->applyFromArray([
             'borders' => [
                 'allBorders' => ['borderStyle' => Border::BORDER_THIN],
             ],
@@ -322,7 +350,7 @@ class ReportController extends Controller
                 'wrapText' => true,
             ],
         ]);
-        $sheet->getStyle('A1:J3')->applyFromArray([
+        $sheet->getStyle('A1:M3')->applyFromArray([
             'font' => ['bold' => true],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
             'fill' => [
@@ -332,7 +360,7 @@ class ReportController extends Controller
         ]);
         $sheet->getStyle('A1')->getFont()->setSize(14);
 
-        foreach (range('A', 'J') as $column) {
+        foreach (range('A', 'M') as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
 
