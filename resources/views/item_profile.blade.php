@@ -345,7 +345,7 @@
                         @if (in_array($userGroup, ['Manager', 'Director']))
                         <li class="nav-item">
                             <a class="nav-link" id="get-purchase-history" data-toggle="tab" href="#purchase-history">
-                                <span class="d-none d-lg-block">Purchase Rate History</span>
+                                <span class="d-none d-lg-block">Sale order History</span>
                                 <i class="fa fa-shopping-cart d-block d-lg-none"></i>
                             </a>
                         </li>
