@@ -267,7 +267,10 @@
               <td class="text-center p-2">
                 <span class="d-block font-weight-bold">{{ formatDate(row.date) }}</span>
               </td>
-              <td class="text-center p-2">{{ row.id }}</td>
+              <td class="text-center p-2">
+                <a v-if="pendingDocumentUrl(row.id)" :href="pendingDocumentUrl(row.id)" target="_blank" rel="noopener">{{ row.id }}</a>
+                <template v-else>{{ row.id }}</template>
+              </td>
               <td class="text-center p-2"><b>{{ row.qty }}</b> {{ row.uom }}</td>
               <td class="text-center p-2">{{ row.warehouse }}</td>
               <td class="text-center p-2">{{ row.owner }}</td>
@@ -359,6 +362,17 @@ const hasAnyData = computed(() => {
     apiData.value.pending.data.length > 0
   );
 });
+
+function pendingDocumentUrl(id) {
+  const base = apiData.value?.erp_web_base_url;
+  const name = String(id || '');
+  if (!base || !name) return '';
+  let slug = '';
+  if (name.startsWith('STE')) slug = 'stock-entry';
+  else if (name.startsWith('MAT-PAC')) slug = 'packing-slip';
+  if (!slug) return '';
+  return `${base}/app/${slug}/${encodeURIComponent(name)}`;
+}
 
 function formatDate(value) {
   if (!value) return '-';

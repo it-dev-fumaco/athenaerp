@@ -246,6 +246,7 @@ class StockReservationController extends Controller
             return response()->json([
                 'item_code' => $itemCode,
                 'can_edit' => $canEdit,
+                'erp_web_base_url' => rtrim((string) config('erp.web_base_url'), '/'),
                 'web' => [
                     'data' => collect($webList->items())->map($serializeReservation)->values()->all(),
                     'meta' => ['current_page' => $webList->currentPage(), 'last_page' => $webList->lastPage(), 'total' => $webList->total(), 'path' => $basePath],

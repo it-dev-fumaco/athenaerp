@@ -10,10 +10,22 @@
         <th class="text-center" style="width: 15%;">Valuation Rate</th>
     </thead>
     <tbody>
+        @php
+            $erpWebBaseUrl = rtrim((string) config('erp.web_base_url'), '/');
+        @endphp
         @forelse ($list as $row)
+        @php
+            $purchaseOrderUrl = $erpWebBaseUrl !== '' ? $erpWebBaseUrl.'/app/purchase-order/'.rawurlencode($row->name) : null;
+        @endphp
         <tr>
             <td class="text-center">{{ \Carbon\Carbon::parse($row->transaction_date)->format('M-d-Y h:i:A') }}</td>
-            <td class="text-center">{{ $row->name }}</td>
+            <td class="text-center">
+                @if ($purchaseOrderUrl)
+                    <a href="{{ $purchaseOrderUrl }}" target="_blank" rel="noopener">{{ $row->name }}</a>
+                @else
+                    {{ $row->name }}
+                @endif
+            </td>
             <td class="text-center">{{ $row->supplier }}</td>
             <td class="text-center">{{ $row->supplier_group }}</td>
             <td class="text-center">{{ number_format($row->qty) . ' ' . $row->stock_uom }}</td>

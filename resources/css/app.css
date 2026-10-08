@@ -441,6 +441,7 @@ aside#inventory-sidebar.inventory-sidebar {
 
 .inventory-sidebar-label {
 	white-space: nowrap;
+	line-height: 1.2;
 }
 
 .inventory-sidebar__divider {

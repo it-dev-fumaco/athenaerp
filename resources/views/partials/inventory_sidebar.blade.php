@@ -54,9 +54,9 @@
             <span class="inventory-sidebar-label">Reserved Items</span>
         </a>
         @if(Auth::check() && (Auth::user()->department ?? '') === \App\Http\Middleware\EnsureInformationTechnologyAccess::DEPARTMENT)
-            <a href="{{ url('/pending_submit_report') }}" class="{{ $navClasses(request()->is('pending_submit_report')) }}" title="Pending Submit">
+            <a href="{{ url('/pending_submit_report') }}" class="{{ $navClasses(request()->is('pending_submit_report')) }}" title="Unsubmitted Transactions">
                 <i class="fas fa-file-alt inventory-sidebar__icon" aria-hidden="true"></i>
-                <span class="inventory-sidebar-label">Pending to Submit Reports</span>
+                <span class="inventory-sidebar-label">Unsubmitted<br>Transactions</span>
             </a>
         @endif
 

@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\AthenaTransaction;
 use App\Models\DeliveryNote;
+use App\Models\ERPUser;
 use App\Models\Item;
 use App\Models\StockEntry;
 use App\Models\StockEntryDetail;
+use App\Models\User;
 use App\Traits\GeneralTrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -26,6 +28,7 @@ class ReportController extends Controller
     public function pendingSubmitReport(Request $request)
     {
         $itemCode = trim((string) $request->query('item_code', ''));
+        $createdBy = trim((string) $request->query('created_by', ''));
         $documentType = $request->query('document_type', 'all');
         if (! in_array($documentType, ['all', 'ste', 'dr'], true)) {
             $documentType = 'all';
@@ -41,10 +44,14 @@ class ReportController extends Controller
                     ->when($itemCode !== '', function ($query) use ($itemCode) {
                         $query->where('tabStock Entry Detail.item_code', 'like', '%'.$itemCode.'%');
                     })
+                    ->when($createdBy !== '', function ($query) use ($createdBy) {
+                        $query->where('ste.owner', $createdBy);
+                    })
                     ->whereIn('tabStock Entry Detail.s_warehouse', $warehouses)
                     ->select([
                         'ste.name as document_no',
                         'ste.creation as date_created',
+                        'ste.owner as created_by',
                         'ste.purpose as transaction_type',
                         'tabStock Entry Detail.status as item_status',
                         'tabStock Entry Detail.date_modified as date_issued',
@@ -65,11 +72,15 @@ class ReportController extends Controller
                     ->when($itemCode !== '', function ($query) use ($itemCode) {
                         $query->where('at.item_code', 'like', '%'.$itemCode.'%');
                     })
+                    ->when($createdBy !== '', function ($query) use ($createdBy) {
+                        $query->where('ps.owner', $createdBy);
+                    })
                     ->whereIn('at.source_warehouse', $warehouses)
                     ->groupBy('ps.name', 'ps.item_status', 'at.reference_type', 'at.item_code', 'at.source_warehouse')
                     ->select([
                         'ps.name as document_no',
                         DB::raw('MIN(ps.creation) as date_created'),
+                        DB::raw('MIN(ps.owner) as created_by'),
                         'at.reference_type as transaction_type',
                         DB::raw("'Issued' as item_status"),
                         DB::raw('MAX(at.transaction_date) as date_issued'),
@@ -96,10 +107,14 @@ class ReportController extends Controller
                     ->when($itemCode !== '', function ($query) use ($itemCode) {
                         $query->where('psi.item_code', 'like', '%'.$itemCode.'%');
                     })
+                    ->when($createdBy !== '', function ($query) use ($createdBy) {
+                        $query->where('ps.owner', $createdBy);
+                    })
                     ->groupBy('ps.name', 'ps.item_status', 'psi.item_code', 'dri.warehouse')
                     ->select([
                         'ps.name as document_no',
                         DB::raw('MIN(ps.creation) as date_created'),
+                        DB::raw('MIN(ps.owner) as created_by'),
                         DB::raw("'Picking Slip' as transaction_type"),
                         DB::raw("'Issued' as item_status"),
                         DB::raw('MAX(psi.date_modified) as date_issued'),
@@ -111,6 +126,15 @@ class ReportController extends Controller
                         'dri.warehouse as warehouse',
                     ])
                     ->get();
+
+                $slipWarehouseByDocItem = $slipLines->mapWithKeys(function ($line) {
+                    return [$line->document_no.'|'.$line->item_code => $line->warehouse];
+                });
+                $drLines = $drLines->reject(function ($line) use ($slipWarehouseByDocItem) {
+                    $key = $line->document_no.'|'.$line->item_code;
+
+                    return $slipWarehouseByDocItem->has($key) && $slipWarehouseByDocItem->get($key) !== $line->warehouse;
+                })->values();
 
                 $loggedSlips = $drLines->mapWithKeys(function ($line) {
                     return [$line->document_no.'|'.$line->item_code.'|'.$line->warehouse => true];
@@ -135,7 +159,13 @@ class ReportController extends Controller
             $lines = $steLines->concat($drLines);
         }
 
-        $rows = $this->pendingSubmitRows($lines);
+        $creators = $this->pendingSubmitCreators($warehouses);
+        $creatorNames = [];
+        foreach ($creators as $creator) {
+            $creatorNames[$creator['value']] = $creator['label'];
+        }
+
+        $rows = $this->pendingSubmitRows($lines, $creatorNames);
 
         if ($request->boolean('export')) {
             return $this->downloadPendingSubmitReport($rows);
@@ -144,15 +174,114 @@ class ReportController extends Controller
         return view('reports.pending_submit', [
             'rows' => $this->paginatePendingSubmitRows($rows, $request),
             'itemCode' => $itemCode,
+            'createdBy' => $createdBy,
+            'creators' => $creators,
             'documentType' => $documentType,
         ]);
     }
 
     /**
+     * People who created a pending Stock Entry or packing slip in the user's warehouses.
+     *
+     * @param  \Illuminate\Support\Collection<int, string>  $warehouses
+     * @return list<array{value: string, label: string}>
+     */
+    private function pendingSubmitCreators($warehouses): array
+    {
+        if ($warehouses->isEmpty()) {
+            return [];
+        }
+
+        $owners = StockEntryDetail::query()
+            ->issuedOnDraftStockEntry()
+            ->whereIn('tabStock Entry Detail.s_warehouse', $warehouses)
+            ->where('ste.owner', '!=', '')
+            ->distinct()
+            ->pluck('ste.owner');
+
+        $owners = $owners->merge(
+            AthenaTransaction::query()
+                ->joinPackingSlipDeliveryNote()
+                ->whereIn('at.source_warehouse', $warehouses)
+                ->where('ps.owner', '!=', '')
+                ->distinct()
+                ->pluck('ps.owner')
+        );
+
+        $owners = $owners->merge(
+            DB::table('tabPacking Slip as ps')
+                ->join('tabPacking Slip Item as psi', 'ps.name', 'psi.parent')
+                ->join('tabDelivery Note as dr', 'dr.name', 'ps.delivery_note')
+                ->join('tabDelivery Note Item as dri', function ($join) {
+                    $join->on('dri.parent', '=', 'dr.name')
+                        ->on('dri.item_code', '=', 'psi.item_code');
+                })
+                ->where('psi.status', 'Issued')
+                ->where('dr.docstatus', 0)
+                ->where('ps.docstatus', '<', 2)
+                ->whereIn('dri.warehouse', $warehouses)
+                ->where('ps.owner', '!=', '')
+                ->distinct()
+                ->pluck('ps.owner')
+        );
+
+        $owners = $owners->filter()->unique()->values();
+        $names = $this->pendingSubmitCreatorNames($owners);
+
+        return $owners->map(function ($owner) use ($names) {
+            return [
+                'value' => $owner,
+                'label' => $names[$owner] ?? $owner,
+            ];
+        })->sortBy('label', SORT_NATURAL | SORT_FLAG_CASE)->values()->all();
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, string>|list<string>  $owners
+     * @return array<string, string>
+     */
+    private function pendingSubmitCreatorNames($owners): array
+    {
+        $owners = collect($owners)->filter()->unique()->values();
+        if ($owners->isEmpty()) {
+            return [];
+        }
+
+        $names = User::query()
+            ->whereIn('wh_user', $owners)
+            ->pluck('full_name', 'wh_user');
+
+        $missing = $owners->reject(function ($owner) use ($names) {
+            return filled($names[$owner] ?? null);
+        })->values();
+
+        if ($missing->isNotEmpty()) {
+            $erpNames = ERPUser::query()
+                ->whereIn('name', $missing)
+                ->pluck('full_name', 'name');
+            foreach ($erpNames as $owner => $fullName) {
+                if (filled($fullName)) {
+                    $names[$owner] = $fullName;
+                }
+            }
+        }
+
+        $resolved = [];
+        foreach ($owners as $owner) {
+            $resolved[$owner] = filled($names[$owner] ?? null)
+                ? $names[$owner]
+                : ucwords(str_replace(['.', '_'], ' ', explode('@', (string) $owner)[0]));
+        }
+
+        return $resolved;
+    }
+
+    /**
      * @param  \Illuminate\Support\Collection<int, object>  $lines
+     * @param  array<string, string>  $creatorNames
      * @return list<array<string, mixed>>
      */
-    private function pendingSubmitRows($lines): array
+    private function pendingSubmitRows($lines, array $creatorNames): array
     {
         $sorted = $lines->sortBy([
             ['item_code', 'asc'],
@@ -185,6 +314,7 @@ class ReportController extends Controller
                         'item_code' => $itemCode,
                         'document_no' => $line->document_no,
                         'date_created' => $this->formatPendingSubmitDate($line->date_created ?? null),
+                        'created_by' => $creatorNames[$line->created_by] ?? ($line->created_by ?: ''),
                         'transaction_type' => $line->transaction_type,
                         'item_status' => $line->item_status,
                         'date_issued' => $this->formatPendingSubmitDate($line->date_issued ?? null),
@@ -288,18 +418,18 @@ class ReportController extends Controller
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Pending DR and STE');
+        $sheet->setTitle('Unsubmitted Transactions');
 
-        $sheet->mergeCells('A1:M1');
+        $sheet->mergeCells('A1:N1');
         $sheet->setCellValue('A1', 'Pending DR and STE that are still in Draft Status but items are already issued');
         $sheet->mergeCells('A2:A3');
         $sheet->setCellValue('A2', 'Item Code');
-        $sheet->mergeCells('B2:J2');
+        $sheet->mergeCells('B2:K2');
         $sheet->setCellValue('B2', 'Pending Transactions');
-        $sheet->mergeCells('K2:M2');
-        $sheet->setCellValue('K2', 'Current Available Stock Per Source');
+        $sheet->mergeCells('L2:N2');
+        $sheet->setCellValue('L2', 'Current Available Stock Per Source');
 
-        $subHeaders = ['No.', 'Date Created', 'Transaction Type', 'Item Status', 'Date Issued', 'Issued By', 'Main Status', 'Doc Status', 'Qty', 'Warehouse', 'Actual', 'Available'];
+        $subHeaders = ['No.', 'Date Created', 'Created By', 'Transaction Type', 'Item Status', 'Date Issued', 'Issued By', 'Main Status', 'Doc Status', 'Qty', 'Warehouse', 'Actual', 'Available'];
         $column = 'B';
         foreach ($subHeaders as $header) {
             $sheet->setCellValue($column.'3', $header);
@@ -317,23 +447,24 @@ class ReportController extends Controller
 
             $sheet->setCellValue('B'.$excelRow, $row['document_no']);
             $sheet->setCellValue('C'.$excelRow, $row['date_created']);
-            $sheet->setCellValue('D'.$excelRow, $row['transaction_type']);
-            $sheet->setCellValue('E'.$excelRow, $row['item_status']);
-            $sheet->setCellValue('F'.$excelRow, $row['date_issued']);
-            $sheet->setCellValue('G'.$excelRow, $row['issued_by']);
-            $sheet->setCellValue('H'.$excelRow, $row['main_status'] ?: '');
-            $sheet->setCellValue('I'.$excelRow, $row['doc_status']);
-            $sheet->setCellValue('J'.$excelRow, $row['qty']);
+            $sheet->setCellValue('D'.$excelRow, $row['created_by']);
+            $sheet->setCellValue('E'.$excelRow, $row['transaction_type']);
+            $sheet->setCellValue('F'.$excelRow, $row['item_status']);
+            $sheet->setCellValue('G'.$excelRow, $row['date_issued']);
+            $sheet->setCellValue('H'.$excelRow, $row['issued_by']);
+            $sheet->setCellValue('I'.$excelRow, $row['main_status'] ?: '');
+            $sheet->setCellValue('J'.$excelRow, $row['doc_status']);
+            $sheet->setCellValue('K'.$excelRow, $row['qty']);
 
             if ($row['show_warehouse']) {
-                $sheet->setCellValue('K'.$excelRow, $row['warehouse']);
-                $sheet->setCellValue('L'.$excelRow, $row['actual']);
-                $sheet->setCellValue('M'.$excelRow, $row['available']);
+                $sheet->setCellValue('L'.$excelRow, $row['warehouse']);
+                $sheet->setCellValue('M'.$excelRow, $row['actual']);
+                $sheet->setCellValue('N'.$excelRow, $row['available']);
                 if ($row['warehouse_rowspan'] > 1) {
                     $end = $excelRow + $row['warehouse_rowspan'] - 1;
-                    $sheet->mergeCells('K'.$excelRow.':K'.$end);
                     $sheet->mergeCells('L'.$excelRow.':L'.$end);
                     $sheet->mergeCells('M'.$excelRow.':M'.$end);
+                    $sheet->mergeCells('N'.$excelRow.':N'.$end);
                 }
             }
 
@@ -341,7 +472,7 @@ class ReportController extends Controller
         }
 
         $lastRow = max(3, $excelRow - 1);
-        $sheet->getStyle('A1:M'.$lastRow)->applyFromArray([
+        $sheet->getStyle('A1:N'.$lastRow)->applyFromArray([
             'borders' => [
                 'allBorders' => ['borderStyle' => Border::BORDER_THIN],
             ],
@@ -350,7 +481,7 @@ class ReportController extends Controller
                 'wrapText' => true,
             ],
         ]);
-        $sheet->getStyle('A1:M3')->applyFromArray([
+        $sheet->getStyle('A1:N3')->applyFromArray([
             'font' => ['bold' => true],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
             'fill' => [
@@ -360,7 +491,7 @@ class ReportController extends Controller
         ]);
         $sheet->getStyle('A1')->getFont()->setSize(14);
 
-        foreach (range('A', 'M') as $column) {
+        foreach (range('A', 'N') as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
 
