@@ -266,6 +266,9 @@
 	{{ $inhouseList->links() }}
 </div>
 
+@php
+    $erpWebBaseUrl = rtrim((string) config('erp.web_base_url'), '/');
+@endphp
 @if (count($paginatedPendingItems) > 0)
     <h6 class="font-weight-bold text-uppercase font-responsive"><i class="fas fa-box"></i> Pending to Submit Stock Entries</h6>
     <table class="table table-hover table-bordered table-sm stock-ledger-table-font" style="font-size: 9pt !important;">
@@ -286,7 +289,17 @@
                     <td class="text-center p-2">
                         <span class="d-block font-weight-bold">{{ date('M-d-Y', strtotime($row['date'])) }}</span>
                     </td>
-                    <td class="text-center p-2">{{ $row['id'] }}</td>
+                    @php
+                        $pendingSlug = str_starts_with((string) $row['id'], 'STE') ? 'stock-entry' : (str_starts_with((string) $row['id'], 'MAT-PAC') ? 'packing-slip' : null);
+                        $pendingUrl = ($erpWebBaseUrl !== '' && $pendingSlug) ? $erpWebBaseUrl.'/app/'.$pendingSlug.'/'.rawurlencode($row['id']) : null;
+                    @endphp
+                    <td class="text-center p-2">
+                        @if ($pendingUrl)
+                            <a href="{{ $pendingUrl }}" target="_blank" rel="noopener">{{ $row['id'] }}</a>
+                        @else
+                            {{ $row['id'] }}
+                        @endif
+                    </td>
                     <td class="text-center p-2"><b>{{ $row['qty'] * 1 }}</b> {{ $row['uom'] }}</td>
                     <td class="text-center p-2">{{ $row['warehouse'] }}</td>
                     <td class="text-center p-2">{{ $row['owner'] }}</td>

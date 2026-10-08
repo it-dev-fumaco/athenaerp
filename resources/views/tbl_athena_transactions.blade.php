@@ -1,3 +1,22 @@
+@php
+    $erpWebBaseUrl = rtrim((string) config('erp.web_base_url'), '/');
+    $erpDocumentUrl = function ($name) use ($erpWebBaseUrl) {
+        $name = trim((string) $name);
+        if ($erpWebBaseUrl === '' || $name === '') {
+            return null;
+        }
+        $slug = match (true) {
+            str_starts_with($name, 'SO-') => 'sales-order',
+            str_starts_with($name, 'DR-') => 'delivery-note',
+            str_starts_with($name, 'PO-') => 'purchase-order',
+            str_starts_with($name, 'STE') => 'stock-entry',
+            str_starts_with($name, 'MAT-PAC') => 'packing-slip',
+            default => null,
+        };
+
+        return $slug ? $erpWebBaseUrl.'/app/'.$slug.'/'.rawurlencode($name) : null;
+    };
+@endphp
 <br class="d-md-none">
 <table class="table table-sm table-bordered table-striped table-hover" style="font-size: 9pt;">
     <thead>
@@ -27,7 +46,14 @@
         @endphp
         <tr>
             <td class="text-center">
-                <span class="d-block">{{ $row['reference_parent'] }}<br/></span>
+                <span class="d-block">
+                    @if ($erpDocumentUrl($row['reference_parent']))
+                        <a href="{{ $erpDocumentUrl($row['reference_parent']) }}" target="_blank" rel="noopener">{{ $row['reference_parent'] }}</a>
+                    @else
+                        {{ $row['reference_parent'] }}
+                    @endif
+                    <br/>
+                </span>
                 <span class="badge {{ $label }}">{{ $row['status'] }}</span>
                 <div class="d-md-none mt-2">
                     @if($userGroup == 'Inventory Manager')
@@ -71,7 +97,11 @@
             <td class="text-center d-none d-sm-table-cell">{{ $row['reference_type'] }}</td>
             <td class="text-center d-none d-sm-table-cell">{{ $row['issued_qty'] }}</td>
             <td class="text-center d-none d-sm-table-cell">
-                {{ $row['reference_no'] }}
+                @if ($erpDocumentUrl($row['reference_no']))
+                    <a href="{{ $erpDocumentUrl($row['reference_no']) }}" target="_blank" rel="noopener">{{ $row['reference_no'] }}</a>
+                @else
+                    {{ $row['reference_no'] }}
+                @endif
                 @if ($row['reference_type'] == 'Material Transfer for Manufacture' && $row['production_order'])
                     <span class="badge badge-primary d-block">{{ $row['production_order'] }}</span>
                 @endif
