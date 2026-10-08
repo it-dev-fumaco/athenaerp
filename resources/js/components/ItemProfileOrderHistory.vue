@@ -5,13 +5,13 @@
     </div>
 
     <div v-else-if="error" class="text-center text-muted p-4">
-      Failed to load order history.
+      Failed to load sales order history.
     </div>
 
     <template v-else-if="loadedOnce">
       <div class="oh-header">
         <div class="oh-title-row">
-          <h2 class="oh-title">Order History</h2>
+          <h2 class="oh-title">Sales Order History</h2>
           <span class="oh-badge">Sales Orders</span>
         </div>
         <p class="oh-subtitle">List of unique customers who ordered this item based on Sales Order records.</p>
