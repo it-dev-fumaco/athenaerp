@@ -74,10 +74,9 @@ class BrochurePdfService
                 $absolutePath = $this->resolveAbsolutePathForPdf($row, $project, $isStandard, $i, $name);
                 $dataUri = null;
                 if ($absolutePath && file_exists($absolutePath)) {
-                    $mime = @mime_content_type($absolutePath) ?: 'image/png';
                     $data = @file_get_contents($absolutePath);
-                    if ($data !== false) {
-                        $dataUri = 'data:'.$mime.';base64,'.base64_encode($data);
+                    if ($data !== false && $data !== '') {
+                        $dataUri = $this->dataUriForPdf($data, $name);
                     }
                 } elseif (! $isStandard) {
                     try {
@@ -172,17 +171,7 @@ class BrochurePdfService
             if ($data === null || $data === '') {
                 continue;
             }
-            $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-            $mimeMap = [
-                'png' => 'image/png',
-                'jpg' => 'image/jpeg',
-                'jpeg' => 'image/jpeg',
-                'gif' => 'image/gif',
-                'webp' => 'image/webp',
-                'bmp' => 'image/bmp',
-            ];
-            $mime = $mimeMap[$ext] ?? 'image/png';
-            $dataUri = 'data:'.$mime.';base64,'.base64_encode($data);
+            $dataUri = $this->dataUriForPdf($data, $fileName);
             $alreadyUsed = in_array($dataUri, [$uris[1] ?? null, $uris[2] ?? null, $uris[3] ?? null], true);
             if (! $alreadyUsed) {
                 $uris[$nextSlot] = $dataUri;
@@ -235,6 +224,30 @@ class BrochurePdfService
         }
 
         return $content;
+    }
+
+    /**
+     * Embed image bytes for Dompdf. Resizes to a JPEG so a multi-page brochure stays within memory.
+     */
+    private function dataUriForPdf(string $data, string $nameOrKey): string
+    {
+        $jpegData = $this->imageDataToJpegBytes($data, $nameOrKey);
+        if ($jpegData !== null) {
+            return 'data:image/jpeg;base64,'.base64_encode($jpegData);
+        }
+
+        $ext = strtolower(pathinfo($nameOrKey, PATHINFO_EXTENSION));
+        $mimeMap = [
+            'png' => 'image/png',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            'bmp' => 'image/bmp',
+        ];
+        $mime = $mimeMap[$ext] ?? 'image/png';
+
+        return 'data:'.$mime.';base64,'.base64_encode($data);
     }
 
     /**
@@ -331,18 +344,7 @@ class BrochurePdfService
             if ($data === null || $data === '') {
                 continue;
             }
-            $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-            $mimeMap = [
-                'png' => 'image/png',
-                'jpg' => 'image/jpeg',
-                'jpeg' => 'image/jpeg',
-                'gif' => 'image/gif',
-                'webp' => 'image/webp',
-                'bmp' => 'image/bmp',
-            ];
-            $mime = $mimeMap[$ext] ?? 'image/png';
-
-            return 'data:'.$mime.';base64,'.base64_encode($data);
+            return $this->dataUriForPdf($data, $name);
         }
         $baseName = pathinfo($name, PATHINFO_FILENAME);
         $dir = 'item-brochures/'.strtoupper($project);
@@ -354,18 +356,7 @@ class BrochurePdfService
             if ($fileBase === $baseName || str_starts_with($fileBase, $baseName.' ')) {
                 $data = $disk->get($fullKey);
                 if ($data !== null && $data !== '') {
-                    $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-                    $mimeMap = [
-                        'png' => 'image/png',
-                        'jpg' => 'image/jpeg',
-                        'jpeg' => 'image/jpeg',
-                        'gif' => 'image/gif',
-                        'webp' => 'image/webp',
-                        'bmp' => 'image/bmp',
-                    ];
-                    $mime = $mimeMap[$ext] ?? 'image/png';
-
-                    return 'data:'.$mime.';base64,'.base64_encode($data);
+                    return $this->dataUriForPdf($data, $fileName);
                 }
             }
         }
@@ -379,9 +370,7 @@ class BrochurePdfService
             if ($localPath && is_file($localPath)) {
                 $data = @file_get_contents($localPath);
                 if ($data !== false && $data !== '') {
-                    $mime = @mime_content_type($localPath) ?: 'image/png';
-
-                    return 'data:'.$mime.';base64,'.base64_encode($data);
+                    return $this->dataUriForPdf($data, $name);
                 }
             }
         }
@@ -397,9 +386,7 @@ class BrochurePdfService
                     $localPath = $file->getPathname();
                     $data = @file_get_contents($localPath);
                     if ($data !== false && $data !== '') {
-                        $mime = @mime_content_type($localPath) ?: 'image/png';
-
-                        return 'data:'.$mime.';base64,'.base64_encode($data);
+                        return $this->dataUriForPdf($data, $file->getFilename());
                     }
                 }
             }
