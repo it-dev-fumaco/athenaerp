@@ -28,7 +28,7 @@
         <div class="oh-kpi-card">
           <div class="oh-kpi-icon"><i class="fas fa-file-invoice"></i></div>
           <div class="oh-kpi-body">
-            <div class="oh-kpi-label">Total Sales (Vat Exclusive)</div>
+            <div class="oh-kpi-label">Total Sales</div>
             <div class="oh-kpi-value">{{ formatMoney(summary.total_sales) }}</div>
           </div>
         </div>
@@ -42,7 +42,7 @@
         <div class="oh-kpi-card">
           <div class="oh-kpi-icon"><i class="fas fa-tags"></i></div>
           <div class="oh-kpi-body">
-            <div class="oh-kpi-label">Average Order Value (Vat Exclusive)</div>
+            <div class="oh-kpi-label">Average Order Value</div>
             <div class="oh-kpi-value">{{ formatMoney(summary.average_order_value) }}</div>
           </div>
         </div>
@@ -110,8 +110,7 @@
               </th>
               <th>
                 <button type="button" class="oh-sort" @click="toggleSort('total_sales')">
-                  Total Sales (Vat Exclusive)
-                  <i class="fas" :class="sort === 'total_sales' ? sortIcon : 'fa-sort'"></i>
+                  Total Sales                  <i class="fas" :class="sort === 'total_sales' ? sortIcon : 'fa-sort'"></i>
                 </button>
               </th>
               <th>
@@ -122,8 +121,7 @@
               </th>
               <th>
                 <button type="button" class="oh-sort" @click="toggleSort('avg_selling_price')">
-                  Average Selling Price (Vat Exclusive)
-                  <i v-if="sort === 'avg_selling_price'" class="fas" :class="sortIcon"></i>
+                  Average Selling Price                  <i v-if="sort === 'avg_selling_price'" class="fas" :class="sortIcon"></i>
                 </button>
               </th>
               <th>
