@@ -203,6 +203,7 @@ class UserHomeController extends Controller
         array $extraSearch
     ): array {
         $created = Carbon::parse($creation);
+        $daysPending = (int) abs($created->copy()->startOfDay()->diffInDays(now()->startOfDay()));
         $warehouses = $lines->pluck('warehouse')->map(fn ($warehouse) => trim((string) $warehouse))->filter()->unique()->values();
         $uoms = $lines->pluck('uom')->map(fn ($uom) => trim((string) $uom))->filter()->unique()->values();
         $qty = (float) $lines->sum(fn ($line) => (float) $line->qty);
@@ -221,6 +222,7 @@ class UserHomeController extends Controller
             'created_on' => $created->format('Y-m-d'),
             'date_label' => $created->format('M j, Y'),
             'time_label' => $created->format('g:i A'),
+            'days_pending' => $daysPending,
             'requester_name' => $requesterName,
             'department' => $department,
             'warehouse' => $warehouses->implode(', '),

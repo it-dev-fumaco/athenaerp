@@ -100,6 +100,7 @@
               <th>Warehouse</th>
               <th>Items / Qty</th>
               <th>Status</th>
+              <th>Days Pending</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -137,6 +138,9 @@
               </td>
               <td>
                 <span class="pending-home__badge" :class="'pending-home__badge--' + row.status">{{ row.status_label }}</span>
+              </td>
+              <td>
+                <span class="pending-home__days" :class="dayClass(row.days_pending)">{{ dayLabel(row.days_pending) }}</span>
               </td>
               <td>
                 <a class="pending-home__view" :href="row.view_url">View</a>
@@ -218,6 +222,18 @@ const emptyMessage = computed(() => {
 function itemLabel(count) {
   const total = Number(count) || 0;
   return `${total} ${total === 1 ? 'item' : 'items'}`;
+}
+
+function dayLabel(days) {
+  const total = Number(days) || 0;
+  return `${total} ${total === 1 ? 'day' : 'days'}`;
+}
+
+function dayClass(days) {
+  const total = Number(days) || 0;
+  if (total >= 30) return 'pending-home__days--late';
+  if (total >= 7) return 'pending-home__days--warn';
+  return '';
 }
 
 function showTab(next) {
@@ -562,6 +578,13 @@ onMounted(async () => {
 .pending-home__badge--pending_approval { background: #fff4e5; color: #c2410c; }
 .pending-home__badge--pending_issuance { background: #e8f1ff; color: #1d4ed8; }
 .pending-home__badge--pending_delivery { background: #f3e8ff; color: #7e22ce; }
+.pending-home__days {
+  font-weight: 600;
+  color: #334155;
+  white-space: nowrap;
+}
+.pending-home__days--warn { color: #c2410c; }
+.pending-home__days--late { color: #b91c1c; }
 .pending-home__view {
   display: inline-flex;
   align-items: center;
