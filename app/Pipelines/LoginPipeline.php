@@ -30,6 +30,6 @@ class LoginPipeline
                 EnsureApiCredentialsPipe::class,
                 LoginUserPipe::class,
             ])
-            ->then(fn ($passable) => $this->redirect->to('/'));
+            ->then(fn ($passable) => $this->redirect->to('/user-home'));
     }
 }

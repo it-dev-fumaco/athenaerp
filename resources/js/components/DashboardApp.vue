@@ -50,6 +50,19 @@
             </div>
           </div>
           <div
+            v-if="activeTab === 'stock-level'"
+            class="tab-pane"
+          >
+            <div class="card-glass">
+              <div class="dashboard-widget-header">
+                <h3 class="dashboard-widget-title">Stock Level Monitoring</h3>
+              </div>
+              <div class="dashboard-widget-body">
+                <DashboardLowStock />
+              </div>
+            </div>
+          </div>
+          <div
             class="tab-pane"
             :style="{ display: activeTab === 'inventory-accuracy' ? 'block' : 'none' }"
           >
@@ -96,6 +109,7 @@ const VALID_TABS = [
   'recent',
   'inventory-accuracy',
   'reserved-items',
+  'stock-level',
 ];
 
 const props = defineProps({
