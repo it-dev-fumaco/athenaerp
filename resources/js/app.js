@@ -33,6 +33,12 @@ import PhaseOutItemsApp from './components/PhaseOutItemsApp.vue';
 import UpdateLifecycleStatusApp from './components/UpdateLifecycleStatusApp.vue';
 import ItemProfileLifecycleStatusApp from './components/item-profile/ItemProfileLifecycleStatusApp.vue';
 import LoginActivityApp from './components/LoginActivityApp.vue';
+import UserHomePending from './components/UserHomePending.vue';
+
+const userHomeEl = document.getElementById('user-home-app');
+if (userHomeEl) {
+    createApp(UserHomePending).mount('#user-home-app');
+}
 
 const dashboardAppEl = document.getElementById('dashboard-app');
 if (dashboardAppEl) {
