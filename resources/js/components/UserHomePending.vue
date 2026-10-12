@@ -15,7 +15,7 @@
         <span class="pending-home__metric-icon" aria-hidden="true"><i class="fas fa-file-alt"></i></span>
         <div class="pending-home__metric-copy">
           <h2>Pending Stock Entry Requests</h2>
-          <p>Waiting for approval / issuance</p>
+          <p>Waiting for issuance</p>
           <strong>{{ stockEntries.length }}</strong>
         </div>
         <button type="button" class="pending-home__details" @click="showTab('stock')">View Details →</button>
@@ -178,7 +178,6 @@ const statusOptions = computed(() => {
     return [{ value: 'pending_delivery', label: 'Pending Delivery' }];
   }
   return [
-    { value: 'pending_approval', label: 'Pending Approval' },
     { value: 'pending_issuance', label: 'Pending Issuance' },
   ];
 });
@@ -277,44 +276,44 @@ onMounted(async () => {
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
-  padding: 1.25rem 1.25rem 2.5rem;
+  padding: 0.75rem 1rem 1.5rem;
   color: #0f172a;
 }
 .pending-home__header {
   display: flex;
   align-items: flex-start;
-  gap: 0.85rem;
-  margin-bottom: 1.1rem;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
 }
 .pending-home__header-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2rem;
+  height: 2rem;
   flex-shrink: 0;
-  border-radius: 0.7rem;
+  border-radius: 0.55rem;
   background: #e8f0fe;
   color: #2563eb;
-  font-size: 1.05rem;
+  font-size: 0.9rem;
 }
 .pending-home__title {
   margin: 0;
-  font-size: 1.55rem;
+  font-size: 1.25rem;
   font-weight: 700;
   line-height: 1.2;
   color: #0f172a;
 }
 .pending-home__subtitle {
-  margin: 0.25rem 0 0;
-  font-size: 0.92rem;
+  margin: 0.15rem 0 0;
+  font-size: 0.82rem;
   color: #64748b;
 }
 .pending-home__summary {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.85rem;
-  margin-bottom: 1rem;
+  gap: 0.6rem;
+  margin-bottom: 0.7rem;
 }
 @media (min-width: 900px) {
   .pending-home__summary {
@@ -329,11 +328,11 @@ onMounted(async () => {
 .pending-home__metric {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.6rem;
   min-width: 0;
-  padding: 1rem 1.05rem;
+  padding: 0.65rem 0.75rem;
   border: 1px solid transparent;
-  border-radius: 0.9rem;
+  border-radius: 0.7rem;
 }
 .pending-home__metric--blue {
   background: #eef4ff;
@@ -347,12 +346,12 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.6rem;
-  height: 2.6rem;
+  width: 2.1rem;
+  height: 2.1rem;
   flex-shrink: 0;
-  border-radius: 0.75rem;
+  border-radius: 0.55rem;
   background: #fff;
-  font-size: 1.05rem;
+  font-size: 0.9rem;
 }
 .pending-home__metric--blue .pending-home__metric-icon { color: #2563eb; }
 .pending-home__metric--green .pending-home__metric-icon { color: #16a34a; }
@@ -362,29 +361,29 @@ onMounted(async () => {
 }
 .pending-home__metric-copy h2 {
   margin: 0;
-  font-size: 0.92rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: #0f172a;
 }
 .pending-home__metric-copy p {
-  margin: 0.15rem 0 0;
-  font-size: 0.78rem;
+  margin: 0.1rem 0 0;
+  font-size: 0.72rem;
   color: #64748b;
 }
 .pending-home__metric-copy strong {
   display: block;
-  margin-top: 0.2rem;
-  font-size: 1.7rem;
+  margin-top: 0.1rem;
+  font-size: 1.35rem;
   line-height: 1;
   color: #0f172a;
 }
 .pending-home__details {
   flex-shrink: 0;
-  padding: 0.4rem 0.7rem;
+  padding: 0.28rem 0.55rem;
   border: 1px solid transparent;
-  border-radius: 0.55rem;
+  border-radius: 0.45rem;
   background: #fff;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -393,21 +392,21 @@ onMounted(async () => {
 .pending-home__reminder {
   display: flex;
   align-items: flex-start;
-  gap: 0.65rem;
-  padding: 0.9rem 0.85rem;
+  gap: 0.5rem;
+  padding: 0.6rem 0.7rem;
   border: 1px solid #d6e6fb;
-  border-radius: 0.9rem;
+  border-radius: 0.7rem;
   background: #eef6ff;
 }
 .pending-home__reminder h2 {
   margin: 0;
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: #1d4ed8;
 }
 .pending-home__reminder p {
-  margin: 0.25rem 0 0;
-  font-size: 0.78rem;
+  margin: 0.15rem 0 0;
+  font-size: 0.72rem;
   line-height: 1.4;
   color: #334155;
 }
@@ -427,15 +426,15 @@ onMounted(async () => {
 .pending-home__panel {
   background: #fff;
   border: 1px solid #e2e8f0;
-  border-radius: 0.95rem;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
   overflow: hidden;
 }
 .pending-home__tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem;
-  padding: 0.75rem 0.9rem 0;
+  padding: 0.4rem 0.7rem 0;
   border-bottom: 1px solid #e2e8f0;
 }
 .pending-home__tabs button {
@@ -443,12 +442,12 @@ onMounted(async () => {
   align-items: center;
   gap: 0.4rem;
   margin-bottom: -1px;
-  padding: 0.65rem 0.75rem;
+  padding: 0.45rem 0.6rem;
   border: 0;
   border-bottom: 2px solid transparent;
   background: transparent;
   color: #64748b;
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -459,9 +458,9 @@ onMounted(async () => {
 .pending-home__filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.6rem;
+  gap: 0.45rem;
   align-items: center;
-  padding: 0.85rem 0.9rem;
+  padding: 0.55rem 0.7rem;
 }
 .pending-home__search {
   display: flex;
@@ -469,7 +468,7 @@ onMounted(async () => {
   gap: 0.45rem;
   flex: 1 1 220px;
   min-width: 200px;
-  padding: 0.45rem 0.7rem;
+  padding: 0.3rem 0.55rem;
   border: 1px solid #e2e8f0;
   border-radius: 0.6rem;
   background: #fff;
@@ -482,8 +481,8 @@ onMounted(async () => {
   border-radius: 0.6rem;
   background: #fff;
   color: #0f172a;
-  font-size: 0.85rem;
-  padding: 0.45rem 0.65rem;
+  font-size: 0.8rem;
+  padding: 0.32rem 0.5rem;
 }
 .pending-home__search input {
   flex: 1;
@@ -511,10 +510,10 @@ onMounted(async () => {
 .pending-home__table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.84rem;
+  font-size: 0.8rem;
 }
 .pending-home__table th {
-  padding: 0.7rem 0.85rem;
+  padding: 0.45rem 0.65rem;
   border-top: 1px solid #e2e8f0;
   background: #f8fafc;
   color: #64748b;
@@ -524,7 +523,7 @@ onMounted(async () => {
   white-space: nowrap;
 }
 .pending-home__table td {
-  padding: 0.8rem 0.85rem;
+  padding: 0.45rem 0.65rem;
   border-top: 1px solid #eef2f7;
   vertical-align: middle;
   color: #0f172a;
@@ -560,8 +559,8 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.8rem;
-  height: 1.8rem;
+  width: 1.5rem;
+  height: 1.5rem;
   border-radius: 0.5rem;
   background: #eef4ff;
   color: #2563eb;
@@ -569,13 +568,12 @@ onMounted(async () => {
 .pending-home__badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.2rem 0.55rem;
+  padding: 0.12rem 0.45rem;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
   white-space: nowrap;
 }
-.pending-home__badge--pending_approval { background: #fff4e5; color: #c2410c; }
 .pending-home__badge--pending_issuance { background: #e8f1ff; color: #1d4ed8; }
 .pending-home__badge--pending_delivery { background: #f3e8ff; color: #7e22ce; }
 .pending-home__days {
@@ -589,8 +587,8 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 4.2rem;
-  padding: 0.35rem 0.75rem;
+  min-width: 3.4rem;
+  padding: 0.22rem 0.55rem;
   border: 1px solid #dbe3ee;
   border-radius: 0.5rem;
   background: #fff;

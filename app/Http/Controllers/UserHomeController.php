@@ -88,16 +88,13 @@ class UserHomeController extends Controller
             ->sortByDesc(fn (Collection $group) => (string) $group->first()->creation)
             ->map(function (Collection $group) use ($requesterName, $department) {
                 $first = $group->first();
-                $hasIssued = $group->contains(fn ($line) => $line->status === StockEntryConstants::STATUS_ISSUED);
-                $status = $hasIssued ? 'pending_issuance' : 'pending_approval';
-                $statusLabel = $hasIssued ? 'Pending Issuance' : 'Pending Approval';
 
                 return $this->present(
                     $group,
                     (string) $first->document_name,
                     'Stock Entry',
-                    $status,
-                    $statusLabel,
+                    'pending_issuance',
+                    'Pending Issuance',
                     $this->stockEntryUrl((string) $first->purpose),
                     $first->creation,
                     $requesterName,
