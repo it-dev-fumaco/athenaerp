@@ -29,6 +29,7 @@ class ReportController extends Controller
     {
         $itemCode = trim((string) $request->query('item_code', ''));
         $createdBy = trim((string) $request->query('created_by', ''));
+        $targetWarehouse = trim((string) $request->query('target_warehouse', ''));
         $documentType = $request->query('document_type', 'all');
         if (! in_array($documentType, ['all', 'ste', 'dr'], true)) {
             $documentType = 'all';
@@ -46,6 +47,9 @@ class ReportController extends Controller
                     })
                     ->when($createdBy !== '', function ($query) use ($createdBy) {
                         $query->where('ste.owner', $createdBy);
+                    })
+                    ->when($targetWarehouse !== '', function ($query) use ($targetWarehouse) {
+                        $query->where('tabStock Entry Detail.t_warehouse', $targetWarehouse);
                     })
                     ->whereIn('tabStock Entry Detail.s_warehouse', $warehouses)
                     ->select([
@@ -74,6 +78,9 @@ class ReportController extends Controller
                     })
                     ->when($createdBy !== '', function ($query) use ($createdBy) {
                         $query->where('ps.owner', $createdBy);
+                    })
+                    ->when($targetWarehouse !== '', function ($query) use ($targetWarehouse) {
+                        $query->where('at.target_warehouse', $targetWarehouse);
                     })
                     ->whereIn('at.source_warehouse', $warehouses)
                     ->groupBy('ps.name', 'ps.item_status', 'at.reference_type', 'at.item_code', 'at.source_warehouse')
@@ -109,6 +116,16 @@ class ReportController extends Controller
                     })
                     ->when($createdBy !== '', function ($query) use ($createdBy) {
                         $query->where('ps.owner', $createdBy);
+                    })
+                    ->when($targetWarehouse !== '', function ($query) use ($targetWarehouse) {
+                        $query->whereExists(function ($exists) use ($targetWarehouse) {
+                            $exists->select(DB::raw(1))
+                                ->from('tabAthena Transactions as at')
+                                ->whereColumn('at.reference_parent', 'ps.name')
+                                ->whereColumn('at.item_code', 'psi.item_code')
+                                ->where('at.target_warehouse', $targetWarehouse)
+                                ->where('at.status', 'Issued');
+                        });
                     })
                     ->groupBy('ps.name', 'ps.item_status', 'psi.item_code', 'dri.warehouse')
                     ->select([
@@ -160,6 +177,7 @@ class ReportController extends Controller
         }
 
         $creators = $this->pendingSubmitCreators($warehouses);
+        $targetWarehouses = $this->pendingSubmitTargetWarehouses($warehouses);
         $creatorNames = [];
         foreach ($creators as $creator) {
             $creatorNames[$creator['value']] = $creator['label'];
@@ -176,8 +194,44 @@ class ReportController extends Controller
             'itemCode' => $itemCode,
             'createdBy' => $createdBy,
             'creators' => $creators,
+            'targetWarehouse' => $targetWarehouse,
+            'targetWarehouses' => $targetWarehouses,
             'documentType' => $documentType,
         ]);
+    }
+
+    /**
+     * Destinations on pending Stock Entries and deliveries in the user's source warehouses.
+     *
+     * @param  \Illuminate\Support\Collection<int, string>  $warehouses
+     * @return list<string>
+     */
+    private function pendingSubmitTargetWarehouses($warehouses): array
+    {
+        if ($warehouses->isEmpty()) {
+            return [];
+        }
+
+        $targets = StockEntryDetail::query()
+            ->issuedOnDraftStockEntry()
+            ->whereIn('tabStock Entry Detail.s_warehouse', $warehouses)
+            ->where('tabStock Entry Detail.t_warehouse', '!=', '')
+            ->distinct()
+            ->pluck('tabStock Entry Detail.t_warehouse');
+
+        $targets = $targets->merge(
+            AthenaTransaction::query()
+                ->joinPackingSlipDeliveryNote()
+                ->whereIn('at.source_warehouse', $warehouses)
+                ->where('at.target_warehouse', '!=', '')
+                ->whereNotNull('at.target_warehouse')
+                ->distinct()
+                ->pluck('at.target_warehouse')
+        );
+
+        return $targets->filter()->unique()->sort(function ($a, $b) {
+            return strnatcasecmp((string) $a, (string) $b);
+        })->values()->all();
     }
 
     /**
