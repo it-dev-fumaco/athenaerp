@@ -723,3 +723,64 @@ body.inventory-shell-mobile-nav-lock {
 .phase-out-popup-panel .phase-out-tag-submit:not(:disabled):hover {
 	background-color: #c62828 !important;
 }
+
+/* Search result card: photo beside the name, details and stock on their own rows when narrow */
+.search-result-layout {
+	display: grid;
+	grid-template-columns: 9.5rem minmax(0, 1.15fr) minmax(0, 1fr);
+	gap: 0.35rem 0.75rem;
+	align-items: start;
+	padding: 0.35rem;
+}
+.search-result-media {
+	grid-column: 1;
+	grid-row: 1 / span 2;
+}
+.search-result-identity {
+	grid-column: 2;
+	grid-row: 1;
+}
+.search-result-details {
+	grid-column: 2;
+	grid-row: 2;
+}
+.search-result-stock {
+	grid-column: 3;
+	grid-row: 1 / span 2;
+	min-width: 0;
+}
+.search-result-thumb-wrap {
+	max-width: 140px;
+	margin-left: auto;
+	margin-right: auto;
+}
+.search-result-stock-scroll {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	max-width: 100%;
+}
+.search-result-code {
+	margin-top: 0.15rem;
+	font-weight: 700;
+}
+@media (max-width: 767.98px) {
+	.search-result-layout {
+		grid-template-columns: 7.5rem minmax(0, 1fr);
+	}
+	.search-result-media {
+		grid-column: 1;
+		grid-row: 1;
+	}
+	.search-result-identity {
+		grid-column: 2;
+		grid-row: 1;
+	}
+	.search-result-details,
+	.search-result-stock {
+		grid-column: 1 / -1;
+		grid-row: auto;
+	}
+	.search-result-thumb-wrap {
+		max-width: 100%;
+	}
+}

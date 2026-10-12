@@ -354,7 +354,7 @@
                         <li class="nav-item">
                             <a class="nav-link" id="get-consignment-stock-movement" data-toggle="tab" href="#consignment-stock-movement">
                                 <span class="d-none d-lg-block">Consignment Stock Movement</span>
-                                <i class="fas fa-warehouse d-block d-lg-none" style="font-size: 8pt"></i>
+                                <i class="fas fa-warehouse d-block d-lg-none"></i>
                             </a>
                         </li>
                         @endif
@@ -569,12 +569,12 @@
 
                        <div class="row border p-2">
                         <div class="col-12 p-3">
-                            <h5 class="font-weight-bolder">Product / Item Files
-                                <span class="text-muted font-weight-normal">| Manage item files across different categories</span>
+                            <h5 class="font-weight-bolder ip-files-heading">Product / Item Files
+                                <span class="text-muted font-weight-normal ip-files-heading__note">Manage item files across different categories</span>
                             </h5>
                         </div>
                         @if (in_array($userGroup, ['Inventory Manager', 'Director']) || in_array(Auth::user()->department, ['Information Technology', 'Engineering']))
-                            <div class="col-4">
+                            <div class="col-12 col-md-6 col-lg-4">
                                 <div class="card">
                                     <div class="card-header">
                                         <h5 class="card-title font-weight-bolder">Supplier Brochure
@@ -592,7 +592,7 @@
                             @endif
                             
 
-                                 <div class="col-4">
+                                 <div class="col-12 col-md-6 col-lg-4">
                                 <div class="card">
                                     <div class="card-header">
                                         <h5 class="card-title font-weight-bolder">Photometric Data
@@ -608,7 +608,7 @@
                                 </div>
                             </div>
 
-                                 <div class="col-4">
+                                 <div class="col-12 col-md-6 col-lg-4">
                                 <div class="card">
                                     <div class="card-header">
                                         <h5 class="card-title font-weight-bolder">IES Files
@@ -682,6 +682,62 @@
             font-weight: 700 !important;
             border-bottom: 3px solid #0f2744 !important;
             background: transparent !important;
+        }
+        @media (max-width: 991.98px) {
+            .ip-tab-chrome {
+                flex-wrap: nowrap;
+            }
+            #ip-navs {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                min-width: 0;
+            }
+            #ip-navs .nav-item {
+                flex: 0 0 auto;
+            }
+            #ip-navs .nav-link {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 44px;
+                min-height: 44px;
+                padding: 0.5rem 0.7rem;
+            }
+            #ip-navs .nav-link i {
+                font-size: 1.25rem;
+                line-height: 1;
+            }
+        }
+        .ip-files-heading__note {
+            display: inline;
+        }
+        .ip-files-heading__note::before {
+            content: "| ";
+        }
+        #tabProductFiles .card-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        #tabProductFiles .card-title {
+            float: none;
+            flex: 1 1 12rem;
+            white-space: normal;
+        }
+        #tabProductFiles .card-tools {
+            float: none;
+            margin-left: auto;
+        }
+        @media (max-width: 575.98px) {
+            .ip-files-heading__note {
+                display: block;
+                margin-top: 0.2rem;
+            }
+            .ip-files-heading__note::before {
+                content: "";
+            }
         }
         #example tr > *:first-child {
             position: -webkit-sticky;

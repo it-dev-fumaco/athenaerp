@@ -480,9 +480,9 @@
 															</div>
 														</div>
 													</div>
-													<div class="d-block d-xl-none border border-outline-secondary"><!-- Mobile/Tablet -->
-														<div class="row m-0">
-															<div class="col-3 col-lg-2 col-xl-3 p-1">
+													<div class="d-block d-xl-none border border-outline-secondary search-result-row-card"><!-- Mobile/Tablet -->
+														<div class="search-result-layout">
+															<div class="search-result-media p-1">
 																<div class="search-result-thumb-wrap position-relative">
 																	<a href="{{ $row['image'] }}" data-item-code="{{ $row['name'] }}" class="view-images d-block">
 																		<img src="{{ $row['image'] }}" class="img w-100" alt="" onerror="if(this.dataset.fallbackApplied){return;} this.dataset.fallbackApplied='1'; this.src='{{ $noImgPlaceholder }}';">
@@ -495,7 +495,7 @@
 																	</div>
 																</a>
 															</div>
-															<div class="col-9 col-lg-10 col-xl-9">
+															<div class="search-result-identity p-1 min-width-0">
 																<span class="font-italic item-class">
 																	{{ $row['item_classification'] }} - {!! $row['item_group'] !!}
 																	@if ($lifecycleLabel)
@@ -505,13 +505,15 @@
 																@if (in_array($row['name'], $bundledItems))
 																	&nbsp;<span class="badge badge-info font-italic d-none d-md-inline p-0" style="font-size: 8pt;">&nbsp;Product Bundle&nbsp;</span>
 																@endif
-																<br/>
-																<span class="text-justify item-name">
+																<div class="item-name search-result-code">
 																	@if (in_array($row['name'], $bundledItems))
 																		<i class="fas fa-box-open text-info d-md-none"></i>
 																	@endif
-																	<span style="font-weight: 900 !important">{{ $row['name'] }}</span> - {!! $row['description'] !!}
-																</span>
+																	<span style="font-weight: 900 !important">{{ $row['name'] }}</span>
+																</div>
+															</div>
+															<div class="search-result-details p-1 min-width-0">
+																<span class="text-justify item-name">{!! $row['description'] !!}</span>
 																@if ($row['package_dimension'])
 																	<dl class="mt-3 mb-0">
 																		<dt style="font-size: 9pt;">Package Dimension</dt>
@@ -537,6 +539,9 @@
 																	<span class="d-block" style="font-size: 9pt;">Standard Selling Price</span>
 																</p>
 																@endif
+															</div>
+															<div class="search-result-stock p-1 min-width-0">
+																<div class="search-result-stock-scroll">
 																<div class="d-none d-md-block">
 																	@if ($row['item_inventory'])
 																		<table class="table table-sm table-bordered warehouse-table table-striped">
@@ -653,9 +658,8 @@
 																		@endif
 																	</div><!-- View Consignment Warehouse -->
 																</div>
-															</div>
-														</div>
-														<div class="row m-0 p-1 d-block d-md-none">
+																</div>
+														<div class="d-md-none">
 															<div class="container-fluid mb-1">
 																@if ($row['item_inventory'])
 																	<table class="table table-sm table-bordered warehouse-table table-striped m-0 p-0">
@@ -769,6 +773,8 @@
 																	</div>
 																	@endif
 																</div><!-- View Consignment Warehouse -->
+															</div>
+														</div>
 															</div>
 														</div>
 													</div>
