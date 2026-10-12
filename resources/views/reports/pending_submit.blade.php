@@ -27,11 +27,18 @@
                         <option value="{{ $creator['value'] }}" @selected($createdBy === $creator['value'])>{{ $creator['label'] }}</option>
                     @endforeach
                 </select>
+                <label class="mr-2" for="target_warehouse">Target Warehouse</label>
+                <select id="target_warehouse" name="target_warehouse" class="form-control mr-2">
+                    <option value="" @selected($targetWarehouse === '')>All</option>
+                    @foreach($targetWarehouses as $warehouse)
+                        <option value="{{ $warehouse }}" @selected($targetWarehouse === $warehouse)>{{ $warehouse }}</option>
+                    @endforeach
+                </select>
                 <button type="submit" class="btn btn-primary mr-2">Filter</button>
-                @if($itemCode !== '' || $createdBy !== '' || $documentType !== 'all')
+                @if($itemCode !== '' || $createdBy !== '' || $targetWarehouse !== '' || $documentType !== 'all')
                     <a href="{{ url('/pending_submit_report') }}" class="btn btn-default mr-2">Clear</a>
                 @endif
-                <a class="btn btn-success" href="{{ url('/pending_submit_report') }}?export=1&amp;document_type={{ urlencode($documentType) }}&amp;item_code={{ urlencode($itemCode) }}&amp;created_by={{ urlencode($createdBy) }}">
+                <a class="btn btn-success" href="{{ url('/pending_submit_report') }}?export=1&amp;document_type={{ urlencode($documentType) }}&amp;item_code={{ urlencode($itemCode) }}&amp;created_by={{ urlencode($createdBy) }}&amp;target_warehouse={{ urlencode($targetWarehouse) }}">
                     <i class="fas fa-file-excel"></i> Export to Excel
                 </a>
                 <span class="ml-3 font-weight-bold">Total records: {{ number_format($rows->total()) }}</span>
