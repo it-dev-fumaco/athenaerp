@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Http\Middleware\EnsureInformationTechnologyAccess;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -54,6 +55,19 @@ class User extends Authenticatable
         if (! $isRememberTokenAttribute) {
             parent::setAttribute($key, $value);
         }
+    }
+
+    public function seesWarehouseOperations(): bool
+    {
+        return in_array($this->user_group ?? '', ['Warehouse Personnel', 'Director'], true)
+            || ($this->department ?? '') === EnsureInformationTechnologyAccess::DEPARTMENT;
+    }
+
+    public function homePath(): string
+    {
+        return ($this->user_group ?? '') === 'Warehouse Personnel'
+            ? '/?tab=home'
+            : '/user-home';
     }
 
     public function assignedWarehouses()

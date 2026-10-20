@@ -87,7 +87,7 @@ class MicrosoftAuthController extends Controller
 
             $this->loginActivityLogger->record($request, UserLoginActivity::STATUS_SUCCESS, $normalizedEmail, $user);
 
-            return redirect('/user-home');
+            return redirect(Auth::user()?->homePath() ?? '/user-home');
         } catch (\Throwable $e) {
             Log::error('Microsoft SSO callback failed', [
                 'message' => $e->getMessage(),

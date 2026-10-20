@@ -16,6 +16,8 @@
     $canLoginActivity = Auth::check()
         && in_array(Auth::user()->user_group ?? '', config('login_activity.allowed_user_groups', []), true);
     $showAdministration = $canLifecycle || $canLoginActivity;
+    $showWarehouseOperations = Auth::check() && Auth::user()->seesWarehouseOperations();
+    $showGeneral = ! Auth::check() || (Auth::user()->user_group ?? '') !== 'Warehouse Personnel';
 
     $navClasses = function (bool $active): string {
         return 'inventory-sidebar__link'.($active ? ' inventory-sidebar__link--active' : '');
@@ -41,34 +43,40 @@
     </div>
 
     <nav class="inventory-sidebar-nav" aria-label="Primary">
-        <p class="inventory-sidebar__section-label inventory-sidebar-label">General</p>
-        <a href="{{ url('/user-home') }}" class="{{ $navClasses($isUserHome) }}" title="User Home">
-            <i class="fas fa-home inventory-sidebar__icon" aria-hidden="true"></i>
-            <span class="inventory-sidebar-label">User Home</span>
-        </a>
+        @if($showGeneral)
+            <p class="inventory-sidebar__section-label inventory-sidebar-label">General</p>
+            <a href="{{ url('/user-home') }}" class="{{ $navClasses($isUserHome) }}" title="User Home">
+                <i class="fas fa-home inventory-sidebar__icon" aria-hidden="true"></i>
+                <span class="inventory-sidebar-label">User Home</span>
+            </a>
+        @endif
 
-        <div class="inventory-sidebar__divider inventory-sidebar-label" role="separator"></div>
-        <p class="inventory-sidebar__section-label inventory-sidebar-label">Warehouse Operations</p>
-        <a href="{{ url('/?tab=home') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'home') }}" title="Warehouse Dashboard">
-            <i class="fas fa-th-large inventory-sidebar__icon" aria-hidden="true"></i>
-            <span class="inventory-sidebar-label">Warehouse Dashboard</span>
-        </a>
-        <a href="{{ url('/?tab=recent') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'recent') }}" title="Recently Received Stocks">
-            <i class="fas fa-box inventory-sidebar__icon" aria-hidden="true"></i>
-            <span class="inventory-sidebar-label">Recently Received Stocks</span>
-        </a>
-        <a href="{{ url('/?tab=reserved-items') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'reserved-items') }}" title="Stock Reservations">
-            <i class="fas fa-box inventory-sidebar__icon" aria-hidden="true"></i>
-            <span class="inventory-sidebar-label">Stock Reservations</span>
-        </a>
-        <a href="{{ url('/?tab=movement') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'movement') }}" title="Recent Stock Movements">
-            <i class="fas fa-exchange-alt inventory-sidebar__icon" aria-hidden="true"></i>
-            <span class="inventory-sidebar-label">Recent Stock Movements</span>
-        </a>
-        <a href="{{ url('/?tab=stock-level') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'stock-level') }}" title="Stock Level Monitoring">
-            <i class="fas fa-exclamation-triangle inventory-sidebar__icon" aria-hidden="true"></i>
-            <span class="inventory-sidebar-label">Stock Level Monitoring</span>
-        </a>
+        @if($showWarehouseOperations)
+            @if($showGeneral)
+                <div class="inventory-sidebar__divider inventory-sidebar-label" role="separator"></div>
+            @endif
+            <p class="inventory-sidebar__section-label inventory-sidebar-label">Warehouse Operations</p>
+            <a href="{{ url('/?tab=home') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'home') }}" title="Warehouse Dashboard">
+                <i class="fas fa-th-large inventory-sidebar__icon" aria-hidden="true"></i>
+                <span class="inventory-sidebar-label">Warehouse Dashboard</span>
+            </a>
+            <a href="{{ url('/?tab=recent') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'recent') }}" title="Recently Received Stocks">
+                <i class="fas fa-box inventory-sidebar__icon" aria-hidden="true"></i>
+                <span class="inventory-sidebar-label">Recently Received Stocks</span>
+            </a>
+            <a href="{{ url('/?tab=reserved-items') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'reserved-items') }}" title="Stock Reservations">
+                <i class="fas fa-box inventory-sidebar__icon" aria-hidden="true"></i>
+                <span class="inventory-sidebar-label">Stock Reservations</span>
+            </a>
+            <a href="{{ url('/?tab=movement') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'movement') }}" title="Recent Stock Movements">
+                <i class="fas fa-exchange-alt inventory-sidebar__icon" aria-hidden="true"></i>
+                <span class="inventory-sidebar-label">Recent Stock Movements</span>
+            </a>
+            <a href="{{ url('/?tab=stock-level') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'stock-level') }}" title="Stock Level Monitoring">
+                <i class="fas fa-exclamation-triangle inventory-sidebar__icon" aria-hidden="true"></i>
+                <span class="inventory-sidebar-label">Stock Level Monitoring</span>
+            </a>
+        @endif
 
         <div class="inventory-sidebar__divider inventory-sidebar-label" role="separator"></div>
         <p class="inventory-sidebar__section-label inventory-sidebar-label">System Reports</p>
