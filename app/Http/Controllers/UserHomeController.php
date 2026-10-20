@@ -136,7 +136,7 @@ class UserHomeController extends Controller
                             });
                     });
             })
-            ->orderByDesc('ste.creation')
+            ->orderBy('ste.creation')
             ->get([
                 'ste.name as document_name',
                 'ste.owner',
@@ -224,7 +224,7 @@ class UserHomeController extends Controller
                 $query->whereNull('so.name')
                     ->orWhereNotIn('so.status', self::EXCLUDED_SALES_ORDER_STATUSES);
             })
-            ->orderByDesc('ps.creation')
+            ->orderBy('ps.creation')
             ->get([
                 'ps.name as document_name',
                 'ps.owner',
@@ -243,7 +243,7 @@ class UserHomeController extends Controller
 
         return $lines
             ->groupBy('document_name')
-            ->sortByDesc(fn (Collection $group) => (string) $group->first()->creation)
+            ->sortBy(fn (Collection $group) => (string) $group->first()->creation)
             ->map(function (Collection $group) use ($requesterName, $department, $seesAll, $profiles) {
                 $first = $group->first();
                 $notes = array_filter([(string) ($first->delivery_note ?? '')]);

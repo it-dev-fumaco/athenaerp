@@ -177,7 +177,13 @@
                 <span class="pending-home__days" :class="dayClass(row.days_pending)">{{ dayLabel(row.days_pending) }}</span>
               </td>
               <td>
-                <button type="button" class="pending-home__view" @click="openDocument(row)">View</button>
+                <a
+                  v-if="erpDocumentUrl(row.number)"
+                  class="pending-home__view"
+                  :href="erpDocumentUrl(row.number)"
+                  target="_blank"
+                  rel="noopener"
+                >View</a>
               </td>
             </tr>
           </tbody>
