@@ -155,9 +155,9 @@ class UserHomeController extends Controller
 
         $profiles = $seesAll ? $this->requestersByOwner($lines) : [];
 
-        return $lines
+        $rows = $lines
             ->groupBy('document_name')
-            ->sortByDesc(fn (Collection $group) => (string) $group->first()->creation)
+            ->sortBy(fn (Collection $group) => (string) $group->first()->creation)
             ->map(function (Collection $group) use ($requesterName, $department, $seesAll, $profiles) {
                 $first = $group->first();
                 [$name, $dept] = $this->requesterFor($first, $requesterName, $department, $seesAll, $profiles);
@@ -183,6 +183,8 @@ class UserHomeController extends Controller
             })
             ->values()
             ->all();
+
+        return $rows;
     }
 
     /**
