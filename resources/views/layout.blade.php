@@ -829,13 +829,13 @@
 			</div>
 			@endif
 			
-			@if(!in_array($activePage, ['search_results', 'dashboard', 'error_page', 'item_profile', 'audit_list', 'import_from_ecommerce', 'beginning_inventory', 'phase_out_dashboard', 'phase_out_items', 'phase_out_update_lifecycle', 'login_activity', 'pending_submit_report']))
+			@if(!in_array($activePage, ['search_results', 'dashboard', 'error_page', 'item_profile', 'audit_list', 'import_from_ecommerce', 'beginning_inventory', 'phase_out_dashboard', 'phase_out_items', 'phase_out_update_lifecycle', 'login_activity', 'pending_submit_report', 'user_home']))
 			<div class="row m-0 pb-0">
 				<div class="col-xl-5 p-3">
-					<h2 class="d-none d-lg-block"><a href="/" class="btn btn-default pt-2 pr-4 pb-2 pr-3 pl-3 mr-2 ">
+					<h2 class="d-none d-lg-block"><a href="{{ url('/user-home') }}" class="btn btn-default pt-2 pr-4 pb-2 pr-3 pl-3 mr-2 ">
 						<i class="fas fa-home"></i>
 					</a>&nbsp;{{ $namePage }} <small class="text-muted">{{ $nameDesc }}</small></h2>
-					<h4 class="d-block d-lg-none"><a href="/" class="btn btn-default">
+					<h4 class="d-block d-lg-none"><a href="{{ url('/user-home') }}" class="btn btn-default">
 						<i class="fas fa-home"></i>
 					</a>&nbsp;{{ $namePage }} <small class="text-muted">{{ $nameDesc }}</small></h4>
 				</div>

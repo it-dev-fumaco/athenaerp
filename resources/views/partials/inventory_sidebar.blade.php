@@ -1,12 +1,23 @@
 @php
     $dashboardTab = request('tab', 'home');
-    if (! in_array($dashboardTab, ['home', 'movement', 'recent', 'inventory-accuracy', 'reserved-items'], true)) {
+    if (! in_array($dashboardTab, ['home', 'movement', 'recent', 'inventory-accuracy', 'reserved-items', 'stock-level'], true)) {
         $dashboardTab = 'home';
     }
     $isDashboard = request()->is('/');
+    $isUserHome = request()->is('user-home');
     $isPhaseOutItems = request()->is('phase-out/items');
     $isPhaseOutUpdateLifecycle = request()->is('phase-out/update-lifecycle-status');
     $isLoginActivity = request()->is('admin/login-activity');
+
+    $canUnsubmitted = Auth::check()
+        && (Auth::user()->department ?? '') === \App\Http\Middleware\EnsureInformationTechnologyAccess::DEPARTMENT;
+    $canLifecycle = Auth::check()
+        && in_array(Auth::user()->user_group ?? '', \App\Http\Middleware\EnsureInventoryLifecycleSettingsAccess::ALLOWED_USER_GROUPS, true);
+    $canLoginActivity = Auth::check()
+        && in_array(Auth::user()->user_group ?? '', config('login_activity.allowed_user_groups', []), true);
+    $showAdministration = $canLifecycle || $canLoginActivity;
+    $showWarehouseOperations = Auth::check() && Auth::user()->seesWarehouseOperations();
+    $showGeneral = ! Auth::check() || (Auth::user()->user_group ?? '') !== 'Warehouse Personnel';
 
     $navClasses = function (bool $active): string {
         return 'inventory-sidebar__link'.($active ? ' inventory-sidebar__link--active' : '');
@@ -28,66 +39,83 @@
             aria-expanded="true"
         >
             <i class="fas fa-angle-double-left inventory-shell-collapse-icon" aria-hidden="true"></i>
-            <span class="inventory-sidebar-label" data-sidebar-toggle-label>Collapse</span>
         </button>
     </div>
 
     <nav class="inventory-sidebar-nav" aria-label="Primary">
-        <a href="{{ url('/?tab=home') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'home') }}" title="Home">
-            <i class="fas fa-home inventory-sidebar__icon" aria-hidden="true"></i>
-            <span class="inventory-sidebar-label">Home</span>
-        </a>
-        <a href="{{ url('/?tab=movement') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'movement') }}" title="Stock Movement">
-            <i class="fas fa-list-alt inventory-sidebar__icon" aria-hidden="true"></i>
-            <span class="inventory-sidebar-label">Stock Movement</span>
-        </a>
-        <a href="{{ url('/?tab=recent') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'recent') }}" title="Recently Received Items">
-            <i class="fas fa-inbox inventory-sidebar__icon" aria-hidden="true"></i>
-            <span class="inventory-sidebar-label">Recently Received Items</span>
-        </a>
+        @if($showGeneral)
+            <p class="inventory-sidebar__section-label inventory-sidebar-label">General</p>
+            <a href="{{ url('/user-home') }}" class="{{ $navClasses($isUserHome) }}" title="User Home">
+                <i class="fas fa-home inventory-sidebar__icon" aria-hidden="true"></i>
+                <span class="inventory-sidebar-label">User Home</span>
+            </a>
+        @endif
+
+        @if($showWarehouseOperations)
+            @if($showGeneral)
+                <div class="inventory-sidebar__divider inventory-sidebar-label" role="separator"></div>
+            @endif
+            <p class="inventory-sidebar__section-label inventory-sidebar-label">Warehouse Operations</p>
+            <a href="{{ url('/?tab=home') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'home') }}" title="Warehouse Dashboard">
+                <i class="fas fa-th-large inventory-sidebar__icon" aria-hidden="true"></i>
+                <span class="inventory-sidebar-label">Warehouse Dashboard</span>
+            </a>
+            <a href="{{ url('/?tab=recent') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'recent') }}" title="Recently Received Stocks">
+                <i class="fas fa-box inventory-sidebar__icon" aria-hidden="true"></i>
+                <span class="inventory-sidebar-label">Recently Received Stocks</span>
+            </a>
+            <a href="{{ url('/?tab=reserved-items') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'reserved-items') }}" title="Stock Reservations">
+                <i class="fas fa-box inventory-sidebar__icon" aria-hidden="true"></i>
+                <span class="inventory-sidebar-label">Stock Reservations</span>
+            </a>
+            <a href="{{ url('/?tab=movement') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'movement') }}" title="Recent Stock Movements">
+                <i class="fas fa-exchange-alt inventory-sidebar__icon" aria-hidden="true"></i>
+                <span class="inventory-sidebar-label">Recent Stock Movements</span>
+            </a>
+            <a href="{{ url('/?tab=stock-level') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'stock-level') }}" title="Stock Level Monitoring">
+                <i class="fas fa-exclamation-triangle inventory-sidebar__icon" aria-hidden="true"></i>
+                <span class="inventory-sidebar-label">Stock Level Monitoring</span>
+            </a>
+        @endif
+
+        <div class="inventory-sidebar__divider inventory-sidebar-label" role="separator"></div>
+        <p class="inventory-sidebar__section-label inventory-sidebar-label">System Reports</p>
+        @if($canUnsubmitted)
+            <a href="{{ url('/pending_submit_report') }}" class="{{ $navClasses(request()->is('pending_submit_report')) }}" title="Unsubmitted Transactions">
+                <i class="fas fa-file-alt inventory-sidebar__icon" aria-hidden="true"></i>
+                <span class="inventory-sidebar-label">Unsubmitted Transactions</span>
+            </a>
+        @endif
         <a href="{{ url('/?tab=inventory-accuracy') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'inventory-accuracy') }}" title="Inventory Accuracy">
             <i class="fas fa-chart-line inventory-sidebar__icon" aria-hidden="true"></i>
             <span class="inventory-sidebar-label">Inventory Accuracy</span>
         </a>
-        <a href="{{ url('/?tab=reserved-items') }}" class="{{ $navClasses($isDashboard && $dashboardTab === 'reserved-items') }}" title="Reserved Items">
-            <i class="fas fa-clipboard-list inventory-sidebar__icon" aria-hidden="true"></i>
-            <span class="inventory-sidebar-label">Reserved Items</span>
-        </a>
-        @if(Auth::check() && (Auth::user()->department ?? '') === \App\Http\Middleware\EnsureInformationTechnologyAccess::DEPARTMENT)
-            <a href="{{ url('/pending_submit_report') }}" class="{{ $navClasses(request()->is('pending_submit_report')) }}" title="Unsubmitted Transactions">
-                <i class="fas fa-file-alt inventory-sidebar__icon" aria-hidden="true"></i>
-                <span class="inventory-sidebar-label">Unsubmitted<br>Transactions</span>
-            </a>
-        @endif
 
-        @auth
-            @if(in_array(Auth::user()->user_group, \App\Http\Middleware\EnsureInventoryLifecycleSettingsAccess::ALLOWED_USER_GROUPS))
-                <div class="inventory-sidebar__divider inventory-sidebar-label" role="separator"></div>
-                <p class="inventory-sidebar__section-label inventory-sidebar-label">Item Lifecycle Settings</p>
-
-                <a href="{{ url('/phase-out/items') }}" class="{{ $navClasses($isPhaseOutItems) }}" title="Phase-Out Items">
+        @if($showAdministration)
+            <div class="inventory-sidebar__divider inventory-sidebar-label" role="separator"></div>
+            <p class="inventory-sidebar__section-label inventory-sidebar-label">Administration</p>
+            @if($canLifecycle)
+                <a href="{{ url('/phase-out/items') }}" class="{{ $navClasses($isPhaseOutItems) }}" title="Phase-out Items">
                     <i class="fas fa-box-open inventory-sidebar__icon" aria-hidden="true"></i>
-                    <span class="inventory-sidebar-label">Phase-Out Items</span>
+                    <span class="inventory-sidebar-label">Phase-out Items</span>
                 </a>
                 <a href="{{ url('/phase-out/update-lifecycle-status') }}" class="{{ $navClasses($isPhaseOutUpdateLifecycle) }}" title="Update Lifecycle Status">
-                    <i class="fas fa-arrows-rotate inventory-sidebar__icon" aria-hidden="true"></i>
+                    <i class="fas fa-sync-alt inventory-sidebar__icon" aria-hidden="true"></i>
                     <span class="inventory-sidebar-label">Update Lifecycle Status</span>
                 </a>
             @endif
-            @if(in_array(Auth::user()->user_group ?? '', config('login_activity.allowed_user_groups', []), true))
-                <div class="inventory-sidebar__divider inventory-sidebar-label" role="separator"></div>
-                <p class="inventory-sidebar__section-label inventory-sidebar-label">Security</p>
-                <a href="{{ url('/admin/login-activity') }}" class="{{ $navClasses($isLoginActivity) }}" title="Login activity">
-                    <i class="fas fa-right-to-bracket inventory-sidebar__icon" aria-hidden="true"></i>
-                    <span class="inventory-sidebar-label">Login activity</span>
+            @if($canLoginActivity)
+                <a href="{{ url('/admin/login-activity') }}" class="{{ $navClasses($isLoginActivity) }}" title="Login Activity">
+                    <i class="fas fa-sign-in-alt inventory-sidebar__icon" aria-hidden="true"></i>
+                    <span class="inventory-sidebar-label">Login Activity</span>
                 </a>
             @endif
-        @endauth
+        @endif
     </nav>
 
     <div class="inventory-sidebar__footer">
         <a href="{{ url('/user_manual') }}" class="{{ $navClasses(request()->is('user_manual') || request()->is('user_manual/*')) }}" title="Help &amp; Support">
-            <i class="fas fa-circle-question inventory-sidebar__icon" aria-hidden="true"></i>
+            <i class="fas fa-question-circle inventory-sidebar__icon" aria-hidden="true"></i>
             <span class="inventory-sidebar-label">Help &amp; Support</span>
         </a>
     </div>
@@ -118,10 +146,6 @@
                 var toggleLabel = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
                 btn.setAttribute('title', toggleLabel);
                 btn.setAttribute('aria-label', toggleLabel);
-                var toggleText = btn.querySelector('[data-sidebar-toggle-label]');
-                if (toggleText) {
-                    toggleText.textContent = collapsed ? 'Expand' : 'Collapse';
-                }
             }
             try {
                 localStorage.setItem(KEY, collapsed ? '1' : '0');

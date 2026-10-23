@@ -507,6 +507,13 @@ class MaterialTransferController extends Controller
                 throw new MaterialTransferValidationException('Qty cannot be less than or equal to 0.');
             }
 
+            $availableQty = (float) $this->getAvailableQty($itemCode, $stockEntryItem->s_warehouse);
+            if ((int) $request->input('deduct_reserve') !== 1 && (float) $request->qty > $availableQty) {
+                throw new MaterialTransferValidationException(
+                    'Qty not available for <b>'.$itemCode.'</b> in <b>'.$stockEntryItem->s_warehouse.'</b><br><br>Available qty is <b>'.$availableQty.'</b>, you need <b>'.$request->qty.'</b>.'
+                );
+            }
+
             if ($stockEntry->material_request) {
                 $mreqResult = $this->resolveMaterialRequestForInternalTransfer(
                     $stockEntry->material_request,
@@ -550,6 +557,17 @@ class MaterialTransferController extends Controller
                     }
                 }
             }
+
+            $originalLine = [
+                'status' => $stockEntryItem->status,
+                'qty' => (float) $stockEntryItem->qty,
+                'issued_qty' => $stockEntryItem->issued_qty,
+                'transfer_qty' => $stockEntryItem->transfer_qty,
+                'session_user' => $stockEntryItem->session_user,
+                'validate_item_code' => $stockEntryItem->validate_item_code,
+                'date_modified' => $stockEntryItem->date_modified,
+            ];
+            $originalParentStatus = $stockEntry->item_status;
 
             $unissuedQty = $stockEntryItem->qty - $request->qty;
 
@@ -702,6 +720,13 @@ class MaterialTransferController extends Controller
                     $message = $this->isErpConnectionError($submitErr)
                         ? \App\Traits\ERPTrait::erpConnectionUnavailableMessage()
                         : 'Item checked out, but the Stock Entry could not be submitted to ERP. Stock Ledger Entry was not created. Please contact your system administrator or try submitting the STE manually in ERPNext.';
+
+                    $this->revertFailedInternalTransferIssue($childId, (string) $steName, $originalLine, $originalParentStatus);
+                    if (is_string($submitErr) && str_contains($submitErr, 'NegativeStockError')) {
+                        $message = 'Qty not available for <b>'.$itemCode.'</b> in <b>'.$stockEntryItem->s_warehouse.'</b><br><br>Available qty is <b>'.$availableQty.'</b>, you need <b>'.$request->qty.'</b>.';
+                    } elseif (! $this->isErpConnectionError($submitErr)) {
+                        $message = 'Item <b>'.$itemCode.'</b> was not issued. The Stock Entry could not be submitted.';
+                    }
 
                     return ApiResponse::failure($message);
                 }
@@ -1169,6 +1194,90 @@ class MaterialTransferController extends Controller
      * @param  \App\Models\StockEntry|object  $stockEntry
      * @return array<string, mixed>
      */
+    /**
+     * ERP submit failed after the line was marked Issued. Put the draft and the local row back
+     * so the incoming list does not show an issue that never moved stock.
+     *
+     * @param  array{status: mixed, qty: float, issued_qty: mixed, transfer_qty: mixed, session_user: mixed, validate_item_code: mixed, date_modified: mixed}  $originalLine
+     */
+    private function revertFailedInternalTransferIssue(string $childId, string $steName, array $originalLine, ?string $originalParentStatus): bool
+    {
+        $now = now()->toDateTimeString();
+        $lineStatus = $originalLine['status'] ?: 'For Checking';
+        $parentStatus = $originalParentStatus ?: 'For Checking';
+
+        StockEntryDetail::query()->where('name', $childId)->update([
+            'status' => $lineStatus,
+            'qty' => $originalLine['qty'],
+            'issued_qty' => $originalLine['issued_qty'],
+            'transfer_qty' => $originalLine['transfer_qty'],
+            'session_user' => $originalLine['session_user'],
+            'validate_item_code' => $originalLine['validate_item_code'],
+            'date_modified' => $originalLine['date_modified'],
+            'modified' => $now,
+            'modified_by' => Auth::user()->wh_user,
+        ]);
+
+        if ($steName !== '') {
+            StockEntry::query()->where('name', $steName)->where('docstatus', 0)->update([
+                'item_status' => $parentStatus,
+                'modified' => $now,
+                'modified_by' => Auth::user()->wh_user,
+            ]);
+        }
+
+        AthenaTransaction::query()
+            ->where('reference_name', $childId)
+            ->where('status', 'Issued')
+            ->update([
+                'status' => 'Cancelled',
+                'modified' => $now,
+                'modified_by' => Auth::user()->wh_user,
+            ]);
+
+        if ($steName === '') {
+            return true;
+        }
+
+        try {
+            $freshGet = $this->erpGet('Stock Entry', $steName, [], true);
+            $freshDoc = Arr::get($freshGet, 'data');
+            if (! is_array($freshDoc) || (int) data_get($freshDoc, 'docstatus') !== 0) {
+                return true;
+            }
+
+            $freshDoc['item_status'] = $parentStatus;
+            $freshDoc['items'] = collect($freshDoc['items'] ?? [])->map(function ($item) use ($childId, $originalLine, $lineStatus) {
+                if (($item['name'] ?? '') !== $childId) {
+                    return $item;
+                }
+
+                $item['status'] = $lineStatus;
+                $item['qty'] = $originalLine['qty'];
+                $item['issued_qty'] = $originalLine['issued_qty'];
+                $item['transfer_qty'] = $originalLine['transfer_qty'];
+                $item['session_user'] = $originalLine['session_user'];
+                $item['validate_item_code'] = $originalLine['validate_item_code'];
+                $item['date_modified'] = $originalLine['date_modified'];
+
+                return $item;
+            })->all();
+
+            unset($freshDoc['creation'], $freshDoc['owner']);
+            $revertResponse = $this->erpPut('Stock Entry', $steName, $freshDoc, true);
+
+            return Arr::has($revertResponse, 'data');
+        } catch (\Throwable $th) {
+            Log::error('MaterialTransferController revertFailedInternalTransferIssue failed', [
+                'ste' => $steName,
+                'child_id' => $childId,
+                'message' => $th->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
+
     private function stockEntryToPutPayload($stockEntry): array
     {
         $payload = $stockEntry instanceof StockEntry

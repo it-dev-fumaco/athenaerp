@@ -23,7 +23,7 @@ class LoginController extends Controller
     public function viewLogin()
     {
         if (Auth::check()) {
-            return redirect('/');
+            return redirect(Auth::user()->homePath());
         }
 
         return view('auth.login');

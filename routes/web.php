@@ -28,6 +28,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SelectFilterController;
 use App\Http\Controllers\StockReservationController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\UserHomeController;
 use App\Http\Controllers\UserLoginActivityLogController;
 use Illuminate\Support\Facades\Route;
 
@@ -100,6 +101,8 @@ Route::group(['middleware' => ['sanitation', 'throttle:global']], function () {
         Route::post('/updateParentItem/{item_code}', [ItemAttributeController::class, 'updateParentItem']);
 
         Route::get('/', [MainController::class, 'index']);
+        Route::get('/user-home', [UserHomeController::class, 'page']);
+        Route::get('/user-home/pending', [UserHomeController::class, 'pending']);
         Route::middleware('inventoryLifecycleSettings')->group(function () {
             Route::get('/phase-out/dashboard', [PhaseOutController::class, 'dashboard']);
             Route::get('/phase-out/items', [PhaseOutController::class, 'items']);

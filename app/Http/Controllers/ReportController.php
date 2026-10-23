@@ -45,9 +45,6 @@ class ReportController extends Controller
                     ->when($itemCode !== '', function ($query) use ($itemCode) {
                         $query->where('tabStock Entry Detail.item_code', 'like', '%'.$itemCode.'%');
                     })
-                    ->when($createdBy !== '', function ($query) use ($createdBy) {
-                        $query->where('ste.owner', $createdBy);
-                    })
                     ->when($targetWarehouse !== '', function ($query) use ($targetWarehouse) {
                         $query->where('tabStock Entry Detail.t_warehouse', $targetWarehouse);
                     })
@@ -75,9 +72,6 @@ class ReportController extends Controller
                     ->joinPackingSlipDeliveryNote()
                     ->when($itemCode !== '', function ($query) use ($itemCode) {
                         $query->where('at.item_code', 'like', '%'.$itemCode.'%');
-                    })
-                    ->when($createdBy !== '', function ($query) use ($createdBy) {
-                        $query->where('ps.owner', $createdBy);
                     })
                     ->when($targetWarehouse !== '', function ($query) use ($targetWarehouse) {
                         $query->where('at.target_warehouse', $targetWarehouse);
@@ -113,9 +107,6 @@ class ReportController extends Controller
                     ->whereIn('dri.warehouse', $warehouses)
                     ->when($itemCode !== '', function ($query) use ($itemCode) {
                         $query->where('psi.item_code', 'like', '%'.$itemCode.'%');
-                    })
-                    ->when($createdBy !== '', function ($query) use ($createdBy) {
-                        $query->where('ps.owner', $createdBy);
                     })
                     ->when($targetWarehouse !== '', function ($query) use ($targetWarehouse) {
                         $query->whereExists(function ($exists) use ($targetWarehouse) {
@@ -183,7 +174,13 @@ class ReportController extends Controller
             $creatorNames[$creator['value']] = $creator['label'];
         }
 
-        $rows = $this->pendingSubmitRows($lines, $creatorNames);
+        $allRows = $this->pendingSubmitRows($lines, $creatorNames);
+        $userStats = $this->pendingSubmitUserStats($allRows);
+        $rows = $createdBy === ''
+            ? $allRows
+            : array_values(array_filter($allRows, function ($row) use ($createdBy) {
+                return (string) ($row['owner'] ?? '') === $createdBy;
+            }));
 
         if ($request->boolean('export')) {
             return $this->downloadPendingSubmitReport($rows);
@@ -193,7 +190,8 @@ class ReportController extends Controller
             'rows' => $this->paginatePendingSubmitRows($rows, $request),
             'itemCode' => $itemCode,
             'createdBy' => $createdBy,
-            'creators' => $creators,
+            'userStats' => $userStats,
+            'userTotal' => count($allRows),
             'targetWarehouse' => $targetWarehouse,
             'targetWarehouses' => $targetWarehouses,
             'documentType' => $documentType,
@@ -368,6 +366,7 @@ class ReportController extends Controller
                         'item_code' => $itemCode,
                         'document_no' => $line->document_no,
                         'date_created' => $this->formatPendingSubmitDate($line->date_created ?? null),
+                        'owner' => (string) ($line->created_by ?? ''),
                         'created_by' => $creatorNames[$line->created_by] ?? ($line->created_by ?: ''),
                         'transaction_type' => $line->transaction_type,
                         'item_status' => $line->item_status,
@@ -389,6 +388,43 @@ class ReportController extends Controller
         }
 
         return $rows;
+    }
+
+    /**
+     * One entry per document owner who still has pending rows after the other filters.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array{value: string, label: string, count: int}>
+     */
+    private function pendingSubmitUserStats(array $rows): array
+    {
+        $counts = [];
+        foreach ($rows as $row) {
+            $owner = (string) ($row['owner'] ?? '');
+            if ($owner === '') {
+                continue;
+            }
+            if (! isset($counts[$owner])) {
+                $label = (string) ($row['created_by'] ?? '');
+                $counts[$owner] = [
+                    'value' => $owner,
+                    'label' => $label !== '' ? $label : $owner,
+                    'count' => 0,
+                ];
+            }
+            $counts[$owner]['count']++;
+        }
+
+        $stats = array_values($counts);
+        usort($stats, function ($a, $b) {
+            if ($a['count'] !== $b['count']) {
+                return $b['count'] <=> $a['count'];
+            }
+
+            return strnatcasecmp($a['label'], $b['label']);
+        });
+
+        return $stats;
     }
 
     private function formatPendingSubmitDate($value): string

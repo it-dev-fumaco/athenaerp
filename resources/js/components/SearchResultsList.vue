@@ -9,9 +9,9 @@
           <template v-for="(row, index) in apiData.data" :key="row.name">
             <div class="mb-1"></div>
             <div class="border border-outline-secondary search-result-row-card">
-              <div class="row m-0 align-items-start">
-                <div class="col-12 col-sm-4 col-md-3 col-lg-2 p-1 text-center text-md-left">
-                  <div class="search-result-thumb-wrap position-relative mx-auto mx-md-0" style="max-width: 140px">
+              <div class="search-result-layout">
+                <div class="search-result-media p-1 text-center">
+                  <div class="search-result-thumb-wrap position-relative">
                     <a :href="row.image" :data-item-code="row.name" class="view-images d-block">
                       <img :src="row.image" class="img w-100" alt="" @error="onSearchImageError">
                     </a>
@@ -25,32 +25,30 @@
                     </a>
                   </div>
                 </div>
-                <div class="col-12 col-sm-8 col-md-6 col-lg-5 p-1 min-width-0">
-                  <div class="col-md-12 m-0 text-left search-result-detail-col">
-                    <span class="font-italic item-class">
-                      {{ row.item_classification }} - {{ row.item_group }}
-                      <LifecycleStatusTag :status="row.lifecycleStatus" class="search-result-status-inline" />
-                    </span>
-                    <span v-if="bundledItems.includes(row.name)" class="badge badge-info font-italic ml-1" style="font-size: 8pt;">Product Bundle</span>
-                    <br/>
-                    <span class="text-justify item-name" style="font-size: 10pt !important;">
-                      <b>{{ row.name }}</b> - <span v-html="row.description"></span>
-                    </span>
-                    <template v-if="row.package_dimension">
-                      <dl class="mt-3 mb-0">
-                        <dt style="font-size: 9pt;" class="text-muted">Package Dimension</dt>
-                        <dd style="font-size: 8pt;" class="text-muted text-justify pt-1" v-html="row.package_dimension"></dd>
-                      </dl>
-                    </template>
-                    <template v-else><br></template>
-                    <span v-if="row.part_nos" class="text-justify item-name"><b>Part No(s)</b> {{ row.part_nos }} <i class="fa fa-info-circle text-muted ml-1" style="font-size: 10pt;"></i></span>
-                    <p v-if="apiData.show_price && row.default_price > 0" class="mt-3 mb-2">
-                      <span class="d-block font-weight-bold" style="font-size: 15pt;">P {{ formatPrice(row.default_price) }}</span>
-                      <span class="d-block" style="font-size: 9pt;">Standard Selling Price</span>
-                    </p>
-                  </div>
+                <div class="search-result-identity p-1 min-width-0">
+                  <span class="font-italic item-class">
+                    {{ row.item_classification }} - {{ row.item_group }}
+                    <LifecycleStatusTag :status="row.lifecycleStatus" class="search-result-status-inline" />
+                  </span>
+                  <span v-if="bundledItems.includes(row.name)" class="badge badge-info font-italic ml-1" style="font-size: 8pt;">Product Bundle</span>
+                  <div class="item-name search-result-code"><b>{{ row.name }}</b></div>
                 </div>
-                <div class="col-12 col-md-3 col-lg-5 p-1 min-width-0">
+                <div class="search-result-details p-1 min-width-0">
+                  <span class="text-justify item-name" v-html="row.description"></span>
+                  <template v-if="row.package_dimension">
+                    <dl class="mt-3 mb-0">
+                      <dt style="font-size: 9pt;" class="text-muted">Package Dimension</dt>
+                      <dd style="font-size: 8pt;" class="text-muted text-justify pt-1" v-html="row.package_dimension"></dd>
+                    </dl>
+                  </template>
+                  <span v-if="row.part_nos" class="text-justify item-name d-block"><b>Part No(s)</b> {{ row.part_nos }} <i class="fa fa-info-circle text-muted ml-1" style="font-size: 10pt;"></i></span>
+                  <p v-if="apiData.show_price && row.default_price > 0" class="mt-3 mb-2">
+                    <span class="d-block font-weight-bold" style="font-size: 15pt;">P {{ formatPrice(row.default_price) }}</span>
+                    <span class="d-block" style="font-size: 9pt;">Standard Selling Price</span>
+                  </p>
+                </div>
+                <div class="search-result-stock p-1 min-width-0">
+                  <div class="search-result-stock-scroll">
                   <table v-if="row.item_inventory && row.item_inventory.length" class="table table-sm table-bordered warehouse-table table-hover">
                     <thead>
                       <tr>
@@ -78,6 +76,7 @@
                   </table>
                   <div v-else-if="!bundledItems.includes(row.name)" class="h-75 d-flex align-items-center">
                     <p class="pt-2 mx-auto">No Available Stock on All Warehouses</p>
+                  </div>
                   </div>
                 </div>
               </div>
@@ -379,5 +378,9 @@ onUnmounted(() => {
 .search-result-row-card .warehouse-table {
   width: 100%;
   table-layout: auto;
+}
+.search-result-code {
+  margin-top: 0.15rem;
+  font-size: 0.95rem;
 }
 </style>

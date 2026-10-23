@@ -7,6 +7,7 @@ use App\Pipelines\Pipes\FindUserPipe;
 use App\Pipelines\Pipes\LoginUserPipe;
 use Illuminate\Pipeline\Pipeline;
 use Illuminate\Routing\Redirector;
+use Illuminate\Support\Facades\Auth;
 
 class LoginPipeline
 {
@@ -30,6 +31,6 @@ class LoginPipeline
                 EnsureApiCredentialsPipe::class,
                 LoginUserPipe::class,
             ])
-            ->then(fn ($passable) => $this->redirect->to('/'));
+            ->then(fn ($passable) => $this->redirect->to(Auth::user()?->homePath() ?? '/user-home'));
     }
 }
