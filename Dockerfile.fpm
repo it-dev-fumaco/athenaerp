@@ -3,7 +3,7 @@
 # --- Composer deps (no-dev for prod) ---
 # We run composer on a PHP image with required extensions enabled (e.g. ext-gd),
 # so the lockfile platform checks match runtime.
-FROM php:8.3-cli-bookworm AS composer_deps
+FROM php:8.3.36-cli-bookworm AS composer_deps
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -50,7 +50,7 @@ RUN npm ci --no-audit --no-fund \
     && npm run build
 
 # --- Runtime image ---
-FROM php:8.3-fpm-bookworm
+FROM php:8.3.36-fpm-bookworm
 
 ARG WWWGROUP=1000
 ARG WWWUSER=1000
