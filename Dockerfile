@@ -1,5 +1,5 @@
 # AthenaERP - Laravel application
-FROM php:8.3-cli-bookworm
+FROM php:8.3.36-cli-bookworm
 
 ARG WWWGROUP=1000
 ARG WWWUSER=1000
