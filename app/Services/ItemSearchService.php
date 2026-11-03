@@ -110,6 +110,7 @@ class ItemSearchService
             })
             ->select($selectColumns)
             ->orderBy('tabItem.modified', 'desc')
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
     }
 }
